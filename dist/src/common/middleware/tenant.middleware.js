@@ -1,0 +1,91 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var TenantMiddleware_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TenantMiddleware = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../config/prisma.service");
+const domain_resolver_service_1 = require("../services/domain-resolver.service");
+let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
+    constructor(prisma, domainResolver) {
+        this.prisma = prisma;
+        this.domainResolver = domainResolver;
+        this.logger = new common_1.Logger(TenantMiddleware_1.name);
+    }
+    async use(req, res, next) {
+        try {
+            if (req.path.startsWith('/super-admin')) {
+                this.logger.debug('Skipping tenant resolution for super-admin route');
+                return next();
+            }
+            if (req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
+                return next();
+            }
+            let tenantId;
+            let tenant = null;
+            const tenantIdHeader = req.headers['x-tenant-id'];
+            if (tenantIdHeader) {
+                tenantId = parseInt(tenantIdHeader, 10);
+                if (isNaN(tenantId)) {
+                    throw new common_1.BadRequestException('Invalid tenant ID in header');
+                }
+                tenant = await this.prisma.tenant.findFirst({
+                    where: {
+                        id: tenantId,
+                        isActive: true,
+                        status: { not: 'SUSPENDED' }
+                    },
+                });
+                if (!tenant) {
+                    throw new common_1.BadRequestException(`Tenant with ID ${tenantId} not found or inactive`);
+                }
+                this.logger.debug(`Tenant resolved by ID header: ${tenant.slug} (${tenantId})`);
+            }
+            else {
+                const domainHeader = (req.headers['x-tenant-domain'] || req.headers['host']);
+                if (!domainHeader) {
+                    throw new common_1.BadRequestException('No domain information found in request headers');
+                }
+                const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
+                this.domainResolver.validateTenantAccess(resolution.tenant);
+                tenant = resolution.tenant;
+                tenantId = tenant.id;
+                this.logger.debug(`Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`);
+                req.domainResolution = {
+                    originalDomain: domainHeader,
+                    resolvedBy: resolution.resolvedBy,
+                    tenantDomain: resolution.domain,
+                };
+            }
+            req.tenantId = tenantId;
+            req.tenant = tenant;
+            this.logger.log(`🏢 Request for tenant: ${tenant.slug} (${tenantId}) - ${req.method} ${req.path}`);
+            if (req.domainResolution) {
+                this.logger.debug(`Domain resolution: ${req.domainResolution.originalDomain} -> ${tenant.slug} via ${req.domainResolution.resolvedBy}`);
+            }
+        }
+        catch (error) {
+            this.logger.error(`❌ Tenant middleware error: ${error.message}`, error.stack);
+            if (process.env.NODE_ENV === 'development') {
+                throw new common_1.BadRequestException(`Tenant resolution failed: ${error.message}`);
+            }
+            throw new common_1.BadRequestException('Unable to resolve tenant for this request');
+        }
+        next();
+    }
+};
+exports.TenantMiddleware = TenantMiddleware;
+exports.TenantMiddleware = TenantMiddleware = TenantMiddleware_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        domain_resolver_service_1.DomainResolverService])
+], TenantMiddleware);
+//# sourceMappingURL=tenant.middleware.js.map

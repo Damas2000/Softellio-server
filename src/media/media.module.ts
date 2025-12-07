@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { MediaService } from './media.service';
+import { MediaController } from './media.controller';
+import { CloudinaryModule } from '../config/cloudinary.module';
+
+@Module({
+  imports: [CloudinaryModule],
+  controllers: [MediaController],
+  providers: [MediaService],
+  exports: [MediaService],
+})
+export class MediaModule {}

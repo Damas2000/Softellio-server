@@ -1,0 +1,36 @@
+import { PrismaService } from '../../config/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { DatabaseBackup, SystemBackup } from '@prisma/client';
+import { CreateDatabaseBackupDto, CreateSystemBackupDto } from '../dto/create-backup.dto';
+import { CreateRestoreOperationDto, RestoreOperationResponse } from '../dto/restore-backup.dto';
+import { BackupProgress, RestoreProgress } from '../interfaces/backup.interface';
+export declare class BackupService {
+    private prisma;
+    private configService;
+    private readonly logger;
+    private readonly backupDir;
+    private readonly maxConcurrentBackups;
+    private runningBackups;
+    private runningRestores;
+    constructor(prisma: PrismaService, configService: ConfigService);
+    private ensureBackupDirectoryExists;
+    createDatabaseBackup(tenantId: number | null, createBackupDto: CreateDatabaseBackupDto): Promise<DatabaseBackup>;
+    private performDatabaseBackup;
+    private buildDumpCommand;
+    createSystemBackup(tenantId: number | null, createBackupDto: CreateSystemBackupDto): Promise<SystemBackup>;
+    private performSystemBackup;
+    createRestoreOperation(tenantId: number | null, createRestoreDto: CreateRestoreOperationDto): Promise<RestoreOperationResponse>;
+    private performRestoreOperation;
+    private compressFile;
+    private calculateFileChecksum;
+    private calculateDirectorySize;
+    private formatBytes;
+    private backupDatabase;
+    private backupApplicationFiles;
+    private backupConfiguration;
+    private backupMediaFiles;
+    private backupLogs;
+    cleanupExpiredBackups(): Promise<void>;
+    getBackupProgress(backupId: string): BackupProgress | null;
+    getRestoreProgress(restoreId: string): RestoreProgress | null;
+}
