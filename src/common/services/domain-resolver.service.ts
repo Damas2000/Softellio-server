@@ -32,7 +32,7 @@ export class DomainResolverService {
     let result: TenantResolutionResult | null = null;
 
     // Step 1: Try custom domain lookup
-    result = await this.resolveByCustoomain(normalizedHost);
+    result = await this.resolveByCustomDomain(normalizedHost);
     if (result) {
       this.logger.debug(`Tenant resolved by custom domain: ${result.tenant.slug}`);
       return result;
@@ -88,7 +88,7 @@ export class DomainResolverService {
    * Step 1: Custom domain resolution
    * Looks for exact match in TenantDomain table
    */
-  private async resolveByCustoomain(domain: string): Promise<TenantResolutionResult | null> {
+  private async resolveByCustomDomain(domain: string): Promise<TenantResolutionResult | null> {
     try {
       // Try exact match first
       let tenantDomain = await this.prisma.tenantDomain.findFirst({

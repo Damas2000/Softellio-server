@@ -13,7 +13,7 @@ export declare class DomainResolverService {
     constructor(prisma: PrismaService);
     resolveTenantFromDomain(hostHeader: string): Promise<TenantResolutionResult>;
     private normalizeHost;
-    private resolveByCustoomain;
+    private resolveByCustomDomain;
     private resolveBySubdomain;
     private resolveDefaultTenant;
     private resolveFallbackTenant;

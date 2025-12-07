@@ -68,4 +68,5 @@ export declare class MonitoringService extends EventEmitter implements OnModuleI
     createAlertRule(ruleDto: CreateAlertRuleDto, tenantId?: number): Promise<AlertRule>;
     updateAlertRule(id: string, updateDto: UpdateAlertRuleDto): Promise<AlertRule>;
     deleteAlertRule(id: string): Promise<void>;
+    private convertMetadataToLabels;
 }

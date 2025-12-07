@@ -25,7 +25,7 @@ let DomainResolverService = DomainResolverService_1 = class DomainResolverServic
         const normalizedHost = this.normalizeHost(hostHeader);
         this.logger.debug(`Resolving tenant for domain: ${normalizedHost}`);
         let result = null;
-        result = await this.resolveByCustoomain(normalizedHost);
+        result = await this.resolveByCustomDomain(normalizedHost);
         if (result) {
             this.logger.debug(`Tenant resolved by custom domain: ${result.tenant.slug}`);
             return result;
@@ -57,7 +57,7 @@ let DomainResolverService = DomainResolverService_1 = class DomainResolverServic
         normalized = normalized.replace(/\.+$/, '');
         return normalized;
     }
-    async resolveByCustoomain(domain) {
+    async resolveByCustomDomain(domain) {
         try {
             let tenantDomain = await this.prisma.tenantDomain.findFirst({
                 where: {

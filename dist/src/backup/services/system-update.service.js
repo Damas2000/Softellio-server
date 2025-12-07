@@ -16,6 +16,7 @@ const prisma_service_1 = require("../../config/prisma.service");
 const config_1 = require("@nestjs/config");
 const schedule_1 = require("@nestjs/schedule");
 const backup_service_1 = require("./backup.service");
+const create_backup_dto_1 = require("../dto/create-backup.dto");
 const fs = require("fs-extra");
 const path = require("path");
 const crypto = require("crypto");
@@ -342,7 +343,7 @@ let SystemUpdateService = SystemUpdateService_1 = class SystemUpdateService {
         const backup = await this.backupService.createSystemBackup(update.tenantId, {
             name: `Pre-update backup for ${update.name}`,
             description: `Automatic backup created before applying update to version ${update.version}`,
-            backupType: 'full',
+            backupType: create_backup_dto_1.SystemBackupType.FULL,
             includeDatabase: true,
             includeFiles: true,
             includeConfig: true,

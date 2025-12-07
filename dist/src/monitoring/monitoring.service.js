@@ -563,7 +563,7 @@ let MonitoringService = MonitoringService_1 = class MonitoringService extends ev
                 type: metric.metricType,
                 value: metric.value,
                 unit: metric.unit,
-                labels: metric.metadata ? metric.metadata : undefined,
+                labels: this.convertMetadataToLabels(metric.metadata),
                 tenantId: metric.tenantId,
                 source: metric.component,
                 description: metric.tags?.join(', '),
@@ -1136,6 +1136,23 @@ let MonitoringService = MonitoringService_1 = class MonitoringService extends ev
     }
     async deleteAlertRule(id) {
         throw new Error('Method not implemented');
+    }
+    convertMetadataToLabels(metadata) {
+        if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+            return undefined;
+        }
+        try {
+            const labels = {};
+            for (const [key, value] of Object.entries(metadata)) {
+                if (typeof key === 'string' && value !== null && value !== undefined) {
+                    labels[key] = String(value);
+                }
+            }
+            return Object.keys(labels).length > 0 ? labels : undefined;
+        }
+        catch (error) {
+            return undefined;
+        }
     }
 };
 exports.MonitoringService = MonitoringService;

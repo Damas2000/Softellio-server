@@ -630,37 +630,6 @@ export class CreateMaintenanceWindowDto {
 
 // ===== CONFIGURATION DTOs =====
 
-export class MonitoringConfigurationDto {
-  @ApiProperty({ description: 'Enable monitoring system' })
-  @IsBoolean()
-  enabled: boolean;
-
-  @ApiProperty({ description: 'Logging configuration' })
-  @ValidateNested()
-  @Type(() => LoggingConfigDto)
-  logging: LoggingConfigDto;
-
-  @ApiProperty({ description: 'Metrics configuration' })
-  @ValidateNested()
-  @Type(() => MetricsConfigDto)
-  metrics: MetricsConfigDto;
-
-  @ApiProperty({ description: 'Health checks configuration' })
-  @ValidateNested()
-  @Type(() => HealthChecksConfigDto)
-  healthChecks: HealthChecksConfigDto;
-
-  @ApiProperty({ description: 'Alerting configuration' })
-  @ValidateNested()
-  @Type(() => AlertingConfigDto)
-  alerting: AlertingConfigDto;
-
-  @ApiProperty({ description: 'Real-time monitoring configuration' })
-  @ValidateNested()
-  @Type(() => RealtimeConfigDto)
-  realtime: RealtimeConfigDto;
-}
-
 export class LoggingConfigDto {
   @ApiProperty({ description: 'Enable logging' })
   @IsBoolean()
@@ -826,4 +795,35 @@ export class RealtimeConfigDto {
   @ApiProperty({ description: 'Enable broadcast to all clients' })
   @IsBoolean()
   enableBroadcast: boolean;
+}
+
+export class MonitoringConfigurationDto {
+  @ApiProperty({ description: 'Enable monitoring system' })
+  @IsBoolean()
+  enabled: boolean;
+
+  @ApiProperty({ description: 'Logging configuration' })
+  @ValidateNested()
+  @Type(() => LoggingConfigDto)
+  logging: LoggingConfigDto;
+
+  @ApiProperty({ description: 'Metrics configuration' })
+  @ValidateNested()
+  @Type(() => MetricsConfigDto)
+  metrics: MetricsConfigDto;
+
+  @ApiProperty({ description: 'Health checks configuration' })
+  @ValidateNested()
+  @Type(() => HealthChecksConfigDto)
+  healthChecks: HealthChecksConfigDto;
+
+  @ApiProperty({ description: 'Alerting configuration' })
+  @ValidateNested()
+  @Type(() => AlertingConfigDto)
+  alerting: AlertingConfigDto;
+
+  @ApiProperty({ description: 'Real-time monitoring configuration' })
+  @ValidateNested()
+  @Type(() => RealtimeConfigDto)
+  realtime: RealtimeConfigDto;
 }

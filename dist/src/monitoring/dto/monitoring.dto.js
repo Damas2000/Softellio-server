@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RealtimeConfigDto = exports.AlertingConfigDto = exports.HealthChecksConfigDto = exports.MetricsConfigDto = exports.LoggingConfigDto = exports.MonitoringConfigurationDto = exports.CreateMaintenanceWindowDto = exports.SendTestNotificationDto = exports.CreateNotificationTemplateDto = exports.CreateHealthCheckDto = exports.ResolveAlertDto = exports.AcknowledgeAlertDto = exports.AlertQueryDto = exports.UpdateAlertRuleDto = exports.CreateAlertRuleDto = exports.MetricQueryDto = exports.CreateMetricDto = exports.LogQueryDto = exports.CreateLogEntryDto = void 0;
+exports.MonitoringConfigurationDto = exports.RealtimeConfigDto = exports.AlertingConfigDto = exports.HealthChecksConfigDto = exports.MetricsConfigDto = exports.LoggingConfigDto = exports.CreateMaintenanceWindowDto = exports.SendTestNotificationDto = exports.CreateNotificationTemplateDto = exports.CreateHealthCheckDto = exports.ResolveAlertDto = exports.AcknowledgeAlertDto = exports.AlertQueryDto = exports.UpdateAlertRuleDto = exports.CreateAlertRuleDto = exports.MetricQueryDto = exports.CreateMetricDto = exports.LogQueryDto = exports.CreateLogEntryDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
@@ -738,44 +738,6 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateMaintenanceWindowDto.prototype, "disableNotifications", void 0);
-class MonitoringConfigurationDto {
-}
-exports.MonitoringConfigurationDto = MonitoringConfigurationDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Enable monitoring system' }),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], MonitoringConfigurationDto.prototype, "enabled", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Logging configuration' }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => LoggingConfigDto),
-    __metadata("design:type", LoggingConfigDto)
-], MonitoringConfigurationDto.prototype, "logging", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Metrics configuration' }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => MetricsConfigDto),
-    __metadata("design:type", MetricsConfigDto)
-], MonitoringConfigurationDto.prototype, "metrics", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Health checks configuration' }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => HealthChecksConfigDto),
-    __metadata("design:type", HealthChecksConfigDto)
-], MonitoringConfigurationDto.prototype, "healthChecks", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Alerting configuration' }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => AlertingConfigDto),
-    __metadata("design:type", AlertingConfigDto)
-], MonitoringConfigurationDto.prototype, "alerting", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Real-time monitoring configuration' }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => RealtimeConfigDto),
-    __metadata("design:type", RealtimeConfigDto)
-], MonitoringConfigurationDto.prototype, "realtime", void 0);
 class LoggingConfigDto {
 }
 exports.LoggingConfigDto = LoggingConfigDto;
@@ -980,4 +942,42 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], RealtimeConfigDto.prototype, "enableBroadcast", void 0);
+class MonitoringConfigurationDto {
+}
+exports.MonitoringConfigurationDto = MonitoringConfigurationDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Enable monitoring system' }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], MonitoringConfigurationDto.prototype, "enabled", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Logging configuration' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => LoggingConfigDto),
+    __metadata("design:type", LoggingConfigDto)
+], MonitoringConfigurationDto.prototype, "logging", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Metrics configuration' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => MetricsConfigDto),
+    __metadata("design:type", MetricsConfigDto)
+], MonitoringConfigurationDto.prototype, "metrics", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Health checks configuration' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => HealthChecksConfigDto),
+    __metadata("design:type", HealthChecksConfigDto)
+], MonitoringConfigurationDto.prototype, "healthChecks", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Alerting configuration' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => AlertingConfigDto),
+    __metadata("design:type", AlertingConfigDto)
+], MonitoringConfigurationDto.prototype, "alerting", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Real-time monitoring configuration' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => RealtimeConfigDto),
+    __metadata("design:type", RealtimeConfigDto)
+], MonitoringConfigurationDto.prototype, "realtime", void 0);
 //# sourceMappingURL=monitoring.dto.js.map

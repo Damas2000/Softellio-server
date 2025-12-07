@@ -697,7 +697,7 @@ export class MonitoringService extends EventEmitter implements OnModuleInit, OnM
         type: metric.metricType as MetricType,
         value: metric.value,
         unit: metric.unit,
-        labels: metric.metadata ? metric.metadata : undefined,
+        labels: this.convertMetadataToLabels(metric.metadata),
         tenantId: metric.tenantId,
         source: metric.component,
         description: metric.tags?.join(', '),
@@ -1389,5 +1389,23 @@ export class MonitoringService extends EventEmitter implements OnModuleInit, OnM
   async deleteAlertRule(id: string): Promise<void> {
     // Implementation for deleting alert rules
     throw new Error('Method not implemented');
+  }
+
+  private convertMetadataToLabels(metadata: any): Record<string, string> | undefined {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+      return undefined;
+    }
+
+    try {
+      const labels: Record<string, string> = {};
+      for (const [key, value] of Object.entries(metadata)) {
+        if (typeof key === 'string' && value !== null && value !== undefined) {
+          labels[key] = String(value);
+        }
+      }
+      return Object.keys(labels).length > 0 ? labels : undefined;
+    } catch (error) {
+      return undefined;
+    }
   }
 }

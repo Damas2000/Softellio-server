@@ -6,6 +6,7 @@ import { SystemUpdate } from '@prisma/client';
 import { CreateSystemUpdateDto, UpdateSystemUpdateDto, SystemUpdateResponse } from '../dto/system-update.dto';
 import { UpdateProgress } from '../interfaces/backup.interface';
 import { BackupService } from './backup.service';
+import { SystemBackupType } from '../dto/create-backup.dto';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -453,7 +454,7 @@ export class SystemUpdateService {
     const backup = await this.backupService.createSystemBackup(update.tenantId, {
       name: `Pre-update backup for ${update.name}`,
       description: `Automatic backup created before applying update to version ${update.version}`,
-      backupType: 'full' as any,
+      backupType: SystemBackupType.FULL,
       includeDatabase: true,
       includeFiles: true,
       includeConfig: true,

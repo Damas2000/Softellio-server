@@ -127,14 +127,6 @@ export declare class CreateMaintenanceWindowDto {
     silenceAlerts?: boolean;
     disableNotifications?: boolean;
 }
-export declare class MonitoringConfigurationDto {
-    enabled: boolean;
-    logging: LoggingConfigDto;
-    metrics: MetricsConfigDto;
-    healthChecks: HealthChecksConfigDto;
-    alerting: AlertingConfigDto;
-    realtime: RealtimeConfigDto;
-}
 export declare class LoggingConfigDto {
     enabled: boolean;
     level: LogLevel;
@@ -176,4 +168,12 @@ export declare class RealtimeConfigDto {
     websocketPort?: number;
     updateInterval: number;
     enableBroadcast: boolean;
+}
+export declare class MonitoringConfigurationDto {
+    enabled: boolean;
+    logging: LoggingConfigDto;
+    metrics: MetricsConfigDto;
+    healthChecks: HealthChecksConfigDto;
+    alerting: AlertingConfigDto;
+    realtime: RealtimeConfigDto;
 }

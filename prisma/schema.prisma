@@ -27,7 +27,9 @@ enum ModuleName {
 model Tenant {
   id                 Int      @id @default(autoincrement())
   name               String
+  slug               String   @unique @default(cuid()) // tenant slug for subdomain
   domain             String   @unique // e.g. tenant's domain or subdomain
+  status             String   @default("active") // active, suspended, trial_expired
   defaultLanguage    String   @default("tr")
   availableLanguages String[] @default(["tr"]) // list of enabled language codes
   theme              String? // e.g. theme name or config reference

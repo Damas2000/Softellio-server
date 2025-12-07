@@ -30,9 +30,9 @@ export declare class DomainManagementController {
         domain: string;
         tenant: {
             id: number;
-            slug: any;
+            slug: string;
             name: string;
-            status: any;
+            status: string;
         };
         resolvedBy: "default" | "custom_domain" | "subdomain" | "fallback";
         tenantDomain: {
