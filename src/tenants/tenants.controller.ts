@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
+import { CreateTenantWithDomainsDto } from './dto/create-tenant-with-domains.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
@@ -31,6 +32,33 @@ export class TenantsController {
   @ApiResponse({ status: 409, description: 'Tenant with domain already exists' })
   create(@Body() createTenantDto: CreateTenantDto) {
     return this.tenantsService.create(createTenantDto);
+  }
+
+  @Post('create-with-domains')
+  @ApiOperation({
+    summary: 'Create a new tenant with automatic domain assignment',
+    description: 'Creates a tenant and automatically assigns {slug}.softellio.com and {slug}panel.softellio.com domains'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tenant created successfully with automatic domains',
+    example: {
+      tenant: {
+        id: 1,
+        name: 'Reis İnşaat',
+        slug: 'reis-insaat',
+        domain: 'reisinsaat.softellio.com'
+      },
+      domains: {
+        publicDomain: 'reisinsaat.softellio.com',
+        adminDomain: 'reisinsaatpanel.softellio.com'
+      },
+      message: 'Tenant created successfully! Public site: https://reisinsaat.softellio.com | Admin panel: https://reisinsaatpanel.softellio.com'
+    }
+  })
+  @ApiResponse({ status: 409, description: 'Company name/slug already exists' })
+  createWithDomains(@Body() createTenantDto: CreateTenantWithDomainsDto) {
+    return this.tenantsService.createTenantWithDomains(createTenantDto);
   }
 
   @Get()

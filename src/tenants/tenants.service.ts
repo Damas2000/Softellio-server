@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { DomainResolverService } from '../common/services/domain-resolver.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
+import { CreateTenantWithDomainsDto } from './dto/create-tenant-with-domains.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { Tenant, Role, ModuleName } from '@prisma/client';
 
@@ -10,6 +12,7 @@ export class TenantsService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private domainResolver: DomainResolverService,
   ) {}
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
@@ -245,5 +248,147 @@ export class TenantsService {
     const accessToken = 'generated-impersonation-token'; // This would use the actual JWT service
 
     return { accessToken };
+  }
+
+  async createTenantWithDomains(createTenantDto: CreateTenantWithDomainsDto): Promise<{
+    tenant: Tenant;
+    domains: { publicDomain: string; adminDomain: string };
+    message: string;
+  }> {
+    // Generate slug from company name
+    const slug = this.generateSlug(createTenantDto.name);
+
+    // Generate domains
+    const publicDomain = `${slug}.softellio.com`;
+    const adminDomain = `${slug}panel.softellio.com`;
+
+    // Check if domains already exist
+    const existingTenant = await this.prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { slug },
+          { domain: publicDomain }
+        ]
+      }
+    });
+
+    if (existingTenant) {
+      throw new ConflictException('A tenant with this slug already exists');
+    }
+
+    // Check if admin email already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createTenantDto.adminEmail },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Create tenant
+      const tenant = await tx.tenant.create({
+        data: {
+          name: createTenantDto.name,
+          slug,
+          domain: publicDomain,
+          defaultLanguage: createTenantDto.defaultLanguage || 'tr',
+          availableLanguages: createTenantDto.availableLanguages || ['tr'],
+          primaryColor: createTenantDto.primaryColor,
+        },
+      });
+
+      // Create tenant domains in database
+      await tx.tenantDomain.createMany({
+        data: [
+          {
+            tenantId: tenant.id,
+            domain: publicDomain,
+            type: 'subdomain',
+            isPrimary: true,
+            isActive: true,
+            isVerified: true,
+            verifiedAt: new Date(),
+          },
+          {
+            tenantId: tenant.id,
+            domain: adminDomain,
+            type: 'subdomain',
+            isPrimary: false,
+            isActive: true,
+            isVerified: true,
+            verifiedAt: new Date(),
+          }
+        ]
+      });
+
+      // Create tenant admin user
+      const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
+      await tx.user.create({
+        data: {
+          email: createTenantDto.adminEmail,
+          password: hashedPassword,
+          name: createTenantDto.adminName || 'Tenant Admin',
+          role: Role.TENANT_ADMIN,
+          tenantId: tenant.id,
+        },
+      });
+
+      // Create default site settings
+      const siteSetting = await tx.siteSetting.create({
+        data: {
+          tenantId: tenant.id,
+        },
+      });
+
+      // Create default site setting translation
+      await tx.siteSettingTranslation.create({
+        data: {
+          siteSettingId: siteSetting.id,
+          language: tenant.defaultLanguage,
+          siteName: tenant.name,
+          siteDescription: `Welcome to ${tenant.name}`,
+          seoMetaTitle: tenant.name,
+          seoMetaDescription: `Official website of ${tenant.name}`,
+        },
+      });
+
+      // Enable all modules by default
+      const modules = Object.values(ModuleName);
+      await tx.tenantFeature.createMany({
+        data: modules.map(module => ({
+          tenantId: tenant.id,
+          module,
+          enabled: true,
+        })),
+      });
+
+      // Create default main menu
+      await tx.menu.create({
+        data: {
+          tenantId: tenant.id,
+          key: 'main-menu',
+        },
+      });
+
+      return {
+        tenant,
+        domains: {
+          publicDomain,
+          adminDomain,
+        },
+        message: `Tenant created successfully! Public site: https://${publicDomain} | Admin panel: https://${adminDomain}`
+      };
+    });
+  }
+
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .trim()
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
   }
 }

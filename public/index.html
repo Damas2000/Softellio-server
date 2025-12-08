@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softellio - Otomatik Domain Sistemi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #f0f8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .domain-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00ff88;
+        }
+
+        .domain-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00ff88;
+        }
+
+        .status {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+
+        .features {
+            list-style: none;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .features li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff88, #00cc70);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        .admin-panel {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .admin-panel .domain-info {
+            border-left-color: #ff6b6b;
+        }
+
+        .admin-panel .status {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .admin-panel .domain-name {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content">
+        <!-- Content will be populated by JavaScript -->
+    </div>
+
+    <script>
+        // Get current domain and subdomain
+        const currentDomain = window.location.hostname;
+        const isLocalhost = currentDomain === 'localhost' || currentDomain.includes('127.0.0.1');
+
+        function extractCompanyInfo(domain) {
+            if (isLocalhost) {
+                return {
+                    company: 'Demo Company',
+                    slug: 'demo',
+                    isAdmin: false
+                };
+            }
+
+            const parts = domain.split('.');
+            if (parts.length >= 3 && parts[1] === 'softellio') {
+                const subdomain = parts[0];
+                const isAdmin = subdomain.endsWith('panel');
+                const companySlug = isAdmin ? subdomain.replace('panel', '') : subdomain;
+
+                return {
+                    company: companySlug.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    slug: companySlug,
+                    isAdmin: isAdmin
+                };
+            }
+
+            return null;
+        }
+
+        function generateContent() {
+            const info = extractCompanyInfo(currentDomain);
+
+            if (!info) {
+                return `
+                    <div class="logo">Softellio</div>
+                    <div class="description">Bu domain henüz yapılandırılmamış.</div>
+                `;
+            }
+
+            if (info.isAdmin) {
+                document.body.className = 'admin-panel';
+                return `
+                    <div class="logo">🔧 Admin Panel</div>
+                    <div class="domain-info">
+                        <div class="domain-name">${currentDomain}</div>
+                        <div class="status">Admin Panel Aktif</div>
+                    </div>
+                    <div class="description">
+                        <strong>${info.company}</strong> şirketi için yönetim paneli hazır!
+                    </div>
+                    <ul class="features">
+                        <li>Tam CMS yönetimi</li>
+                        <li>Blog ve sayfa editörü</li>
+                        <li>Media yönetimi</li>
+                        <li>Kullanıcı yönetimi</li>
+                        <li>SEO araçları</li>
+                        <li>Analytics ve raporlar</li>
+                    </ul>
+                    <a href="/admin/login" class="btn">Admin Paneline Giriş</a>
+                    <a href="https://${info.slug}.softellio.com" class="btn">Public Siteyi Görüntüle</a>
+                `;
+            } else {
+                // Özel şirket içerikleri
+                if (info.slug === 'reisinsaat' || info.slug === 'reis-insaat') {
+                    return `
+                        <div class="logo">🏗️ Reis İnşaat</div>
+                        <div class="domain-info">
+                            <div class="domain-name">${currentDomain}</div>
+                            <div class="status">İnşaat ve Yapı Çözümleri</div>
+                        </div>
+                        <div class="description">
+                            <strong>Reis İnşaat</strong> - Güvenilir İnşaat Partnerniz<br><br>
+
+                            25 yıllık deneyimimizle kaliteli ve güvenilir inşaat hizmetleri sunuyoruz.
+                            Modern teknikler ve deneyimli ekibimizle hayalinizdeki projeleri gerçekleştiriyoruz.
+                        </div>
+                        <ul class="features">
+                            <li>🏠 Konut projeleri ve villa inşaatı</li>
+                            <li>🏢 Ticari bina ve ofis projeleri</li>
+                            <li>🔧 Tadilat ve renovasyon hizmetleri</li>
+                            <li>📐 Mimari tasarım danışmanlığı</li>
+                            <li>⚡ Hızlı ve kaliteli teslimat</li>
+                            <li>🛡️ 5 yıl garanti</li>
+                        </ul>
+                        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                            <h3 style="color: #00ff88; margin-bottom: 10px;">📞 İletişim</h3>
+                            <p><strong>Tel:</strong> +90 532 123 45 67</p>
+                            <p><strong>Email:</strong> info@reisinsaat.com</p>
+                            <p><strong>Adres:</strong> İstanbul, Türkiye</p>
+                        </div>
+                        <a href="tel:+905321234567" class="btn">📞 Hemen Ara</a>
+                        <a href="https://${info.slug}panel.softellio.com" class="btn">Admin Panel</a>
+                    `;
+                } else {
+                    return `
+                        <div class="logo">${info.company}</div>
+                        <div class="domain-info">
+                            <div class="domain-name">${currentDomain}</div>
+                            <div class="status">Site Aktif</div>
+                        </div>
+                        <div class="description">
+                            <strong>${info.company}</strong> resmi web sitesine hoş geldiniz!<br>
+                            Softellio CMS ile güçlendirilmiştir.
+                        </div>
+                        <ul class="features">
+                            <li>Profesyonel kurumsal tasarım</li>
+                            <li>Mobil uyumlu responsive yapı</li>
+                            <li>SEO optimizasyonu</li>
+                            <li>Hızlı yükleme performansı</li>
+                            <li>Güvenli alt yapı</li>
+                            <li>7/24 teknik destek</li>
+                        </ul>
+                        <a href="/iletisim" class="btn">İletişime Geç</a>
+                        <a href="https://${info.slug}panel.softellio.com" class="btn">Admin Panel</a>
+                    `;
+                }
+            }
+        }
+
+        // Populate content
+        document.getElementById('content').innerHTML = generateContent();
+
+        // Update page title
+        const info = extractCompanyInfo(currentDomain);
+        if (info) {
+            document.title = info.isAdmin
+                ? `${info.company} - Admin Panel`
+                : `${info.company} - Resmi Web Sitesi`;
+        }
+    </script>
+</body>
+</html>
