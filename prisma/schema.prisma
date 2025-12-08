@@ -1243,8 +1243,8 @@ model ReportExecution {
 // System performance metrics
 model SystemMetric {
   id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    Int?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Metric Information
   metricType  String   // cpu_usage, memory_usage, disk_space, response_time, error_count
