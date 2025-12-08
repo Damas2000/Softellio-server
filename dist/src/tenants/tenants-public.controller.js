@@ -35,7 +35,7 @@ let TenantsPublicController = class TenantsPublicController {
             slug: tenant.slug,
             plan: 'basic',
             siteDomain: `${tenant.slug}.softellio.com`,
-            panelDomain: `${tenant.slug}-panel.softellio.com`,
+            panelDomain: 'portal.softellio.com',
             templateKey: tenant.theme || 'default',
             status: tenant.status
         };
@@ -65,7 +65,7 @@ __decorate([
                 slug: { type: 'string', example: 'tekbaski' },
                 plan: { type: 'string', example: 'basic' },
                 siteDomain: { type: 'string', example: 'tekbaski.softellio.com' },
-                panelDomain: { type: 'string', example: 'tekbaski-panel.softellio.com' },
+                panelDomain: { type: 'string', example: 'portal.softellio.com' },
                 templateKey: { type: 'string', example: 'default' },
                 status: { type: 'string', example: 'active' }
             }

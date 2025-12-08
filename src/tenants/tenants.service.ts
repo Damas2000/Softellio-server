@@ -258,9 +258,9 @@ export class TenantsService {
     // Generate slug from company name
     const slug = this.generateSlug(createTenantDto.name);
 
-    // Generate domains
+    // Generate public domain (only public domain is per-tenant)
     const publicDomain = `${slug}.softellio.com`;
-    const adminDomain = `${slug}panel.softellio.com`;
+    const adminDomain = 'portal.softellio.com'; // Shared admin panel for all tenants
 
     // Check if domains already exist
     const existingTenant = await this.prisma.tenant.findFirst({
@@ -298,28 +298,17 @@ export class TenantsService {
         },
       });
 
-      // Create tenant domains in database
-      await tx.tenantDomain.createMany({
-        data: [
-          {
-            tenantId: tenant.id,
-            domain: publicDomain,
-            type: 'subdomain',
-            isPrimary: true,
-            isActive: true,
-            isVerified: true,
-            verifiedAt: new Date(),
-          },
-          {
-            tenantId: tenant.id,
-            domain: adminDomain,
-            type: 'subdomain',
-            isPrimary: false,
-            isActive: true,
-            isVerified: true,
-            verifiedAt: new Date(),
-          }
-        ]
+      // Create tenant domains in database (only public domain per tenant)
+      await tx.tenantDomain.create({
+        data: {
+          tenantId: tenant.id,
+          domain: publicDomain,
+          type: 'subdomain',
+          isPrimary: true,
+          isActive: true,
+          isVerified: true,
+          verifiedAt: new Date(),
+        }
       });
 
       // Create tenant admin user

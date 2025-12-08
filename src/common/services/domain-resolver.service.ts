@@ -5,7 +5,7 @@ import { Tenant, TenantDomain } from '@prisma/client';
 export interface TenantResolutionResult {
   tenant: Tenant & { tenantDomains?: TenantDomain[] };
   domain: TenantDomain | null;
-  resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback';
+  resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback' | 'portal_jwt';
 }
 
 @Injectable()
@@ -200,7 +200,7 @@ export class DomainResolverService {
       const subdomain = match[1];
 
       // Skip reserved subdomains
-      const reservedSubdomains = ['www', 'api', 'admin', 'connect', 'app', 'dashboard', 'mail'];
+      const reservedSubdomains = ['www', 'api', 'admin', 'connect', 'app', 'dashboard', 'mail', 'portal'];
       if (reservedSubdomains.includes(subdomain)) {
         return null;
       }

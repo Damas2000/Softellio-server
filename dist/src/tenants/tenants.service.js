@@ -205,7 +205,7 @@ let TenantsService = class TenantsService {
     async createTenantWithDomains(createTenantDto) {
         const slug = this.generateSlug(createTenantDto.name);
         const publicDomain = `${slug}.softellio.com`;
-        const adminDomain = `${slug}panel.softellio.com`;
+        const adminDomain = 'portal.softellio.com';
         const existingTenant = await this.prisma.tenant.findFirst({
             where: {
                 OR: [
@@ -234,27 +234,16 @@ let TenantsService = class TenantsService {
                     primaryColor: createTenantDto.primaryColor,
                 },
             });
-            await tx.tenantDomain.createMany({
-                data: [
-                    {
-                        tenantId: tenant.id,
-                        domain: publicDomain,
-                        type: 'subdomain',
-                        isPrimary: true,
-                        isActive: true,
-                        isVerified: true,
-                        verifiedAt: new Date(),
-                    },
-                    {
-                        tenantId: tenant.id,
-                        domain: adminDomain,
-                        type: 'subdomain',
-                        isPrimary: false,
-                        isActive: true,
-                        isVerified: true,
-                        verifiedAt: new Date(),
-                    }
-                ]
+            await tx.tenantDomain.create({
+                data: {
+                    tenantId: tenant.id,
+                    domain: publicDomain,
+                    type: 'subdomain',
+                    isPrimary: true,
+                    isActive: true,
+                    isVerified: true,
+                    verifiedAt: new Date(),
+                }
             });
             const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
             await tx.user.create({

@@ -151,7 +151,7 @@ let DomainResolverService = DomainResolverService_1 = class DomainResolverServic
                 return null;
             }
             const subdomain = match[1];
-            const reservedSubdomains = ['www', 'api', 'admin', 'connect', 'app', 'dashboard', 'mail'];
+            const reservedSubdomains = ['www', 'api', 'admin', 'connect', 'app', 'dashboard', 'mail', 'portal'];
             if (reservedSubdomains.includes(subdomain)) {
                 return null;
             }

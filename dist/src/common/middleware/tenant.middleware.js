@@ -81,16 +81,63 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
                 if (!domainHeader) {
                     throw new common_1.BadRequestException('No domain information found in request headers');
                 }
-                const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
-                this.domainResolver.validateTenantAccess(resolution.tenant);
-                tenant = resolution.tenant;
-                tenantId = tenant.id;
-                this.logger.debug(`Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`);
-                req.domainResolution = {
-                    originalDomain: domainHeader,
-                    resolvedBy: resolution.resolvedBy,
-                    tenantDomain: resolution.domain,
-                };
+                const normalizedDomain = domainHeader.toLowerCase().split(':')[0];
+                this.logger.debug(`Checking domain for portal: "${normalizedDomain}" - comparing with "portal.softellio.com"`);
+                if (normalizedDomain === 'portal.softellio.com') {
+                    this.logger.debug('Portal domain detected - special handling for shared admin panel');
+                    if (req.path.startsWith('/auth')) {
+                        this.logger.debug('Auth route on portal domain - proceeding without tenant resolution');
+                        return next();
+                    }
+                    const authHeader = req.headers.authorization;
+                    if (authHeader && authHeader.startsWith('Bearer ')) {
+                        try {
+                            const token = authHeader.substring(7);
+                            const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+                            if (payload.tenantId) {
+                                tenant = await this.prisma.tenant.findFirst({
+                                    where: {
+                                        id: payload.tenantId,
+                                        isActive: true,
+                                        status: { not: 'SUSPENDED' }
+                                    },
+                                });
+                                if (!tenant) {
+                                    throw new common_1.BadRequestException(`Tenant with ID ${payload.tenantId} not found or inactive`);
+                                }
+                                tenantId = tenant.id;
+                                this.logger.debug(`Portal tenant resolved from JWT: ${tenant.slug} (${tenantId})`);
+                                req.domainResolution = {
+                                    originalDomain: domainHeader,
+                                    resolvedBy: 'portal_jwt',
+                                    tenantDomain: null,
+                                };
+                            }
+                            else {
+                                throw new common_1.BadRequestException('Portal access requires authentication with valid tenant information');
+                            }
+                        }
+                        catch (error) {
+                            this.logger.error(`Portal JWT parsing error: ${error.message}`);
+                            throw new common_1.BadRequestException('Invalid authentication token for portal access');
+                        }
+                    }
+                    else {
+                        throw new common_1.BadRequestException('Portal access requires authentication');
+                    }
+                }
+                else {
+                    const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
+                    this.domainResolver.validateTenantAccess(resolution.tenant);
+                    tenant = resolution.tenant;
+                    tenantId = tenant.id;
+                    this.logger.debug(`Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`);
+                    req.domainResolution = {
+                        originalDomain: domainHeader,
+                        resolvedBy: resolution.resolvedBy,
+                        tenantDomain: resolution.domain,
+                    };
+                }
             }
             req.tenantId = tenantId;
             req.tenant = tenant;

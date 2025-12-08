@@ -5,7 +5,7 @@ export interface TenantResolutionResult {
         tenantDomains?: TenantDomain[];
     };
     domain: TenantDomain | null;
-    resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback';
+    resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback' | 'portal_jwt';
 }
 export declare class DomainResolverService {
     private prisma;

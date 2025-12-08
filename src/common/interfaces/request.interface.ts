@@ -3,7 +3,7 @@ import { User, Tenant, TenantDomain } from '@prisma/client';
 
 export interface DomainResolutionInfo {
   originalDomain: string;
-  resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback';
+  resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback' | 'portal_jwt';
   tenantDomain: TenantDomain | null;
 }
 

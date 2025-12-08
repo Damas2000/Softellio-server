@@ -93,26 +93,83 @@ export class TenantMiddleware implements NestMiddleware {
           throw new BadRequestException('No domain information found in request headers');
         }
 
-        // Use domain resolver service for sophisticated tenant resolution
-        const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
+        // Special handling for portal.softellio.com (shared admin panel)
+        const normalizedDomain = domainHeader.toLowerCase().split(':')[0];
+        this.logger.debug(`Checking domain for portal: "${normalizedDomain}" - comparing with "portal.softellio.com"`);
 
-        // Validate tenant access
-        this.domainResolver.validateTenantAccess(resolution.tenant);
+        if (normalizedDomain === 'portal.softellio.com') {
+          this.logger.debug('Portal domain detected - special handling for shared admin panel');
 
-        tenant = resolution.tenant;
-        tenantId = tenant.id;
+          // For portal domain auth routes, skip tenant resolution completely
+          if (req.path.startsWith('/auth')) {
+            this.logger.debug('Auth route on portal domain - proceeding without tenant resolution');
+            // Don't set tenantId or tenant for auth routes
+            return next();
+          }
 
-        // Log resolution method for debugging
-        this.logger.debug(
-          `Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`
-        );
+          // For other routes on portal domain, extract tenant from JWT
+          const authHeader = req.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+              // Basic JWT parsing without verification (just to get tenantId)
+              const token = authHeader.substring(7);
+              const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 
-        // Attach domain resolution info to request for potential use by controllers
-        req.domainResolution = {
-          originalDomain: domainHeader,
-          resolvedBy: resolution.resolvedBy,
-          tenantDomain: resolution.domain,
-        };
+              if (payload.tenantId) {
+                // Validate tenant exists and is active
+                tenant = await this.prisma.tenant.findFirst({
+                  where: {
+                    id: payload.tenantId,
+                    isActive: true,
+                    status: { not: 'SUSPENDED' }
+                  },
+                });
+
+                if (!tenant) {
+                  throw new BadRequestException(`Tenant with ID ${payload.tenantId} not found or inactive`);
+                }
+
+                tenantId = tenant.id;
+                this.logger.debug(`Portal tenant resolved from JWT: ${tenant.slug} (${tenantId})`);
+
+                // Attach portal resolution info to request
+                req.domainResolution = {
+                  originalDomain: domainHeader,
+                  resolvedBy: 'portal_jwt',
+                  tenantDomain: null,
+                };
+              } else {
+                throw new BadRequestException('Portal access requires authentication with valid tenant information');
+              }
+            } catch (error) {
+              this.logger.error(`Portal JWT parsing error: ${error.message}`);
+              throw new BadRequestException('Invalid authentication token for portal access');
+            }
+          } else {
+            throw new BadRequestException('Portal access requires authentication');
+          }
+        } else {
+          // Use domain resolver service for sophisticated tenant resolution
+          const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
+
+          // Validate tenant access
+          this.domainResolver.validateTenantAccess(resolution.tenant);
+
+          tenant = resolution.tenant;
+          tenantId = tenant.id;
+
+          // Log resolution method for debugging
+          this.logger.debug(
+            `Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`
+          );
+
+          // Attach domain resolution info to request for potential use by controllers
+          req.domainResolution = {
+            originalDomain: domainHeader,
+            resolvedBy: resolution.resolvedBy,
+            tenantDomain: resolution.domain,
+          };
+        }
       }
 
       // Attach tenant information to request

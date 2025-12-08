@@ -30,7 +30,7 @@ export class TenantsPublicController {
         slug: { type: 'string', example: 'tekbaski' },
         plan: { type: 'string', example: 'basic' },
         siteDomain: { type: 'string', example: 'tekbaski.softellio.com' },
-        panelDomain: { type: 'string', example: 'tekbaski-panel.softellio.com' },
+        panelDomain: { type: 'string', example: 'portal.softellio.com' },
         templateKey: { type: 'string', example: 'default' },
         status: { type: 'string', example: 'active' }
       }
@@ -58,7 +58,7 @@ export class TenantsPublicController {
       slug: tenant.slug,
       plan: 'basic', // Default plan since not in current schema
       siteDomain: `${tenant.slug}.softellio.com`,
-      panelDomain: `${tenant.slug}-panel.softellio.com`,
+      panelDomain: 'portal.softellio.com', // Shared admin panel for all tenants
       templateKey: tenant.theme || 'default',
       status: tenant.status
     };
