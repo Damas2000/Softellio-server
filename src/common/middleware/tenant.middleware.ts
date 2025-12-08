@@ -26,6 +26,39 @@ export class TenantMiddleware implements NestMiddleware {
         return next();
       }
 
+      // Only apply tenant resolution to specific admin API routes - skip everything else for frontend serving
+      const isApiRoute = req.path.startsWith('/api') ||
+          req.path.startsWith('/auth') ||
+          req.path.startsWith('/users') ||
+          req.path.startsWith('/super-admin/tenants') || // Only super-admin tenant routes need tenant resolution
+          req.path.startsWith('/pages') ||
+          req.path.startsWith('/blog') ||
+          req.path.startsWith('/media') ||
+          req.path.startsWith('/site-settings') ||
+          req.path.startsWith('/menu') ||
+          req.path.startsWith('/services') ||
+          req.path.startsWith('/contact-info') ||
+          req.path.startsWith('/team-members') ||
+          req.path.startsWith('/references') ||
+          req.path.startsWith('/seo') ||
+          req.path.startsWith('/banners-sliders') ||
+          req.path.startsWith('/social-media-maps') ||
+          req.path.startsWith('/dashboard-analytics') ||
+          req.path.startsWith('/system-settings') ||
+          req.path.startsWith('/monitoring') ||
+          req.path.startsWith('/backup') ||
+          req.path.startsWith('/domains') ||
+          req.path.includes('api-docs');
+
+      if (!isApiRoute) {
+        // Skip tenant resolution for non-API routes (let FrontendController handle them)
+        this.logger.debug(`Skipping tenant resolution for frontend route: ${req.path}`);
+        return next();
+      }
+
+      // Only API routes reach this point
+      this.logger.debug(`Processing tenant resolution for API route: ${req.path}`);
+
       let tenantId: number | undefined;
       let tenant: any = null;
 

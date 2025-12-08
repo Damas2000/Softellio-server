@@ -10,6 +10,7 @@ exports.TenantsModule = void 0;
 const common_1 = require("@nestjs/common");
 const tenants_service_1 = require("./tenants.service");
 const tenants_controller_1 = require("./tenants.controller");
+const tenants_public_controller_1 = require("./tenants-public.controller");
 const auth_module_1 = require("../auth/auth.module");
 let TenantsModule = class TenantsModule {
 };
@@ -17,7 +18,7 @@ exports.TenantsModule = TenantsModule;
 exports.TenantsModule = TenantsModule = __decorate([
     (0, common_1.Module)({
         imports: [auth_module_1.AuthModule],
-        controllers: [tenants_controller_1.TenantsController],
+        controllers: [tenants_controller_1.TenantsController, tenants_public_controller_1.TenantsPublicController],
         providers: [tenants_service_1.TenantsService],
         exports: [tenants_service_1.TenantsService],
     })

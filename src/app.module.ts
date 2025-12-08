@@ -25,6 +25,7 @@ import { SystemSettingsModule } from './system-settings/system-settings.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { CommonModule } from './common/common.module';
 import { BackupModule } from './backup/backup.module';
+import { FrontendModule } from './frontend/frontend.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -67,6 +68,8 @@ import { TenantGuard } from './common/guards/tenant.guard';
     SystemSettingsModule,
     MonitoringModule,
     BackupModule,
+    // Frontend serving module
+    FrontendModule,
     // Rate limiting
     ThrottlerModule.forRoot([
       {

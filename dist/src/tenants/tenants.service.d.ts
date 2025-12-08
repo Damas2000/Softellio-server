@@ -39,5 +39,6 @@ export declare class TenantsService {
         };
         message: string;
     }>;
+    findByDomain(host: string): Promise<Tenant | null>;
     private generateSlug;
 }

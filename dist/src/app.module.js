@@ -34,6 +34,7 @@ const system_settings_module_1 = require("./system-settings/system-settings.modu
 const monitoring_module_1 = require("./monitoring/monitoring.module");
 const common_module_1 = require("./common/common.module");
 const backup_module_1 = require("./backup/backup.module");
+const frontend_module_1 = require("./frontend/frontend.module");
 const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
@@ -76,6 +77,7 @@ exports.AppModule = AppModule = __decorate([
             system_settings_module_1.SystemSettingsModule,
             monitoring_module_1.MonitoringModule,
             backup_module_1.BackupModule,
+            frontend_module_1.FrontendModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
                     name: 'short',

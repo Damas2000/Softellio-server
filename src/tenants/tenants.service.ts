@@ -382,6 +382,57 @@ export class TenantsService {
     });
   }
 
+  async findByDomain(host: string): Promise<Tenant | null> {
+    // Remove protocol and port if present
+    const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
+
+    // First, try to find by main domain field
+    let tenant = await this.prisma.tenant.findFirst({
+      where: {
+        domain: cleanHost,
+        isActive: true,
+        status: 'active'
+      }
+    });
+
+    // If not found, search in TenantDomain table
+    if (!tenant) {
+      const tenantDomain = await this.prisma.tenantDomain.findFirst({
+        where: {
+          domain: cleanHost,
+          isActive: true,
+          tenant: {
+            isActive: true,
+            status: 'active'
+          }
+        },
+        include: {
+          tenant: true
+        }
+      });
+
+      if (tenantDomain) {
+        tenant = tenantDomain.tenant;
+      }
+    }
+
+    // If still not found, try to extract slug from subdomain
+    if (!tenant && cleanHost.includes('.softellio.com')) {
+      const subdomain = cleanHost.replace('.softellio.com', '');
+      const slug = subdomain.replace(/panel$/, ''); // Remove 'panel' suffix for admin domains
+
+      tenant = await this.prisma.tenant.findFirst({
+        where: {
+          slug: slug,
+          isActive: true,
+          status: 'active'
+        }
+      });
+    }
+
+    return tenant;
+  }
+
   private generateSlug(name: string): string {
     return name
       .toLowerCase()

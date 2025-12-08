@@ -1,0 +1,348 @@
+import { Controller, Get, Res, Req } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { Public } from '../common/decorators/public.decorator';
+import { DomainResolverService } from '../common/services/domain-resolver.service';
+
+@Controller()
+export class FrontendController {
+  constructor(private domainResolver: DomainResolverService) {}
+
+  @Public()
+  @Get('*')
+  async serveFrontend(@Req() req: Request, @Res() res: Response) {
+    try {
+      // Get domain from request
+      const domain = req.get('host') || req.hostname;
+
+      // Check if it's API request
+      if (req.url.startsWith('/api') ||
+          req.url.startsWith('/auth') ||
+          req.url.startsWith('/super-admin') ||
+          req.url.startsWith('/users') ||
+          req.url.startsWith('/tenants') ||
+          req.url.startsWith('/pages') ||
+          req.url.startsWith('/blog') ||
+          req.url.startsWith('/media') ||
+          req.url.startsWith('/site-settings') ||
+          req.url.includes('api-docs')) {
+        return; // Let other controllers handle API routes
+      }
+
+      // Extract company info from subdomain
+      const companyInfo = this.extractCompanyInfo(domain);
+
+      if (!companyInfo) {
+        return this.renderDefaultPage(res, domain);
+      }
+
+      // Render company-specific template
+      if (companyInfo.isAdmin) {
+        return this.renderAdminPage(res, companyInfo, domain);
+      } else {
+        return this.renderCompanyPage(res, companyInfo, domain);
+      }
+
+    } catch (error) {
+      console.error('Frontend serving error:', error);
+      return this.renderErrorPage(res, 'Site yüklenirken hata oluştu');
+    }
+  }
+
+  private extractCompanyInfo(domain: string) {
+    const isLocalhost = domain === 'localhost:3000' || domain === 'localhost' || domain.includes('127.0.0.1');
+
+    if (isLocalhost) {
+      return {
+        company: 'Demo Company',
+        slug: 'demo',
+        isAdmin: false
+      };
+    }
+
+    const parts = domain.split('.');
+    if (parts.length >= 3 && parts[1] === 'softellio') {
+      const subdomain = parts[0];
+      const isAdmin = subdomain.endsWith('panel');
+      const companySlug = isAdmin ? subdomain.replace('panel', '') : subdomain;
+
+      return {
+        company: companySlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        slug: companySlug,
+        isAdmin: isAdmin
+      };
+    }
+
+    return null;
+  }
+
+  private renderCompanyPage(res: Response, companyInfo: any, domain: string) {
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${companyInfo.company} - Resmi Web Sitesi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #f0f8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .domain-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00ff88;
+        }
+        .domain-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00ff88;
+        }
+        .status {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        .features {
+            list-style: none;
+            text-align: left;
+            margin: 20px 0;
+        }
+        .features li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .features li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff88, #00cc70);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+        }
+        .powered {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 ${companyInfo.company}</div>
+        <div class="domain-info">
+            <div class="domain-name">${domain}</div>
+            <div class="status">✅ Site Aktif - Backend'den Serve Ediliyor</div>
+        </div>
+        <div class="description">
+            <strong>${companyInfo.company}</strong> resmi web sitesine hoş geldiniz!<br>
+            Backend otomatik şablon sistemi ile güçlendirilmiştir.
+        </div>
+        <ul class="features">
+            <li>🎨 Otomatik şablon sistemi</li>
+            <li>📱 Mobil uyumlu responsive tasarım</li>
+            <li>⚡ Hızlı backend rendering</li>
+            <li>🔧 Kolay yönetim paneli</li>
+            <li>🌐 Otomatik domain assignment</li>
+            <li>📊 Analytics ve raporlar</li>
+        </ul>
+        <a href="/iletisim" class="btn">📞 İletişime Geç</a>
+        <a href="https://${companyInfo.slug}panel.softellio.com" class="btn">⚙️ Admin Panel</a>
+
+        <div class="powered">
+            🎯 Powered by Softellio Multi-Tenant Backend<br>
+            Slug: <code>${companyInfo.slug}</code> | Template: <code>Şablon-${Math.ceil(Math.random() * 10)}</code>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Site backend\'den serve ediliyor!');
+        console.log('🏢 Company:', '${companyInfo.company}');
+        console.log('📍 Slug:', '${companyInfo.slug}');
+        console.log('🌐 Domain:', '${domain}');
+    </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  private renderAdminPage(res: Response, companyInfo: any, domain: string) {
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${companyInfo.company} - Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .domain-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+        .status {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔧 ${companyInfo.company} Admin Panel</div>
+        <div class="domain-info">
+            <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; color: #ff6b6b;">${domain}</div>
+            <div class="status">Admin Panel Aktif</div>
+        </div>
+        <div style="font-size: 1.1rem; line-height: 1.6; margin: 20px 0;">
+            <strong>${companyInfo.company}</strong> yönetim paneli hazır!<br>
+            Backend'den direkt serve ediliyor.
+        </div>
+        <a href="/admin/dashboard" class="btn">📊 Dashboard</a>
+        <a href="https://${companyInfo.slug}.softellio.com" class="btn">🌐 Public Site</a>
+    </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  private renderDefaultPage(res: Response, domain: string) {
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softellio - Backend Demo</title>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f0f0;">
+    <h1>🚀 Softellio Backend Çalışıyor!</h1>
+    <p>Domain: <strong>${domain}</strong></p>
+    <p>Backend'den direkt HTML serve ediliyor!</p>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  private renderErrorPage(res: Response, message: string) {
+    const html = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hata</title>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+    <h1>❌ Hata</h1>
+    <p>${message}</p>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.status(500).send(html);
+  }
+}

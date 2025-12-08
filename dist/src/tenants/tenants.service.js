@@ -305,6 +305,46 @@ let TenantsService = class TenantsService {
             };
         });
     }
+    async findByDomain(host) {
+        const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
+        let tenant = await this.prisma.tenant.findFirst({
+            where: {
+                domain: cleanHost,
+                isActive: true,
+                status: 'active'
+            }
+        });
+        if (!tenant) {
+            const tenantDomain = await this.prisma.tenantDomain.findFirst({
+                where: {
+                    domain: cleanHost,
+                    isActive: true,
+                    tenant: {
+                        isActive: true,
+                        status: 'active'
+                    }
+                },
+                include: {
+                    tenant: true
+                }
+            });
+            if (tenantDomain) {
+                tenant = tenantDomain.tenant;
+            }
+        }
+        if (!tenant && cleanHost.includes('.softellio.com')) {
+            const subdomain = cleanHost.replace('.softellio.com', '');
+            const slug = subdomain.replace(/panel$/, '');
+            tenant = await this.prisma.tenant.findFirst({
+                where: {
+                    slug: slug,
+                    isActive: true,
+                    status: 'active'
+                }
+            });
+        }
+        return tenant;
+    }
     generateSlug(name) {
         return name
             .toLowerCase()
