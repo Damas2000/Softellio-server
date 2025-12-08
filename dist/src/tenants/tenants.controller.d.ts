@@ -7,8 +7,11 @@ export declare class TenantsController {
     private readonly tenantsService;
     constructor(tenantsService: TenantsService);
     create(createTenantDto: CreateTenantDto): Promise<{
-        name: string;
         id: number;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         slug: string;
         domain: string;
         status: string;
@@ -16,9 +19,6 @@ export declare class TenantsController {
         availableLanguages: string[];
         theme: string | null;
         primaryColor: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     createWithDomains(createTenantDto: CreateTenantWithDomainsDto): Promise<{
         tenant: import(".prisma/client").Tenant;
@@ -29,8 +29,11 @@ export declare class TenantsController {
         message: string;
     }>;
     findAll(): Promise<{
-        name: string;
         id: number;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         slug: string;
         domain: string;
         status: string;
@@ -38,13 +41,13 @@ export declare class TenantsController {
         availableLanguages: string[];
         theme: string | null;
         primaryColor: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     findOne(id: number): Promise<{
-        name: string;
         id: number;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         slug: string;
         domain: string;
         status: string;
@@ -52,13 +55,13 @@ export declare class TenantsController {
         availableLanguages: string[];
         theme: string | null;
         primaryColor: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     update(id: number, updateTenantDto: UpdateTenantDto): Promise<{
-        name: string;
         id: number;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         slug: string;
         domain: string;
         status: string;
@@ -66,13 +69,13 @@ export declare class TenantsController {
         availableLanguages: string[];
         theme: string | null;
         primaryColor: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     toggleActive(id: number): Promise<{
-        name: string;
         id: number;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         slug: string;
         domain: string;
         status: string;
@@ -80,9 +83,6 @@ export declare class TenantsController {
         availableLanguages: string[];
         theme: string | null;
         primaryColor: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(id: number): Promise<{
         message: string;

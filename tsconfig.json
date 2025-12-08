@@ -20,5 +20,10 @@
     "paths": {
       "@/*": ["src/*"]
     }
-  }
+  },
+  "exclude": [
+    "platform/**/*",
+    "node_modules",
+    "dist"
+  ]
 }

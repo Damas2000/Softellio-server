@@ -25,3 +25,7 @@
 {"timestamp":"2025-12-08T12:34:21.686Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
 {"timestamp":"2025-12-08T12:34:48.104Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
 {"timestamp":"2025-12-08T12:48:49.996Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
+{"timestamp":"2025-12-08T13:06:45.204Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
+{"timestamp":"2025-12-08T13:39:12.105Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
+{"timestamp":"2025-12-08T13:40:21.841Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
+{"timestamp":"2025-12-08T13:44:02.928Z","level":"info","message":"Monitoring Service started","context":"MonitoringService"}
