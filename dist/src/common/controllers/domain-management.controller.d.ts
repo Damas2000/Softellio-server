@@ -34,7 +34,7 @@ export declare class DomainManagementController {
             name: string;
             status: string;
         };
-        resolvedBy: "default" | "custom_domain" | "subdomain" | "fallback" | "portal_jwt";
+        resolvedBy: "default" | "subdomain" | "custom_domain" | "fallback" | "portal_jwt";
         tenantDomain: {
             id: number;
             domain: string;

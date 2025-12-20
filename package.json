@@ -23,6 +23,7 @@
     "seed": "ts-node src/seeding/seed.ts",
     "seed:clear": "ts-node src/seeding/seed.ts --clear"
   },
+  
   "keywords": [],
   "author": "",
   "license": "ISC",

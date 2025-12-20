@@ -1,4 +1,3 @@
-// Multi-Tenant CMS Database Schema
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,126 +7,88 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enum for user roles
-enum Role {
-  SUPER_ADMIN
-  TENANT_ADMIN
-  EDITOR
-}
-
-// Enum for modules/features
-enum ModuleName {
-  PAGES
-  BLOG
-  MENU
-  MEDIA
-  SETTINGS
-}
-
 model Tenant {
-  id                 Int      @id @default(autoincrement())
-  name               String
-  slug               String   @unique @default(cuid()) // tenant slug for subdomain
-  domain             String   @unique // e.g. tenant's domain or subdomain
-  status             String   @default("active") // active, suspended, trial_expired
-  defaultLanguage    String   @default("tr")
-  availableLanguages String[] @default(["tr"]) // list of enabled language codes
-  theme              String? // e.g. theme name or config reference
-  primaryColor       String?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relations:
-  users          User[]
-  pages          Page[]
-  blogPosts      BlogPost[]
-  blogCategories BlogCategory[]
-  menus          Menu[]
-  menuItems      MenuItem[]
-  media          Media[]
-  siteSetting    SiteSetting?
-  features       TenantFeature[] // Feature flags
-
-  // Corporate Website Relations
-  services           Service[]
-  teamMembers        TeamMember[]
-  references         Reference[]
-  contactInfo        ContactInfo?
-  socialMediaLinks   SocialMediaLink[]
-  banners            Banner[]
-  testimonials       Testimonial[]
-  seoSetting         SEOSetting?
-  galleries          Gallery[]
-  contactSubmissions ContactSubmission[]
-
-  // Advanced SEO Relations
-  structuredData     StructuredData[]
-  pageSeo            PageSEO[]
-  redirects          Redirect[]
-  sitemapConfig      SitemapConfig?
-  seoIntegration     SEOIntegration?
-  ogTemplates        OGTemplate[]
-
-  // Advanced Banner & Slider Relations
-  sliders            Slider[]
-  bannerPositions    BannerPosition[]
-
-  // Social Media & Maps Relations
-  socialMediaAnalytics SocialMediaAnalytics[]
-  socialMediaShares    SocialMediaShare[]
-  mapConfigurations    MapConfiguration[]
-  locationCategories   LocationCategory[]
-
-  // Dashboard & Analytics Relations
-  websiteAnalytics     WebsiteAnalytics[]
-  dashboardWidgets     DashboardWidget[]
-  analyticsReports     AnalyticsReport[]
-  systemMetrics        SystemMetric[]
-  contentAnalytics     ContentAnalytics[]
-  activeSessions       ActiveSession[]
-  conversionGoals      ConversionGoal[]
-
-  // System Settings Relations
-  systemSettings       SystemSettings[]
-  configurationBackups ConfigurationBackup[]
-
-  // Monitoring & Logging Relations
-  logEntries           LogEntry[]
-  alertRules           AlertRule[]
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  slug                  String                 @unique @default(cuid())
+  domain                String                 @unique
+  status                String                 @default("active")
+  defaultLanguage       String                 @default("tr")
+  availableLanguages    String[]               @default(["tr"])
+  theme                 String?
+  primaryColor          String?
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activeSessions        ActiveSession[]
+  alertRules            AlertRule[]
+  analyticsReports      AnalyticsReport[]
+  backupSchedules       BackupSchedule[]
+  bannerPositions       BannerPosition[]
+  banners               Banner[]
+  blogCategories        BlogCategory[]
+  blogPosts             BlogPost[]
+  configurationBackups  ConfigurationBackup[]
+  contactInfo           ContactInfo?
+  contactSubmissions    ContactSubmission[]
+  contentAnalytics      ContentAnalytics[]
+  conversionGoals       ConversionGoal[]
+  dashboardWidgets      DashboardWidget[]
+  databaseBackups       DatabaseBackup[]
+  galleries             Gallery[]
+  healthChecks          HealthCheck[]
+  locationCategories    LocationCategory[]
+  logEntries            LogEntry[]
+  maintenanceWindows    MaintenanceWindow[]
+  mapConfigurations     MapConfiguration[]
+  media                 Media[]
+  menuItems             MenuItem[]
+  menus                 Menu[]
+  monitoringEvents      MonitoringEvent[]
   notificationTemplates NotificationTemplate[]
-  maintenanceWindows   MaintenanceWindow[]
-  healthChecks         HealthCheck[]
-  monitoringEvents     MonitoringEvent[]
-
-  // Domain Management Relations
-  tenantDomains        TenantDomain[]
-
-  // Backup & Update System Relations
-  databaseBackups      DatabaseBackup[]
-  systemBackups        SystemBackup[]
-  backupSchedules      BackupSchedule[]
-  restoreOperations    RestoreOperation[]
-  systemUpdates        SystemUpdate[]
+  ogTemplates           OGTemplate[]
+  pageSeo               PageSEO[]
+  pages                 Page[]
+  redirects             Redirect[]
+  references            Reference[]
+  restoreOperations     RestoreOperation[]
+  seoIntegration        SEOIntegration?
+  seoSetting            SEOSetting?
+  services              Service[]
+  siteSetting           SiteSetting?
+  sitemapConfig         SitemapConfig?
+  sliders               Slider[]
+  socialMediaAnalytics  SocialMediaAnalytics[]
+  socialMediaLinks      SocialMediaLink[]
+  socialMediaShares     SocialMediaShare[]
+  structuredData        StructuredData[]
+  systemBackups         SystemBackup[]
+  systemMetrics         SystemMetric[]
+  systemSettings        SystemSettings[]
+  systemUpdates         SystemUpdate[]
+  teamMembers           TeamMember[]
+  tenantDomains         TenantDomain[]
+  features              TenantFeature[]
+  testimonials          Testimonial[]
+  users                 User[]
+  websiteAnalytics      WebsiteAnalytics[]
 
   @@map("tenants")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   tenantId  Int?
-  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
   role      Role
   name      String?
-  email     String   @unique
-  password  String // hashed password
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  email     String     @unique
+  password  String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   blogPosts BlogPost[] @relation("PostAuthor")
   media     Media[]    @relation("MediaUploader")
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id])
 
   @@map("users")
 }
@@ -135,24 +96,22 @@ model User {
 model TenantFeature {
   tenantId Int
   module   ModuleName
-  enabled  Boolean @default(true)
-  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enabled  Boolean    @default(true)
+  tenant   Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@id([tenantId, module]) // composite PK: one entry per module per tenant
+  @@id([tenantId, module])
   @@map("tenant_features")
 }
 
-// ----- Content models -----
 model Page {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  status    String?  @default("draft") // e.g. draft/published
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  translations PageTranslation[]
+  id           Int               @id @default(autoincrement())
+  tenantId     Int
+  status       String?           @default("draft")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   menuItems    MenuItem[]
+  translations PageTranslation[]
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("pages")
 }
@@ -160,26 +119,25 @@ model Page {
 model PageTranslation {
   id              Int     @id @default(autoincrement())
   pageId          Int
-  page            Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
   language        String
   title           String
   slug            String
   contentJson     Json?
   metaTitle       String?
   metaDescription String?
+  page            Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  @@unique([pageId, language]) // one translation per language per page
+  @@unique([pageId, language])
   @@map("page_translations")
 }
 
 model BlogCategory {
-  id       Int      @id @default(autoincrement())
-  tenantId Int
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parentId Int? // Optional hierarchy for categories
-  parent   BlogCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children BlogCategory[] @relation("CategoryHierarchy")
-
+  id           Int                       @id @default(autoincrement())
+  tenantId     Int
+  parentId     Int?
+  parent       BlogCategory?             @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     BlogCategory[]            @relation("CategoryHierarchy")
+  tenant       Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   translations BlogCategoryTranslation[]
   blogPosts    BlogPost[]
 
@@ -189,29 +147,28 @@ model BlogCategory {
 model BlogCategoryTranslation {
   id         Int          @id @default(autoincrement())
   categoryId Int
-  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   language   String
   name       String
   slug       String?
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, language])
   @@map("blog_category_translations")
 }
 
 model BlogPost {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  categoryId  Int?
-  category    BlogCategory? @relation(fields: [categoryId], references: [id])
-  authorId    Int?
-  author      User?    @relation("PostAuthor", fields: [authorId], references: [id])
-  isPublished Boolean  @default(false)
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id           Int                   @id @default(autoincrement())
+  tenantId     Int
+  categoryId   Int?
+  authorId     Int?
+  isPublished  Boolean               @default(false)
+  publishedAt  DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
   translations BlogPostTranslation[]
+  author       User?                 @relation("PostAuthor", fields: [authorId], references: [id])
+  category     BlogCategory?         @relation(fields: [categoryId], references: [id])
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("blog_posts")
 }
@@ -219,7 +176,6 @@ model BlogPost {
 model BlogPostTranslation {
   id              Int      @id @default(autoincrement())
   postId          Int
-  post            BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   language        String
   title           String
   slug            String
@@ -227,40 +183,39 @@ model BlogPostTranslation {
   contentJson     Json?
   metaTitle       String?
   metaDescription String?
+  post            BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([postId, language])
   @@map("blog_post_translations")
 }
 
 model Menu {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  key       String // e.g. "main-menu", unique per tenant
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  items MenuItem[]
+  key       String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     MenuItem[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, key])
   @@map("menus")
 }
 
 model MenuItem {
-  id          Int     @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  menuId      Int
-  menu        Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  parentId    Int?
-  parent      MenuItem? @relation("MenuItemHierarchy", fields: [parentId], references: [id])
-  children    MenuItem[] @relation("MenuItemHierarchy")
-  order       Int? // position in menu
-  pageId      Int? // link to a page (internal link)
-  page        Page? @relation(fields: [pageId], references: [id])
-  externalUrl String?
-
+  id           Int                   @id @default(autoincrement())
+  tenantId     Int
+  menuId       Int
+  parentId     Int?
+  order        Int?
+  pageId       Int?
+  externalUrl  String?
   translations MenuItemTranslation[]
+  menu         Menu                  @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  page         Page?                 @relation(fields: [pageId], references: [id])
+  parent       MenuItem?             @relation("MenuItemHierarchy", fields: [parentId], references: [id])
+  children     MenuItem[]            @relation("MenuItemHierarchy")
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("menu_items")
 }
@@ -268,9 +223,9 @@ model MenuItem {
 model MenuItemTranslation {
   id         Int      @id @default(autoincrement())
   menuItemId Int
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
   language   String
   label      String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 
   @@unique([menuItemId, language])
   @@map("menu_item_translations")
@@ -279,25 +234,24 @@ model MenuItemTranslation {
 model Media {
   id           Int      @id @default(autoincrement())
   tenantId     Int
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  publicId     String // Cloudinary public identifier
-  url          String // URL or secure URL
+  publicId     String
+  url          String
   fileName     String?
   format       String?
   size         Int?
   uploadedAt   DateTime @default(now())
   uploadedById Int?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploadedBy   User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
 
   @@map("media")
 }
 
 model SiteSetting {
-  id       Int    @id @default(autoincrement())
-  tenantId Int    @unique // one per tenant
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
+  id           Int                      @id @default(autoincrement())
+  tenantId     Int                      @unique
   translations SiteSettingTranslation[]
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("site_settings")
 }
@@ -305,32 +259,28 @@ model SiteSetting {
 model SiteSettingTranslation {
   id                 Int         @id @default(autoincrement())
   siteSettingId      Int
-  siteSetting        SiteSetting @relation(fields: [siteSettingId], references: [id], onDelete: Cascade)
   language           String
   siteName           String
   siteDescription    String?
   seoMetaTitle       String?
   seoMetaDescription String?
+  siteSetting        SiteSetting @relation(fields: [siteSettingId], references: [id], onDelete: Cascade)
 
   @@unique([siteSettingId, language])
   @@map("site_setting_translations")
 }
 
-// ----- Corporate Website Models -----
-
-// Services module for construction companies, law firms, agencies
 model Service {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  iconUrl     String?  // Icon or image for the service
-  order       Int?     // Display order
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id           Int                  @id @default(autoincrement())
+  tenantId     Int
+  iconUrl      String?
+  order        Int?
+  isActive     Boolean              @default(true)
+  isFeatured   Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   translations ServiceTranslation[]
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("services")
 }
@@ -338,70 +288,66 @@ model Service {
 model ServiceTranslation {
   id               Int     @id @default(autoincrement())
   serviceId        Int
-  service          Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   language         String
   title            String
   slug             String
   shortDescription String?
-  contentJson      Json?   // Full service description
+  contentJson      Json?
   metaTitle        String?
   metaDescription  String?
+  service          Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([serviceId, language])
   @@map("service_translations")
 }
 
-// Team members for showing company staff
 model TeamMember {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  email     String?
-  phone     String?
-  imageUrl  String?
-  order     Int?     // Display order
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  translations TeamMemberTranslation[]
+  id           Int                     @id @default(autoincrement())
+  tenantId     Int
+  email        String?
+  phone        String?
+  imageUrl     String?
+  order        Int?
+  isActive     Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
   socialLinks  SocialMediaLink[]
+  translations TeamMemberTranslation[]
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("team_members")
 }
 
 model TeamMemberTranslation {
-  id          Int        @id @default(autoincrement())
-  teamId      Int
-  teamMember  TeamMember @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  language    String
-  name        String
-  position    String
-  bio         String?
-  expertise   String?    // Areas of expertise
+  id         Int        @id @default(autoincrement())
+  teamId     Int
+  language   String
+  name       String
+  position   String
+  bio        String?
+  expertise  String?
+  teamMember TeamMember @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, language])
   @@map("team_member_translations")
 }
 
-// References/Portfolio for showcasing previous work
 model Reference {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  imageUrl    String?  // Main image
-  projectUrl  String?  // Link to live project
-  clientName  String?
-  projectDate DateTime?
-  category    String?  // e.g., "construction", "legal", "design"
-  order       Int?     // Display order
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  translations ReferenceTranslation[]
+  id           Int                    @id @default(autoincrement())
+  tenantId     Int
+  imageUrl     String?
+  projectUrl   String?
+  clientName   String?
+  projectDate  DateTime?
+  category     String?
+  order        Int?
+  isActive     Boolean                @default(true)
+  isFeatured   Boolean                @default(false)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
   gallery      ReferenceGallery[]
+  translations ReferenceTranslation[]
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("references")
 }
@@ -409,14 +355,14 @@ model Reference {
 model ReferenceTranslation {
   id              Int       @id @default(autoincrement())
   referenceId     Int
-  reference       Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
   language        String
   title           String
   slug            String
   description     String?
-  contentJson     Json?     // Detailed project information
+  contentJson     Json?
   metaTitle       String?
   metaDescription String?
+  reference       Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
 
   @@unique([referenceId, language])
   @@map("reference_translations")
@@ -425,24 +371,22 @@ model ReferenceTranslation {
 model ReferenceGallery {
   id          Int       @id @default(autoincrement())
   referenceId Int
-  reference   Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
   imageUrl    String
   caption     String?
-  order       Int?      // Display order in gallery
+  order       Int?
+  reference   Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
 
   @@map("reference_gallery")
 }
 
-// Contact information for offices, branches
 model ContactInfo {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int      @unique // one per tenant
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  logo      String?  // Company logo URL
-  favicon   String?  // Favicon URL
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           Int                      @id @default(autoincrement())
+  tenantId     Int                      @unique
+  logo         String?
+  favicon      String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   translations ContactInfoTranslation[]
   offices      Office[]
   socialLinks  SocialMediaLink[]
@@ -453,155 +397,139 @@ model ContactInfo {
 model ContactInfoTranslation {
   id            Int         @id @default(autoincrement())
   contactInfoId Int
-  contactInfo   ContactInfo @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
   language      String
   companyName   String
-  tagline       String?     // Company slogan
-  description   String?     // Company description
-  workingHours  String?     // e.g., "Mon-Fri 9:00-17:00"
+  tagline       String?
+  description   String?
+  workingHours  String?
+  contactInfo   ContactInfo @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
 
   @@unique([contactInfoId, language])
   @@map("contact_info_translations")
 }
 
-// Multiple offices/branches support
 model Office {
-  id            Int         @id @default(autoincrement())
-  contactInfoId Int
-  contactInfo   ContactInfo @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
-  name          String      // e.g., "Istanbul Office", "Ankara Branch"
-  email         String?
-  phone         String?
-  fax           String?
-  address       String?
-  mapUrl        String?     // Google Maps embed URL
-  latitude      Float?      // GPS coordinates
-  longitude     Float?
-  isPrimary     Boolean     @default(false)
-  isActive      Boolean     @default(true)
-  order         Int?        // Display order
-
-  // Map assignment relations
+  id                  Int                  @id @default(autoincrement())
+  contactInfoId       Int
+  name                String
+  email               String?
+  phone               String?
+  fax                 String?
+  address             String?
+  mapUrl              String?
+  latitude            Float?
+  longitude           Float?
+  isPrimary           Boolean              @default(false)
+  isActive            Boolean              @default(true)
+  order               Int?
   locationAssignments LocationAssignment[]
+  contactInfo         ContactInfo          @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
 
   @@map("offices")
 }
 
-// Social media links for company and team members
 model SocialMediaLink {
-  id           Int          @id @default(autoincrement())
-  tenantId     Int
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  platform     String       // facebook, twitter, instagram, linkedin, youtube, etc.
-  url          String
-  icon         String?      // Icon class or URL
-  isActive     Boolean      @default(true)
-  order        Int?         // Display order
-
-  // Can belong to either contact info or team member
+  id            Int                    @id @default(autoincrement())
+  tenantId      Int
+  platform      String
+  url           String
+  icon          String?
+  isActive      Boolean                @default(true)
+  order         Int?
   contactInfoId Int?
-  contactInfo   ContactInfo? @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
   teamMemberId  Int?
-  teamMember    TeamMember?  @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
-
-  // Analytics relation
   analytics     SocialMediaAnalytics[]
+  contactInfo   ContactInfo?           @relation(fields: [contactInfoId], references: [id], onDelete: Cascade)
+  teamMember    TeamMember?            @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("social_media_links")
 }
 
-// Banners and sliders for homepage
 model Banner {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  type        String   @default("slider") // slider, hero, popup, sidebar
-  imageUrl    String
-  mobileImageUrl String? // Responsive image for mobile
-  linkUrl     String?  // Call-to-action link
-  order       Int?     // Display order
-  isActive    Boolean  @default(true)
-  startDate   DateTime?// Schedule banner display
-  endDate     DateTime?// Schedule banner end
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  translations BannerTranslation[]
-  positions    BannerPositionAssignment[]
+  id             Int                        @id @default(autoincrement())
+  tenantId       Int
+  type           String                     @default("slider")
+  imageUrl       String
+  mobileImageUrl String?
+  linkUrl        String?
+  order          Int?
+  isActive       Boolean                    @default(true)
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  positions      BannerPositionAssignment[]
+  translations   BannerTranslation[]
+  tenant         Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("banners")
 }
 
 model BannerTranslation {
-  id          Int    @id @default(autoincrement())
-  bannerId    Int
-  banner      Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-  language    String
-  title       String?
-  subtitle    String?
-  buttonText  String? // Call-to-action button text
-  altText     String? // Image alt text for SEO
+  id         Int     @id @default(autoincrement())
+  bannerId   Int
+  language   String
+  title      String?
+  subtitle   String?
+  buttonText String?
+  altText    String?
+  banner     Banner  @relation(fields: [bannerId], references: [id], onDelete: Cascade)
 
   @@unique([bannerId, language])
   @@map("banner_translations")
 }
 
-// Testimonials/Reviews from clients
 model Testimonial {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  clientName  String
-  clientTitle String?  // Job title or company
-  clientImage String?  // Client photo
-  rating      Int?     // 1-5 star rating
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  order       Int?     // Display order
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id           Int                      @id @default(autoincrement())
+  tenantId     Int
+  clientName   String
+  clientTitle  String?
+  clientImage  String?
+  rating       Int?
+  isActive     Boolean                  @default(true)
+  isFeatured   Boolean                  @default(false)
+  order        Int?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
   translations TestimonialTranslation[]
+  tenant       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("testimonials")
 }
 
 model TestimonialTranslation {
-  id             Int          @id @default(autoincrement())
-  testimonialId  Int
-  testimonial    Testimonial  @relation(fields: [testimonialId], references: [id], onDelete: Cascade)
-  language       String
-  content        String       // Testimonial text
-  projectName    String?      // Project this testimonial relates to
+  id            Int         @id @default(autoincrement())
+  testimonialId Int
+  language      String
+  content       String
+  projectName   String?
+  testimonial   Testimonial @relation(fields: [testimonialId], references: [id], onDelete: Cascade)
 
   @@unique([testimonialId, language])
   @@map("testimonial_translations")
 }
 
-// Advanced Banner & Slider Management (Universal for all business types)
-
-// Slider Collections (Hero Carousels, Image Galleries, Product Showcases, etc.)
 model Slider {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  key         String   // Unique identifier (home-hero, about-gallery, services-showcase)
-  type        String   @default("carousel") // carousel, gallery, showcase, testimonials
-  autoPlay    Boolean  @default(true)
-  autoPlaySpeed Int    @default(5000) // milliseconds
-  showDots    Boolean  @default(true)
-  showArrows  Boolean  @default(true)
-  infinite    Boolean  @default(true)
-  slidesToShow Int     @default(1)
-  slidesToScroll Int   @default(1)
-  responsive  Json?    // Responsive breakpoints configuration
-  isActive    Boolean  @default(true)
-  order       Int?     // Display order if multiple sliders on same page
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  translations SliderTranslation[]
-  items        SliderItem[]
+  id             Int                 @id @default(autoincrement())
+  tenantId       Int
+  key            String
+  type           String              @default("carousel")
+  autoPlay       Boolean             @default(true)
+  autoPlaySpeed  Int                 @default(5000)
+  showDots       Boolean             @default(true)
+  showArrows     Boolean             @default(true)
+  infinite       Boolean             @default(true)
+  slidesToShow   Int                 @default(1)
+  slidesToScroll Int                 @default(1)
+  responsive     Json?
+  isActive       Boolean             @default(true)
+  order          Int?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  items          SliderItem[]
+  translations   SliderTranslation[]
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, key])
   @@map("sliders")
@@ -610,172 +538,162 @@ model Slider {
 model SliderTranslation {
   id          Int     @id @default(autoincrement())
   sliderId    Int
-  slider      Slider  @relation(fields: [sliderId], references: [id], onDelete: Cascade)
   language    String
   title       String?
   description String?
+  slider      Slider  @relation(fields: [sliderId], references: [id], onDelete: Cascade)
 
   @@unique([sliderId, language])
   @@map("slider_translations")
 }
 
-// Individual items within a slider
 model SliderItem {
-  id          Int      @id @default(autoincrement())
-  sliderId    Int
-  slider      Slider   @relation(fields: [sliderId], references: [id], onDelete: Cascade)
-  imageUrl    String
-  mobileImageUrl String? // Responsive image for mobile
-  tabletImageUrl String? // Responsive image for tablet
-  videoUrl    String?  // Optional video instead of image
-  linkUrl     String?  // Call-to-action link
-  linkTarget  String   @default("_self") // _self, _blank
-  overlayColor String? // Overlay color for text readability
-  overlayOpacity Float @default(0.0) // 0.0 to 1.0
-  textPosition String @default("center") // left, center, right, bottom-left, etc.
-  animationIn String   @default("fadeIn") // Animation when slide appears
-  animationOut String  @default("fadeOut") // Animation when slide disappears
-  order       Int?     // Order within slider
-  isActive    Boolean  @default(true)
-  startDate   DateTime? // Schedule item display
-  endDate     DateTime? // Schedule item end
-  clickCount  Int      @default(0) // Track clicks for analytics
-  viewCount   Int      @default(0) // Track views for analytics
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  translations SliderItemTranslation[]
+  id             Int                     @id @default(autoincrement())
+  sliderId       Int
+  imageUrl       String
+  mobileImageUrl String?
+  tabletImageUrl String?
+  videoUrl       String?
+  linkUrl        String?
+  linkTarget     String                  @default("_self")
+  overlayColor   String?
+  overlayOpacity Float                   @default(0.0)
+  textPosition   String                  @default("center")
+  animationIn    String                  @default("fadeIn")
+  animationOut   String                  @default("fadeOut")
+  order          Int?
+  isActive       Boolean                 @default(true)
+  startDate      DateTime?
+  endDate        DateTime?
+  clickCount     Int                     @default(0)
+  viewCount      Int                     @default(0)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  translations   SliderItemTranslation[]
+  slider         Slider                  @relation(fields: [sliderId], references: [id], onDelete: Cascade)
 
   @@map("slider_items")
 }
 
 model SliderItemTranslation {
-  id            Int         @id @default(autoincrement())
-  sliderItemId  Int
-  sliderItem    SliderItem  @relation(fields: [sliderItemId], references: [id], onDelete: Cascade)
-  language      String
-  title         String?
-  subtitle      String?
-  content       String?     // Rich text content
-  buttonText    String?     // Call-to-action button text
-  buttonColor   String?     // Button background color
-  altText       String?     // Image alt text for SEO and accessibility
+  id           Int        @id @default(autoincrement())
+  sliderItemId Int
+  language     String
+  title        String?
+  subtitle     String?
+  content      String?
+  buttonText   String?
+  buttonColor  String?
+  altText      String?
+  sliderItem   SliderItem @relation(fields: [sliderItemId], references: [id], onDelete: Cascade)
 
   @@unique([sliderItemId, language])
   @@map("slider_item_translations")
 }
 
-// Banner Positions for different page areas
 model BannerPosition {
-  id          Int      @id @default(autoincrement())
+  id          Int                        @id @default(autoincrement())
   tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  key         String   // Position identifier (header-top, sidebar-right, footer-bottom)
-  name        String   // Human readable name
-  width       Int?     // Recommended width in pixels
-  height      Int?     // Recommended height in pixels
-  maxBanners  Int      @default(1) // Maximum banners in this position
-  autoRotate  Boolean  @default(false) // Auto-rotate multiple banners
-  rotateSpeed Int      @default(10000) // Rotation speed in milliseconds
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  banners BannerPositionAssignment[]
+  key         String
+  name        String
+  width       Int?
+  height      Int?
+  maxBanners  Int                        @default(1)
+  autoRotate  Boolean                    @default(false)
+  rotateSpeed Int                        @default(10000)
+  isActive    Boolean                    @default(true)
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  banners     BannerPositionAssignment[]
+  tenant      Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, key])
   @@map("banner_positions")
 }
 
-// Assignment of banners to positions
 model BannerPositionAssignment {
   id              Int            @id @default(autoincrement())
   bannerId        Int
-  banner          Banner         @relation(fields: [bannerId], references: [id], onDelete: Cascade)
   positionId      Int
-  position        BannerPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   order           Int            @default(0)
-  weight          Int            @default(100) // For A/B testing (higher weight = more likely to show)
+  weight          Int            @default(100)
   isActive        Boolean        @default(true)
-  startDate       DateTime?      // Schedule assignment
-  endDate         DateTime?      // Schedule assignment end
-  clickCount      Int            @default(0) // Track clicks
-  viewCount       Int            @default(0) // Track views
-  conversionCount Int            @default(0) // Track conversions/goals
+  startDate       DateTime?
+  endDate         DateTime?
+  clickCount      Int            @default(0)
+  viewCount       Int            @default(0)
+  conversionCount Int            @default(0)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  banner          Banner         @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  position        BannerPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@unique([bannerId, positionId])
   @@map("banner_position_assignments")
 }
 
-// Advanced SEO management
 model SEOSetting {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int      @unique // one per tenant
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  robotsTxt String?  // Custom robots.txt content
-  sitemap   Boolean  @default(true) // Auto-generate sitemap
-  analyticsCode String? // Google Analytics tracking code
-  gtagCode  String?  // Google Tag Manager code
-  facebookPixel String? // Facebook Pixel code
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  translations SEOSettingTranslation[]
+  id            Int                     @id @default(autoincrement())
+  tenantId      Int                     @unique
+  robotsTxt     String?
+  sitemap       Boolean                 @default(true)
+  analyticsCode String?
+  gtagCode      String?
+  facebookPixel String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  translations  SEOSettingTranslation[]
+  tenant        Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("seo_settings")
 }
 
 model SEOSettingTranslation {
-  id             Int        @id @default(autoincrement())
-  seoSettingId   Int
-  seoSetting     SEOSetting @relation(fields: [seoSettingId], references: [id], onDelete: Cascade)
-  language       String
-  metaKeywords   String?    // Global meta keywords
-  metaAuthor     String?    // Meta author
-  metaCopyright  String?    // Meta copyright
-  ogTitle        String?    // Open Graph title
-  ogDescription  String?    // Open Graph description
-  ogImage        String?    // Open Graph image URL
+  id            Int        @id @default(autoincrement())
+  seoSettingId  Int
+  language      String
+  metaKeywords  String?
+  metaAuthor    String?
+  metaCopyright String?
+  ogTitle       String?
+  ogDescription String?
+  ogImage       String?
+  seoSetting    SEOSetting @relation(fields: [seoSettingId], references: [id], onDelete: Cascade)
 
   @@unique([seoSettingId, language])
   @@map("seo_setting_translations")
 }
 
-// Advanced SEO: Structured Data/Schema Markup
 model StructuredData {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  entityType  String   // organization, website, article, service, person, etc.
-  entityId    String   // ID of the entity (page, service, team member, etc.)
-  schemaType  String   // @type value (Organization, WebSite, Article, Service, Person)
-  jsonLd      Json     // Complete JSON-LD data
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  tenantId   Int
+  entityType String
+  entityId   String
+  schemaType String
+  jsonLd     Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, entityType, entityId])
   @@map("structured_data")
 }
 
-// Page-specific meta tags (overrides global SEO settings)
 model PageSEO {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  entityType      String   // page, blog_post, service, team_member, reference, etc.
-  entityId        Int      // ID of the specific entity
-  canonicalUrl    String?  // Custom canonical URL
-  noIndex         Boolean  @default(false) // Prevent indexing
-  noFollow        Boolean  @default(false) // Prevent following links
-  priority        Float?   // Sitemap priority (0.0 to 1.0)
-  changeFreq      String?  // Sitemap change frequency
-  customRobots    String?  // Custom robots meta tag
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
+  id           Int                  @id @default(autoincrement())
+  tenantId     Int
+  entityType   String
+  entityId     Int
+  canonicalUrl String?
+  noIndex      Boolean              @default(false)
+  noFollow     Boolean              @default(false)
+  priority     Float?
+  changeFreq   String?
+  customRobots String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   translations PageSEOTranslation[]
 
   @@unique([tenantId, entityType, entityId])
@@ -783,132 +701,125 @@ model PageSEO {
 }
 
 model PageSEOTranslation {
-  id              Int     @id @default(autoincrement())
-  pageSeoId       Int
-  pageSeo         PageSEO @relation(fields: [pageSeoId], references: [id], onDelete: Cascade)
-  language        String
-  metaTitle       String?
-  metaDescription String?
-  metaKeywords    String?
-  ogTitle         String?
-  ogDescription   String?
-  ogImage         String?
-  ogType          String? @default("website") // website, article, product, etc.
-  twitterCard     String? @default("summary_large_image") // summary, summary_large_image, app, player
-  twitterTitle    String?
+  id                 Int     @id @default(autoincrement())
+  pageSeoId          Int
+  language           String
+  metaTitle          String?
+  metaDescription    String?
+  metaKeywords       String?
+  ogTitle            String?
+  ogDescription      String?
+  ogImage            String?
+  ogType             String? @default("website")
+  twitterCard        String? @default("summary_large_image")
+  twitterTitle       String?
   twitterDescription String?
-  twitterImage    String?
+  twitterImage       String?
+  pageSeo            PageSEO @relation(fields: [pageSeoId], references: [id], onDelete: Cascade)
 
   @@unique([pageSeoId, language])
   @@map("page_seo_translations")
 }
 
-// URL Redirects for SEO migrations
 model Redirect {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  fromUrl     String   // Old URL (relative path)
-  toUrl       String   // New URL (can be relative or absolute)
-  statusCode  Int      @default(301) // 301, 302, 307, 308
-  isActive    Boolean  @default(true)
-  hitCount    Int      @default(0) // Track how many times it's used
+  fromUrl     String
+  toUrl       String
+  statusCode  Int       @default(301)
+  isActive    Boolean   @default(true)
+  hitCount    Int       @default(0)
   lastHit     DateTime?
-  description String?  // Admin note about why this redirect exists
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, fromUrl])
   @@map("redirects")
 }
 
-// Sitemap configuration
 model SitemapConfig {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int      @unique
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  includePages    Boolean  @default(true)
-  includeBlog     Boolean  @default(true)
-  includeServices Boolean  @default(true)
-  includeTeam     Boolean  @default(false) // Usually not needed for SEO
-  includeReferences Boolean @default(true)
-  includeGalleries Boolean @default(false)
-  maxUrls         Int      @default(50000) // Sitemap URL limit
-  autoSubmit      Boolean  @default(false) // Auto-submit to search engines
-  lastGenerated   DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                Int       @id @default(autoincrement())
+  tenantId          Int       @unique
+  includePages      Boolean   @default(true)
+  includeBlog       Boolean   @default(true)
+  includeServices   Boolean   @default(true)
+  includeTeam       Boolean   @default(false)
+  includeReferences Boolean   @default(true)
+  includeGalleries  Boolean   @default(false)
+  maxUrls           Int       @default(50000)
+  autoSubmit        Boolean   @default(false)
+  lastGenerated     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("sitemap_config")
 }
 
-// Google Search Console and Analytics Integration
 model SEOIntegration {
-  id                    Int      @id @default(autoincrement())
-  tenantId              Int      @unique
-  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  googleAnalyticsId     String?  // GA4 Measurement ID
-  googleTagManagerId    String?  // GTM Container ID
-  googleSearchConsole   String?  // GSC verification meta tag
-  bingWebmasterTools    String?  // Bing verification meta tag
-  facebookDomainVerif   String?  // Facebook domain verification
-  pinterestVerif        String?  // Pinterest verification
-  yandexVerif           String?  // Yandex verification
-  customHeadScripts     String?  // Custom head scripts
-  customBodyScripts     String?  // Custom body scripts
-  isActive              Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  tenantId            Int      @unique
+  googleAnalyticsId   String?
+  googleTagManagerId  String?
+  googleSearchConsole String?
+  bingWebmasterTools  String?
+  facebookDomainVerif String?
+  pinterestVerif      String?
+  yandexVerif         String?
+  customHeadScripts   String?
+  customBodyScripts   String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("seo_integrations")
 }
 
-// Social Media Open Graph Templates
 model OGTemplate {
-  id           Int      @id @default(autoincrement())
+  id           Int                     @id @default(autoincrement())
   tenantId     Int
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name         String   // Template name (e.g., "Blog Post", "Service Page")
-  entityType   String   // What this template is for (blog, service, page, etc.)
-  isDefault    Boolean  @default(false)
-  imageUrl     String?  // Default OG image for this template
-  imageWidth   Int?     @default(1200)
-  imageHeight  Int?     @default(630)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  name         String
+  entityType   String
+  isDefault    Boolean                 @default(false)
+  imageUrl     String?
+  imageWidth   Int?                    @default(1200)
+  imageHeight  Int?                    @default(630)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
   translations OGTemplateTranslation[]
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name])
   @@map("og_templates")
 }
 
 model OGTemplateTranslation {
-  id              Int        @id @default(autoincrement())
-  templateId      Int
-  template        OGTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  language        String
-  titleTemplate   String?    // Template with variables like "{title} | {siteName}"
-  descTemplate    String?    // Template with variables like "{excerpt} | {siteName}"
+  id            Int        @id @default(autoincrement())
+  templateId    Int
+  language      String
+  titleTemplate String?
+  descTemplate  String?
+  template      OGTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@unique([templateId, language])
   @@map("og_template_translations")
 }
 
-// Gallery collections (separate from individual media files)
 model Gallery {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  coverImage  String?  // Gallery cover image
-  type        String   @default("general") // general, project, before-after, etc.
-  isActive    Boolean  @default(true)
-  order       Int?     // Display order
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  translations GalleryTranslation[]
+  id           Int                  @id @default(autoincrement())
+  tenantId     Int
+  coverImage   String?
+  type         String               @default("general")
+  isActive     Boolean              @default(true)
+  order        Int?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   images       GalleryImage[]
+  translations GalleryTranslation[]
 
   @@map("galleries")
 }
@@ -916,11 +827,11 @@ model Gallery {
 model GalleryTranslation {
   id          Int     @id @default(autoincrement())
   galleryId   Int
-  gallery     Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
   language    String
   name        String
   slug        String
   description String?
+  gallery     Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
 
   @@unique([galleryId, language])
   @@map("gallery_translations")
@@ -929,19 +840,17 @@ model GalleryTranslation {
 model GalleryImage {
   id        Int     @id @default(autoincrement())
   galleryId Int
-  gallery   Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
   imageUrl  String
   caption   String?
-  order     Int?    // Display order in gallery
+  order     Int?
+  gallery   Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
 
   @@map("gallery_images")
 }
 
-// Contact form submissions
 model ContactSubmission {
   id        Int      @id @default(autoincrement())
   tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
   email     String
   phone     String?
@@ -952,77 +861,69 @@ model ContactSubmission {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("contact_submissions")
 }
 
-// ===== SOCIAL MEDIA & MAPS MANAGEMENT =====
-
-// Enhanced social media analytics
 model SocialMediaAnalytics {
-  id             Int      @id @default(autoincrement())
-  tenantId       Int
-  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  socialLinkId   Int?
-  socialLink     SocialMediaLink? @relation(fields: [socialLinkId], references: [id], onDelete: Cascade)
-  platform       String   // facebook, instagram, twitter, linkedin, youtube
-  metricType     String   // clicks, impressions, shares, followers, engagement
-  metricValue    Int      @default(0)
-  referrer       String?  // Where the traffic came from
-  ipAddress      String?
-  userAgent      String?
-  date           DateTime @default(now())
+  id           Int              @id @default(autoincrement())
+  tenantId     Int
+  socialLinkId Int?
+  platform     String
+  metricType   String
+  metricValue  Int              @default(0)
+  referrer     String?
+  ipAddress    String?
+  userAgent    String?
+  date         DateTime         @default(now())
+  socialLink   SocialMediaLink? @relation(fields: [socialLinkId], references: [id], onDelete: Cascade)
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, platform, date])
   @@map("social_media_analytics")
 }
 
-// Map configuration for different types of maps
 model MapConfiguration {
-  id                    Int      @id @default(autoincrement())
-  tenantId              Int
-  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name                  String   // "Main Office Map", "All Locations", "Contact Page Map"
-  mapType               String   @default("google") // google, openstreet, mapbox
-  provider              String   @default("google") // google, mapbox, openstreet
-  apiKey                String?  // Map API key (encrypted)
-  style                 String?  // Map style JSON
-  defaultZoom           Int      @default(15)
-  showMarkers           Boolean  @default(true)
-  showInfoWindows       Boolean  @default(true)
-  enableDirections      Boolean  @default(true)
-  enableStreetView      Boolean  @default(true)
-  markerColor           String?  @default("#FF0000")
-  markerIcon            String?  // Custom marker icon URL
-  width                 String?  @default("100%")
-  height                String?  @default("400px")
-  isActive              Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
+  id                  Int                  @id @default(autoincrement())
+  tenantId            Int
+  name                String
+  mapType             String               @default("google")
+  provider            String               @default("google")
+  apiKey              String?
+  style               String?
+  defaultZoom         Int                  @default(15)
+  showMarkers         Boolean              @default(true)
+  showInfoWindows     Boolean              @default(true)
+  enableDirections    Boolean              @default(true)
+  enableStreetView    Boolean              @default(true)
+  markerColor         String?              @default("#FF0000")
+  markerIcon          String?
+  width               String?              @default("100%")
+  height              String?              @default("400px")
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   locationAssignments LocationAssignment[]
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("map_configurations")
 }
 
-// Categories for organizing locations
 model LocationCategory {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String
-  icon        String?  // Icon class or URL
-  color       String?  // Hex color code
-  description String?
-  isActive    Boolean  @default(true)
-  order       Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  translations          LocationCategoryTranslation[]
-  locationAssignments   LocationAssignment[]
+  id                  Int                           @id @default(autoincrement())
+  tenantId            Int
+  name                String
+  icon                String?
+  color               String?
+  description         String?
+  isActive            Boolean                       @default(true)
+  order               Int?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  locationAssignments LocationAssignment[]
+  tenant              Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  translations        LocationCategoryTranslation[]
 
   @@map("location_categories")
 }
@@ -1030,102 +931,85 @@ model LocationCategory {
 model LocationCategoryTranslation {
   id                 Int              @id @default(autoincrement())
   locationCategoryId Int
-  locationCategory   LocationCategory @relation(fields: [locationCategoryId], references: [id], onDelete: Cascade)
   language           String
   name               String
   description        String?
+  locationCategory   LocationCategory @relation(fields: [locationCategoryId], references: [id], onDelete: Cascade)
 
   @@unique([locationCategoryId, language])
   @@map("location_category_translations")
 }
 
-// Assignment of offices to map configurations and categories
 model LocationAssignment {
-  id                   Int               @id @default(autoincrement())
-  officeId             Int
-  office               Office            @relation(fields: [officeId], references: [id], onDelete: Cascade)
-  mapConfigurationId   Int?
-  mapConfiguration     MapConfiguration? @relation(fields: [mapConfigurationId], references: [id], onDelete: Cascade)
-  locationCategoryId   Int?
-  locationCategory     LocationCategory? @relation(fields: [locationCategoryId], references: [id], onDelete: Cascade)
-  customMarkerIcon     String?           // Override default marker
-  customMarkerColor    String?           // Override default color
-  showInWidget         Boolean           @default(true)
-  order                Int?              // Display order
-  createdAt            DateTime          @default(now())
+  id                 Int               @id @default(autoincrement())
+  officeId           Int
+  mapConfigurationId Int?
+  locationCategoryId Int?
+  customMarkerIcon   String?
+  customMarkerColor  String?
+  showInWidget       Boolean           @default(true)
+  order              Int?
+  createdAt          DateTime          @default(now())
+  locationCategory   LocationCategory? @relation(fields: [locationCategoryId], references: [id], onDelete: Cascade)
+  mapConfiguration   MapConfiguration? @relation(fields: [mapConfigurationId], references: [id], onDelete: Cascade)
+  office             Office            @relation(fields: [officeId], references: [id], onDelete: Cascade)
 
   @@unique([officeId, mapConfigurationId])
   @@map("location_assignments")
 }
 
-// Social media sharing tracking
 model SocialMediaShare {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  entityType  String   // page, blog_post, service, team_member
-  entityId    Int      // ID of the shared entity
-  platform    String   // facebook, twitter, linkedin, whatsapp, telegram
-  url         String   // URL that was shared
-  title       String?  // Content title
-  ipAddress   String?
-  userAgent   String?
-  referrer    String?
-  sharedAt    DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  tenantId   Int
+  entityType String
+  entityId   Int
+  platform   String
+  url        String
+  title      String?
+  ipAddress  String?
+  userAgent  String?
+  referrer   String?
+  sharedAt   DateTime @default(now())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, entityType, entityId])
   @@index([tenantId, platform, sharedAt])
   @@map("social_media_shares")
 }
 
-// ===== DASHBOARD & ANALYTICS MANAGEMENT =====
-
-// Website traffic and visitor analytics
 model WebsiteAnalytics {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Visitor Information
-  sessionId       String?  // Unique session identifier
-  userId          String?  // User identifier (if logged in)
-  ipAddress       String?
-  userAgent       String?
-  deviceType      String?  // mobile, desktop, tablet
-  browserName     String?  // chrome, firefox, safari, etc.
-  osName          String?  // windows, macos, ios, android, etc.
-  country         String?  // ISO country code
-  city            String?
-  language        String?  // browser language
-
-  // Page/Content Information
-  pageUrl         String
-  pagePath        String   // clean path without domain
-  pageTitle       String?
-  referrer        String?  // where the visitor came from
-  entityType      String?  // page, blog_post, service, team_member
-  entityId        Int?     // ID of the entity
-
-  // Engagement Metrics
-  timeOnPage      Int?     @default(0) // seconds
-  scrollDepth     Int?     @default(0) // percentage (0-100)
-  bounceRate      Boolean  @default(false)
-  exitPage        Boolean  @default(false)
-
-  // UTM and Marketing
-  utmSource       String?  // google, facebook, direct
-  utmMedium       String?  // cpc, organic, social
-  utmCampaign     String?  // campaign name
-  utmTerm         String?  // keyword
-  utmContent      String?  // ad content
-
-  // Technical Information
-  loadTime        Int?     // page load time in ms
-  errors          String?  // JavaScript errors
-
-  // Timestamps
-  visitedAt       DateTime @default(now())
-  createdAt       DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  sessionId   String?
+  userId      String?
+  ipAddress   String?
+  userAgent   String?
+  deviceType  String?
+  browserName String?
+  osName      String?
+  country     String?
+  city        String?
+  language    String?
+  pageUrl     String
+  pagePath    String
+  pageTitle   String?
+  referrer    String?
+  entityType  String?
+  entityId    Int?
+  timeOnPage  Int?     @default(0)
+  scrollDepth Int?     @default(0)
+  bounceRate  Boolean  @default(false)
+  exitPage    Boolean  @default(false)
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  loadTime    Int?
+  errors      String?
+  visitedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, visitedAt])
   @@index([tenantId, pageUrl])
@@ -1134,177 +1018,126 @@ model WebsiteAnalytics {
   @@map("website_analytics")
 }
 
-// Customizable dashboard widgets
 model DashboardWidget {
   id              Int      @id @default(autoincrement())
   tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Widget Configuration
-  name            String   // "Visitor Overview", "Popular Pages", "Recent Orders"
-  type            String   // chart_line, chart_bar, chart_pie, stat_card, table, map
-  category        String   // analytics, content, ecommerce, social, system
-
-  // Data Source
-  dataSource      String   // website_analytics, blog_posts, services, etc.
-  query           Json?    // SQL query or aggregation config
-  filters         Json?    // Date ranges, entity filters, etc.
-
-  // Display Configuration
+  name            String
+  type            String
+  category        String
+  dataSource      String
+  query           Json?
+  filters         Json?
   title           String?
   description     String?
   icon            String?
   color           String?
-  size            String   @default("medium") // small, medium, large
-  position        Json?    // Grid position {x, y, width, height}
-
-  // Permissions & Visibility
+  size            String   @default("medium")
+  position        Json?
   isPublic        Boolean  @default(false)
   allowedRoles    String[] @default([])
-
-  // Settings
-  refreshInterval Int?     @default(300) // seconds
+  refreshInterval Int?     @default(300)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, category])
   @@index([tenantId, isActive])
   @@map("dashboard_widgets")
 }
 
-// Scheduled analytics reports
 model AnalyticsReport {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Report Configuration
-  name            String   // "Monthly Traffic Report", "Content Performance"
-  description     String?
-  reportType      String   // traffic, content, social, seo, custom
-
-  // Report Content
-  metrics         Json     // List of metrics to include
-  dateRange       String   // last_7_days, last_30_days, custom
-  startDate       DateTime?
-  endDate         DateTime?
-  filters         Json?    // Additional filters
-
-  // Format & Delivery
-  format          String   @default("pdf") // pdf, excel, json
-  recipients      String[] // Email addresses
-
-  // Scheduling
-  isScheduled     Boolean  @default(false)
-  schedule        String?  // cron expression
-  timezone        String   @default("UTC")
-  nextRunAt       DateTime?
-  lastRunAt       DateTime?
-
-  // Status
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  executions      ReportExecution[]
+  id          Int               @id @default(autoincrement())
+  tenantId    Int
+  name        String
+  description String?
+  reportType  String
+  metrics     Json
+  dateRange   String
+  startDate   DateTime?
+  endDate     DateTime?
+  filters     Json?
+  format      String            @default("pdf")
+  recipients  String[]
+  isScheduled Boolean           @default(false)
+  schedule    String?
+  timezone    String            @default("UTC")
+  nextRunAt   DateTime?
+  lastRunAt   DateTime?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions  ReportExecution[]
 
   @@index([tenantId, isScheduled, nextRunAt])
   @@map("analytics_reports")
 }
 
-// Report execution history
 model ReportExecution {
   id            Int             @id @default(autoincrement())
   reportId      Int
-  report        AnalyticsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-
-  // Execution Details
-  status        String          // pending, running, completed, failed
+  status        String
   startedAt     DateTime        @default(now())
   completedAt   DateTime?
-  duration      Int?            // execution time in seconds
-
-  // Result Information
-  fileUrl       String?         // Generated report file URL
-  fileSize      Int?            // File size in bytes
-  recordCount   Int?            // Number of records processed
-  errorMessage  String?         // Error message if failed
-
-  // Metadata
-  executionData Json?           // Runtime data/parameters used
+  duration      Int?
+  fileUrl       String?
+  fileSize      Int?
+  recordCount   Int?
+  errorMessage  String?
+  executionData Json?
   createdAt     DateTime        @default(now())
+  report        AnalyticsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId, status])
   @@map("report_executions")
 }
 
-// System performance metrics
 model SystemMetric {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int?
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Metric Information
-  metricType  String   // cpu_usage, memory_usage, disk_space, response_time, error_count
-  metricName  String   // Descriptive name
-  value       Float    // Metric value
-  unit        String?  // %, MB, ms, count
-
-  // Categorization
-  category    String   // system, application, database, external_api
-  component   String?  // specific component/service name
-
-  // Thresholds
+  id                Int      @id @default(autoincrement())
+  tenantId          Int?
+  metricType        String
+  metricName        String
+  value             Float
+  unit              String?
+  category          String
+  component         String?
   warningThreshold  Float?
   criticalThreshold Float?
-  status            String @default("normal") // normal, warning, critical
-
-  // Additional Data
-  metadata    Json?    // Additional metric data
-  tags        String[] // Tags for grouping/filtering
-
-  // Timestamps
-  recordedAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
+  status            String   @default("normal")
+  metadata          Json?
+  tags              String[]
+  recordedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  tenant            Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, metricType, recordedAt])
   @@index([tenantId, status])
   @@map("system_metrics")
 }
 
-// Content performance analytics
 model ContentAnalytics {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Content Information
-  entityType      String   // page, blog_post, service, team_member
-  entityId        Int
-  contentTitle    String?
-  contentSlug     String?
-
-  // Performance Metrics
-  viewCount       Int      @default(0)
-  uniqueViews     Int      @default(0)
-  averageTimeOnPage Int    @default(0) // seconds
-  bounceRate      Float    @default(0) // percentage
-  conversionRate  Float    @default(0) // percentage
-  shareCount      Int      @default(0)
-  commentCount    Int      @default(0)
-
-  // SEO Metrics
-  organicTraffic  Int      @default(0)
-  searchImpressions Int    @default(0)
-  searchClicks    Int      @default(0)
-  averagePosition Float    @default(0)
-
-  // Date Information
-  date            DateTime // Daily aggregation
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  tenantId          Int
+  entityType        String
+  entityId          Int
+  contentTitle      String?
+  contentSlug       String?
+  viewCount         Int      @default(0)
+  uniqueViews       Int      @default(0)
+  averageTimeOnPage Int      @default(0)
+  bounceRate        Float    @default(0)
+  conversionRate    Float    @default(0)
+  shareCount        Int      @default(0)
+  commentCount      Int      @default(0)
+  organicTraffic    Int      @default(0)
+  searchImpressions Int      @default(0)
+  searchClicks      Int      @default(0)
+  averagePosition   Float    @default(0)
+  date              DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, entityType, entityId, date])
   @@index([tenantId, date])
@@ -1312,132 +1145,94 @@ model ContentAnalytics {
   @@map("content_analytics")
 }
 
-// Real-time visitor tracking
 model ActiveSession {
-  id              String   @id // Session ID
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Visitor Information
-  ipAddress       String?
-  userAgent       String?
-  deviceType      String?
-  country         String?
-  city            String?
-
-  // Current Activity
-  currentPage     String
-  pageTitle       String?
-  lastActivity    DateTime @default(now())
-  startedAt       DateTime @default(now())
-
-  // Session Stats
-  pageViews       Int      @default(1)
-  timeOnSite      Int      @default(0) // seconds
-  referrer        String?
-  isBot           Boolean  @default(false)
-
-  // Expiration (for cleanup)
-  expiresAt       DateTime
+  id           String   @id
+  tenantId     Int
+  ipAddress    String?
+  userAgent    String?
+  deviceType   String?
+  country      String?
+  city         String?
+  currentPage  String
+  pageTitle    String?
+  lastActivity DateTime @default(now())
+  startedAt    DateTime @default(now())
+  pageViews    Int      @default(1)
+  timeOnSite   Int      @default(0)
+  referrer     String?
+  isBot        Boolean  @default(false)
+  expiresAt    DateTime
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, lastActivity])
   @@index([expiresAt])
   @@map("active_sessions")
 }
 
-// Goal conversion tracking
 model ConversionGoal {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Goal Configuration
-  name            String   // "Contact Form Submission", "Service Inquiry"
-  description     String?
-  goalType        String   // page_visit, form_submission, time_on_site, custom_event
-
-  // Trigger Configuration
-  targetUrl       String?  // URL pattern to match
-  targetElement   String?  // CSS selector or element ID
-  eventName       String?  // Custom event name
-  conditions      Json?    // Additional conditions
-
-  // Goal Value
-  hasValue        Boolean  @default(false)
-  defaultValue    Float?   // Default monetary value
-  currency        String?  @default("USD")
-
-  // Settings
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  conversions     Conversion[]
+  id            Int          @id @default(autoincrement())
+  tenantId      Int
+  name          String
+  description   String?
+  goalType      String
+  targetUrl     String?
+  targetElement String?
+  eventName     String?
+  conditions    Json?
+  hasValue      Boolean      @default(false)
+  defaultValue  Float?
+  currency      String?      @default("USD")
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversions   Conversion[]
 
   @@index([tenantId, isActive])
   @@map("conversion_goals")
 }
 
-// Individual conversion instances
 model Conversion {
-  id              Int            @id @default(autoincrement())
-  goalId          Int
-  goal            ConversionGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-
-  // Conversion Details
-  sessionId       String?        // Related session
-  ipAddress       String?
-  userAgent       String?
-  referrer        String?
-
-  // Value Information
-  value           Float?         // Conversion value
-  currency        String?
-
-  // Attribution
-  utmSource       String?
-  utmMedium       String?
-  utmCampaign     String?
-
-  // Additional Data
-  metadata        Json?          // Custom conversion data
-  convertedAt     DateTime       @default(now())
-  createdAt       DateTime       @default(now())
+  id          Int            @id @default(autoincrement())
+  goalId      Int
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  value       Float?
+  currency    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  metadata    Json?
+  convertedAt DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  goal        ConversionGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@index([goalId, convertedAt])
   @@map("conversions")
 }
 
-// ===== SYSTEM SETTINGS & CONFIGURATION MANAGEMENT =====
-
-// System-wide configuration settings with advanced features
 model SystemSettings {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int?     // Null for global settings, specific for tenant settings
-  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Basic Configuration
-  category        String   // general, security, email, fileUpload, cache, database, logging, performance, features
-  name            String   // Human-readable name
-  description     String?  // Description of this configuration
-
-  // Settings Data (JSON fields for flexibility)
-  general         String?  // JSON: GeneralSettingsDto
-  security        String?  // JSON: SecuritySettingsDto
-  email           String?  // JSON: EmailSettingsDto
-  fileUpload      String?  // JSON: FileUploadSettingsDto
-  cache           String?  // JSON: CacheSettingsDto
-  database        String?  // JSON: DatabaseSettingsDto
-  logging         String?  // JSON: LoggingSettingsDto
-  performance     String?  // JSON: PerformanceSettingsDto
-  features        String?  // JSON: FeatureTogglesDto
-  customSettings  String?  // JSON: Custom configuration data
-
-  // Status & Metadata
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  tenantId       Int?
+  category       String
+  name           String
+  description    String?
+  general        String?
+  security       String?
+  email          String?
+  fileUpload     String?
+  cache          String?
+  database       String?
+  logging        String?
+  performance    String?
+  features       String?
+  customSettings String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, category])
   @@index([tenantId, category])
@@ -1445,77 +1240,49 @@ model SystemSettings {
   @@map("system_settings")
 }
 
-// Configuration backup and restore system
 model ConfigurationBackup {
-  id            String   @id @default(cuid()) // Use CUID for backup IDs
-  tenantId      Int?     // Null for global backups, specific for tenant backups
-  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Backup Metadata
-  name          String   // Backup name
-  description   String?  // Backup description
-  settingsData  String   // JSON: Complete settings data
-  settingsCount Int      @default(0) // Number of settings in backup
-  categories    String[] // List of categories included
-
-  // Backup Status
-  isAutomatic   Boolean  @default(false) // Auto-generated backup
-  isCompressed  Boolean  @default(true)  // Data compression status
-  fileSize      Int?     // Backup size in bytes
-  checksum      String?  // Data integrity checksum
-
-  // Timestamps
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime? // Optional backup expiration
+  id            String    @id @default(cuid())
+  tenantId      Int?
+  name          String
+  description   String?
+  settingsData  String
+  settingsCount Int       @default(0)
+  categories    String[]
+  isAutomatic   Boolean   @default(false)
+  isCompressed  Boolean   @default(true)
+  fileSize      Int?
+  checksum      String?
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, createdAt])
   @@index([createdAt, expiresAt])
   @@map("configuration_backups")
 }
 
-// Add relation to Tenant model
-// Note: This would be added to the Tenant model, but since it's already defined above,
-// we document it here:
-// systemSettings        SystemSettings[]
-// configurationBackups  ConfigurationBackup[]
-
-// ===== MONITORING & LOGGING SYSTEM =====
-
-// Advanced logging system for enterprise monitoring
 model LogEntry {
-  id          String   @id @default(cuid())
-  tenantId    Int?
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Log Information
-  level       String   // error, warn, info, debug, verbose
-  message     String
-  context     String?  // Module or service name
-  metadata    String?  // JSON: Additional log data
-
-  // Request/Session Context
-  sessionId   String?
-  requestId   String?
-  ipAddress   String?
-  userAgent   String?
-  userId      Int?
-
-  // Performance Metrics
-  duration    Int?     // Request duration in milliseconds
-  statusCode  Int?     // HTTP status code
-  method      String?  // HTTP method
-  url         String?  // Request URL
-
-  // Error Details
-  stack       String?  // Stack trace for errors
-  error       String?  // JSON: Error object
-
-  // Categorization
-  tags        String[] // Tags for categorization and filtering
-
-  // Timestamps
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  tenantId   Int?
+  level      String
+  message    String
+  context    String?
+  metadata   String?
+  sessionId  String?
+  requestId  String?
+  ipAddress  String?
+  userAgent  String?
+  userId     Int?
+  duration   Int?
+  statusCode Int?
+  method     String?
+  url        String?
+  stack      String?
+  error      String?
+  tags       String[]
+  timestamp  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, level, timestamp])
   @@index([tenantId, context])
@@ -1525,81 +1292,55 @@ model LogEntry {
   @@map("log_entries")
 }
 
-// Alert rules for proactive monitoring
 model AlertRule {
-  id           String   @id @default(cuid())
-  tenantId     Int?
-  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Rule Configuration
-  name         String
-  description  String?
-  metric       String   // Metric name to monitor
-  condition    String   // gt, lt, eq, ne, gte, lte
-  threshold    Float    // Threshold value
-  severity     String   // critical, high, medium, low, info
-  enabled      Boolean  @default(true)
-
-  // Time Configuration
-  duration     Int?     // How long condition must persist (seconds)
-  cooldown     Int?     // Minimum time between alerts (seconds)
-
-  // Notification Configuration
-  notificationChannels String[] // email, webhook, sms, slack, etc.
-  recipients           String[] // List of recipients
-
-  // Additional Configuration
-  labels       String?  // JSON: Labels for categorization
-  annotations  String?  // JSON: Additional annotations
-  runbook      String?  // URL to troubleshooting guide
-
-  // Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  alerts       Alert[]
+  id                   String   @id @default(cuid())
+  tenantId             Int?
+  name                 String
+  description          String?
+  metric               String
+  condition            String
+  threshold            Float
+  severity             String
+  enabled              Boolean  @default(true)
+  duration             Int?
+  cooldown             Int?
+  notificationChannels String[]
+  recipients           String[]
+  labels               String?
+  annotations          String?
+  runbook              String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  tenant               Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alerts               Alert[]
 
   @@index([tenantId, enabled])
   @@index([metric, enabled])
   @@map("alert_rules")
 }
 
-// Active and historical alerts
 model Alert {
-  id              String    @id @default(cuid())
-  ruleId          String
-  rule            AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-
-  // Alert Status
-  status          String    // active, acknowledged, resolved, silenced
-  severity        String    // critical, high, medium, low, info
-
-  // Alert Content
-  message         String
-  description     String?
-
-  // Trigger Information
-  triggeredAt     DateTime  @default(now())
-  resolvedAt      DateTime?
-  acknowledgedAt  DateTime?
-  acknowledgedBy  String?   // User who acknowledged
-
-  // Context
-  tenantId        Int?
-  metric          String    // Metric that triggered the alert
-  actualValue     Float     // Actual metric value
-  threshold       Float     // Threshold that was crossed
-  labels          String?   // JSON: Labels for categorization
-  annotations     String?   // JSON: Additional context
-
-  // Notification Tracking
-  lastNotifiedAt  DateTime?
-  notificationCount Int     @default(0)
-
-  // Metadata
-  fingerprint     String?   // Unique identifier for grouping
-  generatorURL    String?   // URL to the monitoring dashboard
+  id                String    @id @default(cuid())
+  ruleId            String
+  status            String
+  severity          String
+  message           String
+  description       String?
+  triggeredAt       DateTime  @default(now())
+  resolvedAt        DateTime?
+  acknowledgedAt    DateTime?
+  acknowledgedBy    String?
+  tenantId          Int?
+  metric            String
+  actualValue       Float
+  threshold         Float
+  labels            String?
+  annotations       String?
+  lastNotifiedAt    DateTime?
+  notificationCount Int       @default(0)
+  fingerprint       String?
+  generatorURL      String?
+  rule              AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@index([ruleId, status])
   @@index([status, severity])
@@ -1608,130 +1349,97 @@ model Alert {
   @@map("alerts")
 }
 
-// Notification templates for alerts and reports
 model NotificationTemplate {
-  id          String   @id @default(cuid())
-  tenantId    Int?
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Template Configuration
-  name        String
-  channel     String   // email, webhook, sms, slack, teams, telegram
-  subject     String   // Message subject/title
-  body        String   // Message body template
-  variables   String[] // Available template variables
-  isDefault   Boolean  @default(false)
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  tenantId  Int?
+  name      String
+  channel   String
+  subject   String
+  body      String
+  variables String[]
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name, channel])
   @@index([channel, isDefault])
   @@map("notification_templates")
 }
 
-// Maintenance windows for suppressing alerts
 model MaintenanceWindow {
   id                   String   @id @default(cuid())
   tenantId             Int?
-  tenant               Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Window Configuration
   name                 String
   description          String?
   startTime            DateTime
   endTime              DateTime
-  services             String[] // Affected services
+  services             String[]
   silenceAlerts        Boolean  @default(true)
   disableNotifications Boolean  @default(true)
-
-  // Creator Information
   createdBy            Int?
   createdAt            DateTime @default(now())
+  tenant               Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, startTime, endTime])
   @@index([startTime, endTime])
   @@map("maintenance_windows")
 }
 
-// Health check configurations
 model HealthCheck {
-  id             String   @id @default(cuid())
+  id             String              @id @default(cuid())
   tenantId       Int?
-  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Check Configuration
   name           String
-  type           String   @default("http") // http, tcp, database, custom
-  url            String?  // URL for HTTP checks
-  expectedStatus Int?     // Expected HTTP status
-  timeout        Int      @default(5000) // Timeout in milliseconds
-  interval       Int      @default(60)   // Check interval in seconds
-  retries        Int      @default(3)    // Number of retries on failure
-  enabled        Boolean  @default(true)
-
-  // Custom Configuration
-  headers        String?  // JSON: Custom headers for HTTP checks
-  customScript   String?  // Custom check script
-
-  // Timestamps
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
+  type           String              @default("http")
+  url            String?
+  expectedStatus Int?
+  timeout        Int                 @default(5000)
+  interval       Int                 @default(60)
+  retries        Int                 @default(3)
+  enabled        Boolean             @default(true)
+  headers        String?
+  customScript   String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   results        HealthCheckResult[]
+  tenant         Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, enabled])
   @@index([type, enabled])
   @@map("health_checks")
 }
 
-// Health check execution results
 model HealthCheckResult {
-  id             String      @id @default(cuid())
-  healthCheckId  String
-  healthCheck    HealthCheck @relation(fields: [healthCheckId], references: [id], onDelete: Cascade)
-
-  // Result Information
-  status         String      // healthy, degraded, unhealthy, unknown
-  message        String?
-  duration       Int?        // Check duration in milliseconds
-  responseCode   Int?        // HTTP response code
-  error          String?     // Error message if failed
-
-  // Additional Data
-  metadata       String?     // JSON: Additional check data
-
-  // Timestamps
-  checkedAt      DateTime    @default(now())
+  id            String      @id @default(cuid())
+  healthCheckId String
+  status        String
+  message       String?
+  duration      Int?
+  responseCode  Int?
+  error         String?
+  metadata      String?
+  checkedAt     DateTime    @default(now())
+  healthCheck   HealthCheck @relation(fields: [healthCheckId], references: [id], onDelete: Cascade)
 
   @@index([healthCheckId, checkedAt])
   @@index([status, checkedAt])
   @@map("health_check_results")
 }
 
-// Monitoring events for audit trail
 model MonitoringEvent {
-  id         String   @id @default(cuid())
-  tenantId   Int?
-  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Event Information
-  type       String   // log, metric, alert, health, system, user_action
-  source     String   // Source component/service
-  action     String   // Action performed
-  data       String?  // JSON: Event data
-  processed  Boolean  @default(false)
-
-  // User Context (if applicable)
-  userId     Int?
-  sessionId  String?
-  ipAddress  String?
-
-  // Timestamps
-  timestamp  DateTime @default(now())
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  tenantId  Int?
+  type      String
+  source    String
+  action    String
+  data      String?
+  processed Boolean  @default(false)
+  userId    Int?
+  sessionId String?
+  ipAddress String?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, type, timestamp])
   @@index([type, processed])
@@ -1739,95 +1447,60 @@ model MonitoringEvent {
   @@map("monitoring_events")
 }
 
-// Tenant domain management for Netlify + Railway architecture
 model TenantDomain {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                Int       @id @default(autoincrement())
+  tenantId          Int
+  domain            String    @unique
+  isPrimary         Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  type              String    @default("custom")
+  sslStatus         String?   @default("pending")
+  sslIssuedAt       DateTime?
+  sslExpiresAt      DateTime?
+  isVerified        Boolean   @default(false)
+  verificationToken String?
+  verifiedAt        DateTime?
+  lastCheckedAt     DateTime?
+  responseTime      Int?
+  status            String    @default("active")
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // Domain Information
-  domain      String   // e.g., "www.reisinsaat.com", "reisinsaat.softellio.com"
-  isPrimary   Boolean  @default(false) // Primary domain for this tenant
-  isActive    Boolean  @default(true)  // Domain is active and resolving
-
-  // Domain Type
-  type        String   @default("custom") // "custom", "subdomain", "primary"
-
-  // SSL & Security
-  sslStatus   String?  @default("pending") // "pending", "active", "failed"
-  sslIssuedAt DateTime?
-  sslExpiresAt DateTime?
-
-  // Verification
-  isVerified  Boolean  @default(false)
-  verificationToken String? // DNS verification token
-  verifiedAt  DateTime?
-
-  // Analytics & Monitoring
-  lastCheckedAt DateTime?
-  responseTime  Int?     // Last response time in ms
-  status        String   @default("active") // "active", "inactive", "failed"
-
-  // Additional metadata
-  metadata    Json?    // Additional domain configuration
-
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([domain]) // Each domain can only belong to one tenant
   @@index([tenantId, isPrimary])
   @@index([domain, isActive])
   @@index([type, isActive])
   @@map("tenant_domains")
 }
 
-// ===== BACKUP & AUTOMATIC UPDATE SYSTEM =====
-
-// Database backup tracking and management
 model DatabaseBackup {
-  id            String   @id @default(cuid())
-  tenantId      Int?     // Null for global database backups
-  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Backup Information
-  name          String   // Human-readable backup name
-  description   String?  // Backup description
-  backupType    String   // "full", "incremental", "differential", "schema_only", "data_only"
-  compressionType String @default("gzip") // "gzip", "lz4", "zstd", "none"
-
-  // File Information
-  filePath      String   // Path to backup file
-  fileName      String   // Backup file name
-  fileSize      Int?     // File size in bytes
-  checksum      String?  // File integrity checksum (MD5/SHA256)
-
-  // Status & Metadata
-  status        String   @default("pending") // "pending", "running", "completed", "failed", "corrupted"
-  progress      Int      @default(0) // Backup progress (0-100)
-  errorMessage  String?  // Error message if backup failed
-
-  // Performance Metrics
-  duration      Int?     // Backup duration in seconds
-  recordsCount  Int?     // Number of records backed up
-  tablesCount   Int?     // Number of tables backed up
-
-  // Timing Information
-  startedAt     DateTime?
-  completedAt   DateTime?
-
-  // Retention & Cleanup
-  expiresAt     DateTime? // When backup expires and can be deleted
-  isAutomatic   Boolean  @default(false) // Auto-generated backup
-  retentionDays Int?     @default(30) // Days to keep backup
-
-  // Additional metadata
-  metadata      Json?    // Additional backup metadata
-  tags          String[] // Tags for categorization
-
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String    @id @default(cuid())
+  tenantId        Int?
+  name            String
+  description     String?
+  backupType      String
+  compressionType String    @default("gzip")
+  filePath        String
+  fileName        String
+  fileSize        Int?
+  checksum        String?
+  status          String    @default("pending")
+  progress        Int       @default(0)
+  errorMessage    String?
+  duration        Int?
+  recordsCount    Int?
+  tablesCount     Int?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?
+  isAutomatic     Boolean   @default(false)
+  retentionDays   Int?      @default(30)
+  metadata        Json?
+  tags            String[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tenant          Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
   @@index([status, createdAt])
@@ -1836,66 +1509,43 @@ model DatabaseBackup {
   @@map("database_backups")
 }
 
-// Full system backup tracking (files, configurations, etc.)
 model SystemBackup {
-  id              String   @id @default(cuid())
-  tenantId        Int?     // Null for global system backups
-  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Backup Information
-  name            String   // Human-readable backup name
-  description     String?  // Backup description
-  backupType      String   // "full", "incremental", "files_only", "config_only", "media_only"
-
-  // Backup Components (what's included)
-  includeDatabase Boolean  @default(true)
-  includeFiles    Boolean  @default(true)
-  includeConfig   Boolean  @default(true)
-  includeMedia    Boolean  @default(true)
-  includeLogs     Boolean  @default(false)
-
-  // File Information
-  archivePath     String?  // Path to backup archive
-  archiveSize     Int?     // Archive size in bytes
-  compressionRatio Float?  // Compression ratio achieved
-  checksum        String?  // Archive integrity checksum
-
-  // Status & Progress
-  status          String   @default("pending") // "pending", "running", "completed", "failed", "corrupted"
-  progress        Int      @default(0) // Overall backup progress (0-100)
-  currentPhase    String?  // Current backup phase: "database", "files", "config", "archive", "cleanup"
-  errorMessage    String?  // Error message if backup failed
-
-  // Performance Metrics
-  duration        Int?     // Total backup duration in seconds
-  filesCount      Int?     // Number of files backed up
-  foldersCount    Int?     // Number of folders backed up
-  originalSize    Int?     // Total original size before compression
-
-  // Timing Information
-  startedAt       DateTime?
-  completedAt     DateTime?
-
-  // Retention & Cleanup
-  expiresAt       DateTime? // When backup expires
-  isAutomatic     Boolean   @default(false) // Auto-generated backup
-  retentionDays   Int?      @default(7) // Days to keep backup
-
-  // Restore Information
-  canRestore      Boolean   @default(true)
-  restoreNotes    String?   // Notes for restoration process
-
-  // Additional metadata
-  metadata        Json?     // Additional backup metadata
-  tags            String[]  // Tags for categorization
-  version         String?   // System version at backup time
-
-  // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
+  id                String             @id @default(cuid())
+  tenantId          Int?
+  name              String
+  description       String?
+  backupType        String
+  includeDatabase   Boolean            @default(true)
+  includeFiles      Boolean            @default(true)
+  includeConfig     Boolean            @default(true)
+  includeMedia      Boolean            @default(true)
+  includeLogs       Boolean            @default(false)
+  archivePath       String?
+  archiveSize       Int?
+  compressionRatio  Float?
+  checksum          String?
+  status            String             @default("pending")
+  progress          Int                @default(0)
+  currentPhase      String?
+  errorMessage      String?
+  duration          Int?
+  filesCount        Int?
+  foldersCount      Int?
+  originalSize      Int?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  expiresAt         DateTime?
+  isAutomatic       Boolean            @default(false)
+  retentionDays     Int?               @default(7)
+  canRestore        Boolean            @default(true)
+  restoreNotes      String?
+  metadata          Json?
+  tags              String[]
+  version           String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   restoreOperations RestoreOperation[]
+  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
   @@index([status, createdAt])
@@ -1904,50 +1554,33 @@ model SystemBackup {
   @@map("system_backups")
 }
 
-// Backup scheduling configuration
 model BackupSchedule {
-  id              String   @id @default(cuid())
-  tenantId        Int?     // Null for global backup schedules
-  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Schedule Configuration
-  name            String   // Schedule name
-  description     String?  // Schedule description
-  scheduleType    String   // "database", "system", "files", "config"
-  backupType      String   // "full", "incremental", "differential"
-
-  // Timing Configuration
-  cronExpression  String   // Cron expression for scheduling
-  timezone        String   @default("UTC")
-  isEnabled       Boolean  @default(true)
-
-  // Backup Configuration
-  retentionDays   Int      @default(30)
-  compressionType String   @default("gzip")
-  maxBackups      Int      @default(10) // Maximum number of backups to keep
-
-  // Notification Configuration
-  notifyOnSuccess Boolean  @default(false)
-  notifyOnFailure Boolean  @default(true)
-  recipients      String[] // Email addresses for notifications
-
-  // Execution Tracking
-  lastRunAt       DateTime?
-  nextRunAt       DateTime?
-  lastStatus      String?  // "success", "failed", "skipped"
-  consecutiveFailures Int @default(0)
-
-  // Performance Limits
-  maxDuration     Int?     // Maximum allowed duration in seconds
-  maxSize         Int?     // Maximum allowed backup size in bytes
-
-  // Additional Configuration
-  metadata        Json?    // Additional schedule metadata
-  tags            String[] // Tags for categorization
-
-  // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  tenantId            Int?
+  name                String
+  description         String?
+  scheduleType        String
+  backupType          String
+  cronExpression      String
+  timezone            String    @default("UTC")
+  isEnabled           Boolean   @default(true)
+  retentionDays       Int       @default(30)
+  compressionType     String    @default("gzip")
+  maxBackups          Int       @default(10)
+  notifyOnSuccess     Boolean   @default(false)
+  notifyOnFailure     Boolean   @default(true)
+  recipients          String[]
+  lastRunAt           DateTime?
+  nextRunAt           DateTime?
+  lastStatus          String?
+  consecutiveFailures Int       @default(0)
+  maxDuration         Int?
+  maxSize             Int?
+  metadata            Json?
+  tags                String[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  tenant              Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, isEnabled])
   @@index([isEnabled, nextRunAt])
@@ -1955,57 +1588,36 @@ model BackupSchedule {
   @@map("backup_schedules")
 }
 
-// Backup restore operations tracking
 model RestoreOperation {
-  id              String       @id @default(cuid())
+  id              String        @id @default(cuid())
   tenantId        Int?
-  tenant          Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Source Backup Information
-  backupId        String?      // Reference to system backup
-  systemBackup    SystemBackup? @relation(fields: [backupId], references: [id], onDelete: SetNull)
-  backupType      String       // "database", "system", "files", "config"
-
-  // Restore Configuration
-  restoreType     String       // "full", "partial", "selective"
-  targetLocation  String?      // Target restore location (if different)
-
-  // Restore Components (what to restore)
-  restoreDatabase Boolean      @default(true)
-  restoreFiles    Boolean      @default(true)
-  restoreConfig   Boolean      @default(true)
-  restoreMedia    Boolean      @default(true)
-
-  // Status & Progress
-  status          String       @default("pending") // "pending", "running", "completed", "failed", "cancelled"
-  progress        Int          @default(0) // Restore progress (0-100)
-  currentPhase    String?      // Current restore phase
-  errorMessage    String?      // Error message if restore failed
-
-  // Performance Metrics
-  duration        Int?         // Restore duration in seconds
-  restoredFiles   Int?         // Number of files restored
-  restoredSize    Int?         // Total size of restored data
-
-  // Timing Information
+  backupId        String?
+  backupType      String
+  restoreType     String
+  targetLocation  String?
+  restoreDatabase Boolean       @default(true)
+  restoreFiles    Boolean       @default(true)
+  restoreConfig   Boolean       @default(true)
+  restoreMedia    Boolean       @default(true)
+  status          String        @default("pending")
+  progress        Int           @default(0)
+  currentPhase    String?
+  errorMessage    String?
+  duration        Int?
+  restoredFiles   Int?
+  restoredSize    Int?
   startedAt       DateTime?
   completedAt     DateTime?
-
-  // User Information
-  initiatedBy     Int?         // User who initiated the restore
-  reason          String?      // Reason for restore operation
-  approvedBy      Int?         // User who approved the restore (if required)
-
-  // Rollback Information
-  canRollback     Boolean      @default(false)
-  rollbackData    String?      // JSON: Data for rollback operation
-
-  // Additional metadata
-  metadata        Json?        // Additional restore metadata
-
-  // Timestamps
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  initiatedBy     Int?
+  reason          String?
+  approvedBy      Int?
+  canRollback     Boolean       @default(false)
+  rollbackData    String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  systemBackup    SystemBackup? @relation(fields: [backupId], references: [id])
+  tenant          Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
   @@index([status, createdAt])
@@ -2013,74 +1625,63 @@ model RestoreOperation {
   @@map("restore_operations")
 }
 
-// System update tracking and management
 model SystemUpdate {
-  id                String   @id @default(cuid())
-  tenantId          Int?     // Null for global system updates
-  tenant            Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Update Information
-  name              String   // Update name/title
-  description       String?  // Update description
-  updateType        String   // "patch", "minor", "major", "security", "hotfix"
-  version           String   // Target version
-  currentVersion    String?  // Current version before update
-
-  // Update Package Information
-  packageUrl        String?  // URL to download update package
-  packageSize       Int?     // Package size in bytes
-  packageChecksum   String?  // Package integrity checksum
-  releaseNotes      String?  // Release notes or changelog
-
-  // Dependencies & Requirements
-  requirements      Json?    // System requirements for update
-  dependencies      Json?    // Dependencies that need to be updated
-  conflicts         Json?    // Known conflicts or issues
-
-  // Status & Progress
-  status            String   @default("pending") // "pending", "downloading", "applying", "completed", "failed", "rolled_back"
-  progress          Int      @default(0) // Update progress (0-100)
-  currentPhase      String?  // Current update phase
-  errorMessage      String?  // Error message if update failed
-
-  // Backup Information (before update)
-  preUpdateBackupId String?  // Backup created before update
-  autoBackup        Boolean  @default(true) // Automatically create backup before update
-
-  // Timing Information
-  scheduledAt       DateTime? // When update is scheduled
+  id                String    @id @default(cuid())
+  tenantId          Int?
+  name              String
+  description       String?
+  updateType        String
+  version           String
+  currentVersion    String?
+  packageUrl        String?
+  packageSize       Int?
+  packageChecksum   String?
+  releaseNotes      String?
+  requirements      Json?
+  dependencies      Json?
+  conflicts         Json?
+  status            String    @default("pending")
+  progress          Int       @default(0)
+  currentPhase      String?
+  errorMessage      String?
+  preUpdateBackupId String?
+  autoBackup        Boolean   @default(true)
+  scheduledAt       DateTime?
   startedAt         DateTime?
   completedAt       DateTime?
-
-  // Rollback Information
-  canRollback       Boolean  @default(true)
-  rollbackData      String?  // JSON: Data for rollback operation
+  canRollback       Boolean   @default(true)
+  rollbackData      String?
   rolledBackAt      DateTime?
-
-  // User Information
-  initiatedBy       Int?     // User who initiated the update
-  approvedBy        Int?     // User who approved the update (if required)
-
-  // Testing & Validation
-  testsPassed       Boolean? // Whether tests passed after update
-  validationResults Json?    // Validation results after update
-
-  // Notification Configuration
-  notifyOnComplete  Boolean  @default(true)
-  notifyOnFailure   Boolean  @default(true)
-  recipients        String[] // Email addresses for notifications
-
-  // Additional metadata
-  metadata          Json?    // Additional update metadata
-  tags              String[] // Tags for categorization
-
-  // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  initiatedBy       Int?
+  approvedBy        Int?
+  testsPassed       Boolean?
+  validationResults Json?
+  notifyOnComplete  Boolean   @default(true)
+  notifyOnFailure   Boolean   @default(true)
+  recipients        String[]
+  metadata          Json?
+  tags              String[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  tenant            Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
   @@index([status, scheduledAt])
   @@index([updateType, status])
   @@index([version])
   @@map("system_updates")
+}
+
+enum Role {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  EDITOR
+}
+
+enum ModuleName {
+  PAGES
+  BLOG
+  MENU
+  MEDIA
+  SETTINGS
 }
