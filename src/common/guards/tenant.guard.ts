@@ -13,9 +13,14 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    // Super admins can access any tenant's data
+    // Super admins can access any tenant's data or operate without tenant context
     if (user.role === Role.SUPER_ADMIN) {
       return true;
+    }
+
+    // For reserved domains (api.softellio.com), only SUPER_ADMIN allowed
+    if (requestTenantId === null) {
+      throw new ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
     }
 
     // For tenant-scoped users, ensure they can only access their tenant's data

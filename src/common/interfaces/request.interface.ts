@@ -8,8 +8,8 @@ export interface DomainResolutionInfo {
 }
 
 export interface RequestWithTenant extends Request {
-  tenantId?: number;
-  tenant?: Tenant;
+  tenantId?: number | null; // null for SUPER_ADMIN context on reserved domains
+  tenant?: Tenant | null;
   user?: User;
   domainResolution?: DomainResolutionInfo;
 }

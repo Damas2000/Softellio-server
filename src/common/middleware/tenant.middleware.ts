@@ -86,8 +86,8 @@ export class TenantMiddleware implements NestMiddleware {
         this.logger.debug(`Tenant resolved by ID header: ${tenant.slug} (${tenantId})`);
       } else {
         // Method 2: Netlify + Railway domain resolution
-        // Use X-Tenant-Domain header (from frontend) or fallback to Host header
-        const domainHeader = (req.headers['x-tenant-domain'] || req.headers['host']) as string;
+        // Use X-Tenant-Host, X-Tenant-Domain header (from frontend) or fallback to Host header
+        const domainHeader = (req.headers['x-tenant-host'] || req.headers['x-tenant-domain'] || req.headers['host']) as string;
 
         if (!domainHeader) {
           throw new BadRequestException('No domain information found in request headers');
@@ -98,56 +98,14 @@ export class TenantMiddleware implements NestMiddleware {
         this.logger.debug(`Checking domain for reserved domains: "${normalizedDomain}" - comparing with "portal.softellio.com", "platform.softellio.com", "api.softellio.com" or "localhost"`);
 
         if (normalizedDomain === 'portal.softellio.com' || normalizedDomain === 'platform.softellio.com' || normalizedDomain === 'api.softellio.com' || normalizedDomain === 'localhost') {
-          this.logger.debug('Portal domain detected - special handling for shared admin panel');
+          this.logger.debug('Reserved domain detected - handling SUPER_ADMIN access');
 
-          // For portal domain auth routes, skip tenant resolution completely
-          if (req.path.startsWith('/auth')) {
-            this.logger.debug('Auth route on portal domain - proceeding without tenant resolution');
-            // Don't set tenantId or tenant for auth routes
-            return next();
-          }
+          // For reserved domains, set tenantId to null (indicates SUPER_ADMIN context)
+          req.tenantId = null;
+          req.tenant = null;
 
-          // For other routes on portal domain, extract tenant from JWT
-          const authHeader = req.headers.authorization;
-          if (authHeader && authHeader.startsWith('Bearer ')) {
-            try {
-              // Basic JWT parsing without verification (just to get tenantId)
-              const token = authHeader.substring(7);
-              const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-
-              if (payload.tenantId) {
-                // Validate tenant exists and is active
-                tenant = await this.prisma.tenant.findFirst({
-                  where: {
-                    id: payload.tenantId,
-                    isActive: true,
-                    status: { not: 'SUSPENDED' }
-                  },
-                });
-
-                if (!tenant) {
-                  throw new BadRequestException(`Tenant with ID ${payload.tenantId} not found or inactive`);
-                }
-
-                tenantId = tenant.id;
-                this.logger.debug(`Portal tenant resolved from JWT: ${tenant.slug} (${tenantId})`);
-
-                // Attach portal resolution info to request
-                req.domainResolution = {
-                  originalDomain: domainHeader,
-                  resolvedBy: 'portal_jwt',
-                  tenantDomain: null,
-                };
-              } else {
-                throw new BadRequestException('Portal access requires authentication with valid tenant information');
-              }
-            } catch (error) {
-              this.logger.error(`Portal JWT parsing error: ${error.message}`);
-              throw new BadRequestException('Invalid authentication token for portal access');
-            }
-          } else {
-            throw new BadRequestException('Portal access requires authentication');
-          }
+          this.logger.debug('Reserved domain access - tenantId set to null for SUPER_ADMIN context');
+          return next();
         } else {
           // Use domain resolver service for sophisticated tenant resolution
           const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
