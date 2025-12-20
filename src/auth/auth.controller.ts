@@ -17,12 +17,19 @@ import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
+import { TenantsService } from '../tenants/tenants.service';
+import { Logger, BadRequestException } from '@nestjs/common';
 
 @ApiTags('Authentication')
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(
+    private authService: AuthService,
+    private tenantsService: TenantsService,
+  ) {}
 
   @Post('login')
   @Public()
@@ -36,9 +43,39 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() loginDto: LoginDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
-    const result = await this.authService.login(loginDto);
+    // Enhanced host extraction with priority order and reserved domain checking
+    const host = this.extractHost(request);
+    let tenant = null;
+
+    if (host) {
+      // Check for reserved domains that should never be used for tenant resolution
+      if (this.isReservedDomain(host)) {
+        this.logger.debug(`Reserved domain detected: ${host}`);
+        // For reserved domains, only allow SUPER_ADMIN login
+        if (!this.isSuperAdminEmail(loginDto.email)) {
+          throw new BadRequestException(`Domain ${host} is reserved for SUPER_ADMIN access only`);
+        }
+      } else {
+        // Use TenantsService for tenant resolution
+        tenant = await this.tenantsService.findByDomain(host);
+        if (tenant) {
+          this.logger.debug(`Tenant resolved for login: ${tenant.slug} (${tenant.id})`);
+        } else {
+          this.logger.error(`Tenant resolution failed for host ${host}: No tenant found`);
+          throw new BadRequestException(`Unable to resolve tenant for domain: ${host}`);
+        }
+      }
+    }
+
+    // For SUPER_ADMIN role, tenant is optional. For others, tenant is required.
+    if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email)) {
+      throw new BadRequestException('Tenant information is required for this login');
+    }
+
+    const result = await this.authService.login(loginDto, tenant);
 
     // Generate refresh token and set as HTTP-only cookie
     const tokens = await this.authService.generateTokens({
@@ -106,5 +143,49 @@ export class AuthController {
       tenantId: user.tenantId,
       isActive: user.isActive,
     };
+  }
+
+  /**
+   * Extract host from request headers with priority order
+   */
+  private extractHost(request: Request): string | null {
+    // Priority: X-Tenant-Host, X-Forwarded-Host, Host
+    const rawHost = (
+      request.headers['x-tenant-host'] ||
+      request.headers['x-forwarded-host'] ||
+      request.headers.host
+    ) as string;
+
+    if (!rawHost) return null;
+
+    // Strip port number and normalize: demo.softellio.com:443 -> demo.softellio.com
+    return rawHost.toLowerCase().split(':')[0];
+  }
+
+  /**
+   * Check if domain is reserved and should never be used for tenant resolution
+   */
+  private isReservedDomain(domain: string): boolean {
+    const reservedDomains = [
+      'platform.softellio.com',
+      'portal.softellio.com',
+      'localhost',
+      'api.softellio.com',
+      'admin.softellio.com',
+      'connect.softellio.com',
+      'app.softellio.com',
+      'dashboard.softellio.com',
+      'mail.softellio.com'
+    ];
+
+    return reservedDomains.includes(domain);
+  }
+
+  /**
+   * Check if email is for SUPER_ADMIN (can login without tenant)
+   */
+  private isSuperAdminEmail(email: string): boolean {
+    // Check if email is for SUPER_ADMIN (can login without tenant)
+    return email && email.endsWith('@softellio.com');
   }
 }

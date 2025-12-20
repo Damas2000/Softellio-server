@@ -93,11 +93,11 @@ export class TenantMiddleware implements NestMiddleware {
           throw new BadRequestException('No domain information found in request headers');
         }
 
-        // Special handling for portal.softellio.com and localhost (shared admin panel)
+        // Special handling for reserved domains: portal.softellio.com, platform.softellio.com and localhost
         const normalizedDomain = domainHeader.toLowerCase().split(':')[0];
-        this.logger.debug(`Checking domain for portal: "${normalizedDomain}" - comparing with "portal.softellio.com" or "localhost"`);
+        this.logger.debug(`Checking domain for reserved domains: "${normalizedDomain}" - comparing with "portal.softellio.com", "platform.softellio.com" or "localhost"`);
 
-        if (normalizedDomain === 'portal.softellio.com' || normalizedDomain === 'localhost') {
+        if (normalizedDomain === 'portal.softellio.com' || normalizedDomain === 'platform.softellio.com' || normalizedDomain === 'localhost') {
           this.logger.debug('Portal domain detected - special handling for shared admin panel');
 
           // For portal domain auth routes, skip tenant resolution completely

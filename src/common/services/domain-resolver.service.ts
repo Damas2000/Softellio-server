@@ -29,37 +29,112 @@ export class DomainResolverService {
     const normalizedHost = this.normalizeHost(hostHeader);
     this.logger.debug(`Resolving tenant for domain: ${normalizedHost}`);
 
-    let result: TenantResolutionResult | null = null;
-
-    // Step 1: Try custom domain lookup
-    result = await this.resolveByCustomDomain(normalizedHost);
-    if (result) {
-      this.logger.debug(`Tenant resolved by custom domain: ${result.tenant.slug}`);
-      return result;
+    // Check for reserved domains that should never be treated as tenant domains
+    if (this.isReservedDomain(normalizedHost)) {
+      throw new NotFoundException(`Reserved domain cannot be used for tenant resolution: ${normalizedHost}`);
     }
 
-    // Step 2: Try Softellio subdomain lookup
-    result = await this.resolveBySubdomain(normalizedHost);
-    if (result) {
-      this.logger.debug(`Tenant resolved by subdomain: ${result.tenant.slug}`);
-      return result;
+    // Use same 3-step logic as TenantsService.findByDomain()
+    const tenant = await this.findTenantByDomain(normalizedHost);
+
+    if (!tenant) {
+      throw new NotFoundException(`No tenant found for domain: ${normalizedHost}`);
     }
 
-    // Step 3: Try default tenant (Softellio main site)
-    result = await this.resolveDefaultTenant(normalizedHost);
-    if (result) {
-      this.logger.debug(`Tenant resolved as default: ${result.tenant.slug}`);
-      return result;
+    this.logger.debug(`Tenant resolved: ${tenant.slug} (${tenant.id})`);
+
+    // Find associated tenant domain if exists
+    let tenantDomain: TenantDomain | null = null;
+    try {
+      tenantDomain = await this.prisma.tenantDomain.findFirst({
+        where: {
+          tenantId: tenant.id,
+          domain: normalizedHost,
+          isActive: true
+        }
+      });
+    } catch (error) {
+      this.logger.warn(`Could not find TenantDomain entry for ${normalizedHost}: ${error.message}`);
     }
 
-    // Step 4: Fallback tenant (configurable)
-    result = await this.resolveFallbackTenant();
-    if (result) {
-      this.logger.warn(`Using fallback tenant for domain: ${normalizedHost}`);
-      return result;
+    return {
+      tenant: tenant,
+      domain: tenantDomain,
+      resolvedBy: tenantDomain ? 'custom_domain' : 'subdomain'
+    };
+  }
+
+  /**
+   * Find tenant by domain using same 3-step logic as TenantsService.findByDomain()
+   */
+  private async findTenantByDomain(host: string): Promise<Tenant | null> {
+    // Remove protocol and port if present (already done by normalizeHost, but being explicit)
+    const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
+
+    // Step 1: Try to find by main domain field
+    let tenant = await this.prisma.tenant.findFirst({
+      where: {
+        domain: cleanHost,
+        isActive: true,
+        status: 'active'
+      }
+    });
+
+    // Step 2: If not found, search in TenantDomain table
+    if (!tenant) {
+      const tenantDomain = await this.prisma.tenantDomain.findFirst({
+        where: {
+          domain: cleanHost,
+          isActive: true,
+          tenant: {
+            isActive: true,
+            status: 'active'
+          }
+        },
+        include: {
+          tenant: true
+        }
+      });
+
+      if (tenantDomain) {
+        tenant = tenantDomain.tenant;
+      }
     }
 
-    throw new NotFoundException(`No tenant found for domain: ${normalizedHost}`);
+    // Step 3: If still not found, try to extract slug from subdomain
+    if (!tenant && cleanHost.includes('.softellio.com')) {
+      const subdomain = cleanHost.replace('.softellio.com', '');
+      const slug = subdomain.replace(/panel$/, ''); // Remove 'panel' suffix for admin domains
+
+      tenant = await this.prisma.tenant.findFirst({
+        where: {
+          slug: slug,
+          isActive: true,
+          status: 'active'
+        }
+      });
+    }
+
+    return tenant;
+  }
+
+  /**
+   * Check if domain is reserved and should never be used for tenant resolution
+   */
+  private isReservedDomain(domain: string): boolean {
+    const reservedDomains = [
+      'platform.softellio.com',
+      'portal.softellio.com',
+      'localhost',
+      'api.softellio.com',
+      'admin.softellio.com',
+      'connect.softellio.com',
+      'app.softellio.com',
+      'dashboard.softellio.com',
+      'mail.softellio.com'
+    ];
+
+    return reservedDomains.includes(domain);
   }
 
   /**
@@ -84,260 +159,6 @@ export class DomainResolverService {
     return normalized;
   }
 
-  /**
-   * Step 1: Custom domain resolution
-   * Looks for exact match in TenantDomain table
-   */
-  private async resolveByCustomDomain(domain: string): Promise<TenantResolutionResult | null> {
-    try {
-      // Try exact match first
-      let tenantDomain = await this.prisma.tenantDomain.findFirst({
-        where: {
-          domain: domain,
-          isActive: true,
-          tenant: {
-            isActive: true,
-            status: { not: 'SUSPENDED' }
-          }
-        },
-        include: {
-          tenant: {
-            include: {
-              tenantDomains: true
-            }
-          }
-        }
-      });
-
-      if (tenantDomain) {
-        return {
-          tenant: tenantDomain.tenant,
-          domain: tenantDomain,
-          resolvedBy: 'custom_domain'
-        };
-      }
-
-      // Try with www. prefix if original doesn't have it
-      if (!domain.startsWith('www.')) {
-        tenantDomain = await this.prisma.tenantDomain.findFirst({
-          where: {
-            domain: `www.${domain}`,
-            isActive: true,
-            tenant: {
-              isActive: true,
-              status: { not: 'SUSPENDED' }
-            }
-          },
-          include: {
-            tenant: {
-              include: {
-                tenantDomains: true
-              }
-            }
-          }
-        });
-
-        if (tenantDomain) {
-          return {
-            tenant: tenantDomain.tenant,
-            domain: tenantDomain,
-            resolvedBy: 'custom_domain'
-          };
-        }
-      }
-
-      // Try without www. prefix if original has it
-      if (domain.startsWith('www.')) {
-        const domainWithoutWww = domain.substring(4);
-        tenantDomain = await this.prisma.tenantDomain.findFirst({
-          where: {
-            domain: domainWithoutWww,
-            isActive: true,
-            tenant: {
-              isActive: true,
-              status: { not: 'SUSPENDED' }
-            }
-          },
-          include: {
-            tenant: {
-              include: {
-                tenantDomains: true
-              }
-            }
-          }
-        });
-
-        if (tenantDomain) {
-          return {
-            tenant: tenantDomain.tenant,
-            domain: tenantDomain,
-            resolvedBy: 'custom_domain'
-          };
-        }
-      }
-
-      return null;
-    } catch (error) {
-      this.logger.error('Error in custom domain resolution:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Step 2: Softellio subdomain resolution
-   * Extracts subdomain from *.softellio.com pattern
-   */
-  private async resolveBySubdomain(domain: string): Promise<TenantResolutionResult | null> {
-    try {
-      // Check if domain matches *.softellio.com pattern
-      const softellioPattern = /^([^.]+)\.softellio\.com$/;
-      const match = domain.match(softellioPattern);
-
-      if (!match) {
-        return null;
-      }
-
-      const subdomain = match[1];
-
-      // Skip reserved subdomains
-      const reservedSubdomains = ['www', 'api', 'admin', 'connect', 'app', 'dashboard', 'mail', 'portal'];
-      if (reservedSubdomains.includes(subdomain)) {
-        return null;
-      }
-
-      const tenant = await this.prisma.tenant.findFirst({
-        where: {
-          slug: subdomain,
-          isActive: true,
-          status: { not: 'SUSPENDED' }
-        },
-        include: {
-          tenantDomains: true
-        }
-      });
-
-      if (!tenant) {
-        return null;
-      }
-
-      // Find or create subdomain entry in TenantDomain
-      let tenantDomain = await this.prisma.tenantDomain.findFirst({
-        where: {
-          tenantId: tenant.id,
-          domain: domain,
-          type: 'subdomain'
-        }
-      });
-
-      if (!tenantDomain) {
-        // Auto-create subdomain entry
-        try {
-          tenantDomain = await this.prisma.tenantDomain.create({
-            data: {
-              tenantId: tenant.id,
-              domain: domain,
-              type: 'subdomain',
-              isPrimary: false,
-              isActive: true,
-              isVerified: true,
-              verifiedAt: new Date()
-            }
-          });
-        } catch (createError) {
-          this.logger.warn(`Could not auto-create subdomain entry: ${createError.message}`);
-        }
-      }
-
-      return {
-        tenant,
-        domain: tenantDomain,
-        resolvedBy: 'subdomain'
-      };
-    } catch (error) {
-      this.logger.error('Error in subdomain resolution:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Step 3: Default tenant resolution (Softellio main site)
-   */
-  private async resolveDefaultTenant(domain: string): Promise<TenantResolutionResult | null> {
-    try {
-      const defaultDomains = ['softellio.com', 'www.softellio.com'];
-
-      if (!defaultDomains.includes(domain)) {
-        return null;
-      }
-
-      // Look for default tenant (configurable via environment)
-      const defaultTenantSlug = process.env.DEFAULT_TENANT_SLUG || 'softellio';
-
-      const tenant = await this.prisma.tenant.findFirst({
-        where: {
-          slug: defaultTenantSlug,
-          isActive: true,
-          status: { not: 'SUSPENDED' }
-        },
-        include: {
-          tenantDomains: true
-        }
-      });
-
-      if (!tenant) {
-        this.logger.error(`Default tenant '${defaultTenantSlug}' not found`);
-        return null;
-      }
-
-      return {
-        tenant,
-        domain: null,
-        resolvedBy: 'default'
-      };
-    } catch (error) {
-      this.logger.error('Error in default tenant resolution:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Step 4: Fallback tenant resolution
-   * Used when no other resolution method works
-   */
-  private async resolveFallbackTenant(): Promise<TenantResolutionResult | null> {
-    try {
-      const fallbackTenantSlug = process.env.FALLBACK_TENANT_SLUG;
-
-      if (!fallbackTenantSlug) {
-        return null;
-      }
-
-      const tenant = await this.prisma.tenant.findFirst({
-        where: {
-          slug: fallbackTenantSlug,
-          isActive: true,
-          status: { not: 'SUSPENDED' }
-        },
-        include: {
-          tenantDomains: true
-        }
-      });
-
-      if (!tenant) {
-        this.logger.error(`Fallback tenant '${fallbackTenantSlug}' not found`);
-        return null;
-      }
-
-      return {
-        tenant,
-        domain: null,
-        resolvedBy: 'fallback'
-      };
-    } catch (error) {
-      this.logger.error('Error in fallback tenant resolution:', error);
-      return null;
-    }
-  }
 
   /**
    * Validate tenant access permissions
