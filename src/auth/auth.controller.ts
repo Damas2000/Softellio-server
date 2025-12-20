@@ -8,7 +8,7 @@ import {
   Res,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -35,12 +35,19 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant domain for multi-tenant login (e.g., demo.softellio.com)',
+    required: false,
+    example: 'demo.softellio.com'
+  })
   @ApiResponse({
     status: 200,
     description: 'Login successful',
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 400, description: 'Domain reserved for SUPER_ADMIN access only' })
   async login(
     @Body() loginDto: LoginDto,
     @Req() request: Request,

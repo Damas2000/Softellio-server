@@ -104,8 +104,42 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+
+  // Global header ekleme - manuel olarak document'e inject et
+  const paths = document.paths;
+  Object.keys(paths).forEach(path => {
+    Object.keys(paths[path]).forEach(method => {
+      if (!paths[path][method].parameters) {
+        paths[path][method].parameters = [];
+      }
+
+      // X-Tenant-Host header'ı henüz yoksa ekle
+      const hasHeader = paths[path][method].parameters.some(
+        (param: any) => param.name === 'X-Tenant-Host'
+      );
+
+      if (!hasHeader) {
+        paths[path][method].parameters.push({
+          name: 'X-Tenant-Host',
+          in: 'header',
+          required: false,
+          description: 'Tenant domain for multi-tenant operations (e.g., demo.softellio.com)',
+          schema: {
+            type: 'string',
+            example: 'demo.softellio.com'
+          }
+        });
+      }
+    });
+  });
+
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true
+    }
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
