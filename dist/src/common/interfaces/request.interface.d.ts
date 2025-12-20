@@ -6,8 +6,8 @@ export interface DomainResolutionInfo {
     tenantDomain: TenantDomain | null;
 }
 export interface RequestWithTenant extends Request {
-    tenantId?: number;
-    tenant?: Tenant;
+    tenantId?: number | null;
+    tenant?: Tenant | null;
     user?: User;
     domainResolution?: DomainResolutionInfo;
 }

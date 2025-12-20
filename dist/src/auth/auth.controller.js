@@ -124,12 +124,19 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'User login' }),
+    (0, swagger_1.ApiHeader)({
+        name: 'X-Tenant-Host',
+        description: 'Tenant domain for multi-tenant login (e.g., demo.softellio.com)',
+        required: false,
+        example: 'demo.softellio.com'
+    }),
     (0, swagger_1.ApiResponse)({
         status: 200,
         description: 'Login successful',
         type: auth_response_dto_1.AuthResponseDto,
     }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid credentials' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Domain reserved for SUPER_ADMIN access only' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Res)({ passthrough: true })),

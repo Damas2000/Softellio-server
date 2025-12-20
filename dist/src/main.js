@@ -78,7 +78,32 @@ async function bootstrap() {
         .addBearerAuth()
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
-    swagger_1.SwaggerModule.setup('api-docs', app, document);
+    const paths = document.paths;
+    Object.keys(paths).forEach(path => {
+        Object.keys(paths[path]).forEach(method => {
+            if (!paths[path][method].parameters) {
+                paths[path][method].parameters = [];
+            }
+            const hasHeader = paths[path][method].parameters.some((param) => param.name === 'X-Tenant-Host');
+            if (!hasHeader) {
+                paths[path][method].parameters.push({
+                    name: 'X-Tenant-Host',
+                    in: 'header',
+                    required: false,
+                    description: 'Tenant domain for multi-tenant operations (e.g., demo.softellio.com)',
+                    schema: {
+                        type: 'string',
+                        example: 'demo.softellio.com'
+                    }
+                });
+            }
+        });
+    });
+    swagger_1.SwaggerModule.setup('api-docs', app, document, {
+        swaggerOptions: {
+            persistAuthorization: true
+        }
+    });
     const port = process.env.PORT || 3000;
     await app.listen(port);
     console.log(`🚀 Application running on: http://localhost:${port}`);

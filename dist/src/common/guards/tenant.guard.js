@@ -20,6 +20,9 @@ let TenantGuard = class TenantGuard {
         if (user.role === client_1.Role.SUPER_ADMIN) {
             return true;
         }
+        if (requestTenantId === null) {
+            throw new common_1.ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
+        }
         if (!user.tenantId) {
             throw new common_1.ForbiddenException('User is not associated with any tenant');
         }
