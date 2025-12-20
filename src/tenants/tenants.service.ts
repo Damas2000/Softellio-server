@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
-import { AuthService } from '../auth/auth.service';
-import { DomainResolverService } from '../common/services/domain-resolver.service';
+import * as bcrypt from 'bcrypt';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { CreateTenantWithDomainsDto } from './dto/create-tenant-with-domains.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -11,8 +10,6 @@ import { Tenant, Role, ModuleName } from '@prisma/client';
 export class TenantsService {
   constructor(
     private prisma: PrismaService,
-    private authService: AuthService,
-    private domainResolver: DomainResolverService,
   ) {}
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
@@ -48,7 +45,7 @@ export class TenantsService {
       });
 
       // Create tenant admin user
-      const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
+      const hashedPassword = await bcrypt.hash(createTenantDto.adminPassword, 10);
       await tx.user.create({
         data: {
           email: createTenantDto.adminEmail,
@@ -312,7 +309,7 @@ export class TenantsService {
       });
 
       // Create tenant admin user
-      const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
+      const hashedPassword = await bcrypt.hash(createTenantDto.adminPassword, 10);
       await tx.user.create({
         data: {
           email: createTenantDto.adminEmail,

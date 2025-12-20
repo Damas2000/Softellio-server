@@ -1,11 +1,14 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
+import { TenantsService } from '../tenants/tenants.service';
 export declare class AuthController {
     private authService;
-    constructor(authService: AuthService);
-    login(loginDto: LoginDto, response: Response): Promise<AuthResponseDto>;
+    private tenantsService;
+    private readonly logger;
+    constructor(authService: AuthService, tenantsService: TenantsService);
+    login(loginDto: LoginDto, request: Request, response: Response): Promise<AuthResponseDto>;
     refresh(user: any): Promise<RefreshResponseDto>;
     logout(response: Response): Promise<{
         message: string;
@@ -18,4 +21,7 @@ export declare class AuthController {
         tenantId: any;
         isActive: any;
     }>;
+    private extractHost;
+    private isReservedDomain;
+    private isSuperAdminEmail;
 }

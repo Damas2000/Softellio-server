@@ -127,9 +127,9 @@ export declare class BannersSlidersController {
         success: boolean;
         data: ({
             translations: {
+                content: string | null;
                 title: string | null;
                 id: number;
-                content: string | null;
                 language: string;
                 subtitle: string | null;
                 buttonText: string | null;

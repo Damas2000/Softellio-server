@@ -9,8 +9,8 @@ export declare class AuthService {
     private jwtService;
     private configService;
     constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService);
-    validateUser(email: string, password: string): Promise<User | null>;
-    login(loginDto: LoginDto): Promise<AuthResponseDto>;
+    validateUser(email: string, password: string, tenant?: any): Promise<User | null>;
+    login(loginDto: LoginDto, tenant?: any): Promise<AuthResponseDto>;
     refresh(userId: number): Promise<RefreshResponseDto>;
     generateTokens(user: User): Promise<{
         accessToken: string;

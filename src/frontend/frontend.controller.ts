@@ -14,7 +14,7 @@ export class FrontendController {
       // Get domain from request
       const domain = req.get('host') || req.hostname;
 
-      // Check if it's API request
+      // Check if it's API request or health endpoint
       if (req.url.startsWith('/api') ||
           req.url.startsWith('/auth') ||
           req.url.startsWith('/super-admin') ||
@@ -24,6 +24,7 @@ export class FrontendController {
           req.url.startsWith('/blog') ||
           req.url.startsWith('/media') ||
           req.url.startsWith('/site-settings') ||
+          req.url.startsWith('/health') ||
           req.url.includes('api-docs')) {
         return; // Let other controllers handle API routes
       }

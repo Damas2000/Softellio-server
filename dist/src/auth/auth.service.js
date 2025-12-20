@@ -21,9 +21,16 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
         this.configService = configService;
     }
-    async validateUser(email, password) {
-        const user = await this.prisma.user.findUnique({
-            where: { email, isActive: true },
+    async validateUser(email, password, tenant) {
+        const whereConditions = {
+            email,
+            isActive: true
+        };
+        if (tenant) {
+            whereConditions.tenantId = tenant.id;
+        }
+        const user = await this.prisma.user.findFirst({
+            where: whereConditions,
         });
         if (!user) {
             return null;
@@ -34,8 +41,8 @@ let AuthService = class AuthService {
         }
         return user;
     }
-    async login(loginDto) {
-        const user = await this.validateUser(loginDto.email, loginDto.password);
+    async login(loginDto, tenant) {
+        const user = await this.validateUser(loginDto.email, loginDto.password, tenant);
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }

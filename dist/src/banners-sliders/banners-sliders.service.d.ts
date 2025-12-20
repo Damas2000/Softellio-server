@@ -291,9 +291,9 @@ export declare class BannersSlidersService {
     toggleSliderStatus(id: number, tenantId: number): Promise<SliderWithRelations>;
     getSliderItems(sliderId: number, tenantId: number): Promise<({
         translations: {
+            content: string | null;
             title: string | null;
             id: number;
-            content: string | null;
             language: string;
             subtitle: string | null;
             buttonText: string | null;

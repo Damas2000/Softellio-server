@@ -1,15 +1,11 @@
 import { PrismaService } from '../config/prisma.service';
-import { AuthService } from '../auth/auth.service';
-import { DomainResolverService } from '../common/services/domain-resolver.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { CreateTenantWithDomainsDto } from './dto/create-tenant-with-domains.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { Tenant, ModuleName } from '@prisma/client';
 export declare class TenantsService {
     private prisma;
-    private authService;
-    private domainResolver;
-    constructor(prisma: PrismaService, authService: AuthService, domainResolver: DomainResolverService);
+    constructor(prisma: PrismaService);
     create(createTenantDto: CreateTenantDto): Promise<Tenant>;
     findAll(): Promise<Tenant[]>;
     findOne(id: number): Promise<Tenant>;

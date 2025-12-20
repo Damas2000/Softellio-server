@@ -15,9 +15,20 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { email, isActive: true },
+  async validateUser(email: string, password: string, tenant?: any): Promise<User | null> {
+    // Build query conditions
+    const whereConditions: any = {
+      email,
+      isActive: true
+    };
+
+    // If tenant is provided, add tenant filter
+    if (tenant) {
+      whereConditions.tenantId = tenant.id;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: whereConditions,
     });
 
     if (!user) {
@@ -32,8 +43,8 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+  async login(loginDto: LoginDto, tenant?: any): Promise<AuthResponseDto> {
+    const user = await this.validateUser(loginDto.email, loginDto.password, tenant);
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');

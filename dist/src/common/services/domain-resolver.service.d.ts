@@ -12,11 +12,9 @@ export declare class DomainResolverService {
     private readonly logger;
     constructor(prisma: PrismaService);
     resolveTenantFromDomain(hostHeader: string): Promise<TenantResolutionResult>;
+    private findTenantByDomain;
+    private isReservedDomain;
     private normalizeHost;
-    private resolveByCustomDomain;
-    private resolveBySubdomain;
-    private resolveDefaultTenant;
-    private resolveFallbackTenant;
     validateTenantAccess(tenant: Tenant): void;
     getTenantDomains(tenantId: number): Promise<TenantDomain[]>;
     addCustomDomain(tenantId: number, domain: string, isPrimary?: boolean): Promise<TenantDomain>;

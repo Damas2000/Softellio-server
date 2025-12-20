@@ -82,8 +82,8 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
                     throw new common_1.BadRequestException('No domain information found in request headers');
                 }
                 const normalizedDomain = domainHeader.toLowerCase().split(':')[0];
-                this.logger.debug(`Checking domain for portal: "${normalizedDomain}" - comparing with "portal.softellio.com" or "localhost"`);
-                if (normalizedDomain === 'portal.softellio.com' || normalizedDomain === 'localhost') {
+                this.logger.debug(`Checking domain for reserved domains: "${normalizedDomain}" - comparing with "portal.softellio.com", "platform.softellio.com" or "localhost"`);
+                if (normalizedDomain === 'portal.softellio.com' || normalizedDomain === 'platform.softellio.com' || normalizedDomain === 'localhost') {
                     this.logger.debug('Portal domain detected - special handling for shared admin panel');
                     if (req.path.startsWith('/auth')) {
                         this.logger.debug('Auth route on portal domain - proceeding without tenant resolution');

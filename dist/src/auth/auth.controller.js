@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AuthController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
@@ -22,12 +23,39 @@ const login_dto_1 = require("./dto/login.dto");
 const auth_response_dto_1 = require("./dto/auth-response.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const current_tenant_decorator_1 = require("../common/decorators/current-tenant.decorator");
-let AuthController = class AuthController {
-    constructor(authService) {
+const tenants_service_1 = require("../tenants/tenants.service");
+const common_2 = require("@nestjs/common");
+let AuthController = AuthController_1 = class AuthController {
+    constructor(authService, tenantsService) {
         this.authService = authService;
+        this.tenantsService = tenantsService;
+        this.logger = new common_2.Logger(AuthController_1.name);
     }
-    async login(loginDto, response) {
-        const result = await this.authService.login(loginDto);
+    async login(loginDto, request, response) {
+        const host = this.extractHost(request);
+        let tenant = null;
+        if (host) {
+            if (this.isReservedDomain(host)) {
+                this.logger.debug(`Reserved domain detected: ${host}`);
+                if (!this.isSuperAdminEmail(loginDto.email)) {
+                    throw new common_2.BadRequestException(`Domain ${host} is reserved for SUPER_ADMIN access only`);
+                }
+            }
+            else {
+                tenant = await this.tenantsService.findByDomain(host);
+                if (tenant) {
+                    this.logger.debug(`Tenant resolved for login: ${tenant.slug} (${tenant.id})`);
+                }
+                else {
+                    this.logger.error(`Tenant resolution failed for host ${host}: No tenant found`);
+                    throw new common_2.BadRequestException(`Unable to resolve tenant for domain: ${host}`);
+                }
+            }
+        }
+        if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email)) {
+            throw new common_2.BadRequestException('Tenant information is required for this login');
+        }
+        const result = await this.authService.login(loginDto, tenant);
         const tokens = await this.authService.generateTokens({
             id: result.user.id,
             email: result.user.email,
@@ -64,6 +92,31 @@ let AuthController = class AuthController {
             isActive: user.isActive,
         };
     }
+    extractHost(request) {
+        const rawHost = (request.headers['x-tenant-host'] ||
+            request.headers['x-forwarded-host'] ||
+            request.headers.host);
+        if (!rawHost)
+            return null;
+        return rawHost.toLowerCase().split(':')[0];
+    }
+    isReservedDomain(domain) {
+        const reservedDomains = [
+            'platform.softellio.com',
+            'portal.softellio.com',
+            'localhost',
+            'api.softellio.com',
+            'admin.softellio.com',
+            'connect.softellio.com',
+            'app.softellio.com',
+            'dashboard.softellio.com',
+            'mail.softellio.com'
+        ];
+        return reservedDomains.includes(domain);
+    }
+    isSuperAdminEmail(email) {
+        return email && email.endsWith('@softellio.com');
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -78,9 +131,10 @@ __decorate([
     }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid credentials' }),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
@@ -121,10 +175,11 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
-exports.AuthController = AuthController = __decorate([
+exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, swagger_1.ApiTags)('Authentication'),
     (0, common_1.Controller)('auth'),
     (0, common_1.UseGuards)(throttler_1.ThrottlerGuard),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        tenants_service_1.TenantsService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

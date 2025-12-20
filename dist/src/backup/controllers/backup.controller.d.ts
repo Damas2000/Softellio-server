@@ -11,14 +11,14 @@ export declare class BackupController {
     private updateService;
     constructor(backupService: BackupService, schedulerService: BackupSchedulerService, updateService: SystemUpdateService);
     createDatabaseBackup(tenantId: number, createBackupDto: CreateDatabaseBackupDto): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         fileName: string;
         startedAt: Date | null;
@@ -46,14 +46,15 @@ export declare class BackupController {
     getDatabaseBackupProgress(backupId: string): Promise<import("../interfaces/backup.interface").BackupProgress>;
     deleteDatabaseBackup(tenantId: number, backupId: string): Promise<void>;
     createSystemBackup(tenantId: number, createBackupDto: CreateSystemBackupDto): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
+        version: string | null;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
@@ -63,7 +64,6 @@ export declare class BackupController {
         isAutomatic: boolean;
         checksum: string | null;
         retentionDays: number | null;
-        version: string | null;
         backupType: string;
         includeDatabase: boolean;
         includeFiles: boolean;
@@ -101,13 +101,13 @@ export declare class BackupController {
         message: string;
     }>;
     createBackupSchedule(tenantId: number, createScheduleDto: CreateBackupScheduleDto): Promise<{
+        tags: string[];
         description: string | null;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
@@ -128,13 +128,13 @@ export declare class BackupController {
         consecutiveFailures: number;
     }>;
     getBackupSchedules(tenantId: number): Promise<{
+        tags: string[];
         description: string | null;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
@@ -158,13 +158,13 @@ export declare class BackupController {
         message: string;
     }>;
     updateBackupSchedule(tenantId: number, scheduleId: string, updateScheduleDto: UpdateBackupScheduleDto): Promise<{
+        tags: string[];
         description: string | null;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
@@ -185,13 +185,13 @@ export declare class BackupController {
         consecutiveFailures: number;
     }>;
     toggleBackupSchedule(tenantId: number, scheduleId: string, enabled: boolean): Promise<{
+        tags: string[];
         description: string | null;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
@@ -213,20 +213,20 @@ export declare class BackupController {
     }>;
     deleteBackupSchedule(tenantId: number, scheduleId: string): Promise<void>;
     createSystemUpdate(tenantId: number, createUpdateDto: CreateSystemUpdateDto): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
+        version: string;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
-        version: string;
         progress: number;
         currentPhase: string | null;
         initiatedBy: number | null;
@@ -252,20 +252,20 @@ export declare class BackupController {
         validationResults: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getSystemUpdates(tenantId: number, status?: string): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
+        version: string;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
-        version: string;
         progress: number;
         currentPhase: string | null;
         initiatedBy: number | null;
@@ -293,20 +293,20 @@ export declare class BackupController {
     getSystemUpdate(updateId: string): Promise<import("../dto/system-update.dto").SystemUpdateResponse>;
     getSystemUpdateProgress(updateId: string): Promise<import("../interfaces/backup.interface").UpdateProgress>;
     updateSystemUpdate(updateId: string, updateUpdateDto: UpdateSystemUpdateDto): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
+        version: string;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
-        version: string;
         progress: number;
         currentPhase: string | null;
         initiatedBy: number | null;
@@ -332,20 +332,20 @@ export declare class BackupController {
         validationResults: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     rollbackSystemUpdate(updateId: string): Promise<{
+        tags: string[];
         description: string | null;
+        status: string;
+        version: string;
         id: string;
         name: string;
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
-        status: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
-        version: string;
         progress: number;
         currentPhase: string | null;
         initiatedBy: number | null;

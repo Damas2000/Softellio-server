@@ -7,8 +7,8 @@ export declare class DashboardAnalyticsService {
         id: number;
         tenantId: number;
         createdAt: Date;
-        errors: string | null;
         language: string | null;
+        errors: string | null;
         ipAddress: string | null;
         userAgent: string | null;
         entityType: string | null;
@@ -48,17 +48,17 @@ export declare class DashboardAnalyticsService {
         averageSessionDuration: number;
     }[]>;
     getAllDashboardWidgets(tenantId: number, query: DashboardQueryDto): Promise<{
-        query: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string;
+        isPublic: boolean;
         description: string | null;
+        type: string;
         title: string | null;
+        query: import("@prisma/client/runtime/library").JsonValue | null;
         id: number;
         name: string;
         tenantId: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        isPublic: boolean;
         category: string;
         size: string;
         icon: string | null;
@@ -70,17 +70,17 @@ export declare class DashboardAnalyticsService {
         refreshInterval: number | null;
     }[]>;
     getDashboardWidgetById(id: number, tenantId: number): Promise<{
-        query: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string;
+        isPublic: boolean;
         description: string | null;
+        type: string;
         title: string | null;
+        query: import("@prisma/client/runtime/library").JsonValue | null;
         id: number;
         name: string;
         tenantId: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        isPublic: boolean;
         category: string;
         size: string;
         icon: string | null;
@@ -92,17 +92,17 @@ export declare class DashboardAnalyticsService {
         refreshInterval: number | null;
     }>;
     createDashboardWidget(createDto: CreateDashboardWidgetDto, tenantId: number): Promise<{
-        query: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string;
+        isPublic: boolean;
         description: string | null;
+        type: string;
         title: string | null;
+        query: import("@prisma/client/runtime/library").JsonValue | null;
         id: number;
         name: string;
         tenantId: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        isPublic: boolean;
         category: string;
         size: string;
         icon: string | null;
@@ -114,17 +114,17 @@ export declare class DashboardAnalyticsService {
         refreshInterval: number | null;
     }>;
     updateDashboardWidget(id: number, updateDto: UpdateDashboardWidgetDto, tenantId: number): Promise<{
-        query: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string;
+        isPublic: boolean;
         description: string | null;
+        type: string;
         title: string | null;
+        query: import("@prisma/client/runtime/library").JsonValue | null;
         id: number;
         name: string;
         tenantId: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        isPublic: boolean;
         category: string;
         size: string;
         icon: string | null;
@@ -139,9 +139,9 @@ export declare class DashboardAnalyticsService {
     getWidgetData(tenantId: number, query: WidgetDataQueryDto): Promise<any>;
     getAllAnalyticsReports(tenantId: number): Promise<({
         executions: {
+            status: string;
             id: number;
             createdAt: Date;
-            status: string;
             startedAt: Date;
             reportId: number;
             completedAt: Date | null;
@@ -249,13 +249,13 @@ export declare class DashboardAnalyticsService {
         };
     }>;
     recordSystemMetric(metricData: RecordSystemMetricDto, tenantId: number): Promise<{
+        tags: string[];
+        status: string;
         id: number;
         tenantId: number | null;
         createdAt: Date;
-        tags: string[];
-        status: string;
-        value: number;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        value: number;
         category: string;
         metricType: string;
         metricName: string;
@@ -360,8 +360,8 @@ export declare class DashboardAnalyticsService {
         conversions: {
             id: number;
             createdAt: Date;
-            value: number | null;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            value: number | null;
             ipAddress: string | null;
             userAgent: string | null;
             referrer: string | null;
@@ -428,8 +428,8 @@ export declare class DashboardAnalyticsService {
     recordConversion(conversionData: RecordConversionDto, ipAddress?: string, userAgent?: string): Promise<{
         id: number;
         createdAt: Date;
-        value: number | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        value: number | null;
         ipAddress: string | null;
         userAgent: string | null;
         referrer: string | null;

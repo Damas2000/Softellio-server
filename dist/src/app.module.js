@@ -39,6 +39,7 @@ const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const tenant_guard_1 = require("./common/guards/tenant.guard");
+const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -96,7 +97,7 @@ exports.AppModule = AppModule = __decorate([
                 },
             ]),
         ],
-        controllers: [],
+        controllers: [app_controller_1.AppController],
         providers: [
             {
                 provide: core_1.APP_GUARD,

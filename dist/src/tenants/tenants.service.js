@@ -12,14 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TenantsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../config/prisma.service");
-const auth_service_1 = require("../auth/auth.service");
-const domain_resolver_service_1 = require("../common/services/domain-resolver.service");
+const bcrypt = require("bcrypt");
 const client_1 = require("@prisma/client");
 let TenantsService = class TenantsService {
-    constructor(prisma, authService, domainResolver) {
+    constructor(prisma) {
         this.prisma = prisma;
-        this.authService = authService;
-        this.domainResolver = domainResolver;
     }
     async create(createTenantDto) {
         const existingTenant = await this.prisma.tenant.findUnique({
@@ -45,7 +42,7 @@ let TenantsService = class TenantsService {
                     primaryColor: createTenantDto.primaryColor,
                 },
             });
-            const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
+            const hashedPassword = await bcrypt.hash(createTenantDto.adminPassword, 10);
             await tx.user.create({
                 data: {
                     email: createTenantDto.adminEmail,
@@ -245,7 +242,7 @@ let TenantsService = class TenantsService {
                     verifiedAt: new Date(),
                 }
             });
-            const hashedPassword = await this.authService.hashPassword(createTenantDto.adminPassword);
+            const hashedPassword = await bcrypt.hash(createTenantDto.adminPassword, 10);
             await tx.user.create({
                 data: {
                     email: createTenantDto.adminEmail,
@@ -347,8 +344,6 @@ let TenantsService = class TenantsService {
 exports.TenantsService = TenantsService;
 exports.TenantsService = TenantsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        auth_service_1.AuthService,
-        domain_resolver_service_1.DomainResolverService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], TenantsService);
 //# sourceMappingURL=tenants.service.js.map

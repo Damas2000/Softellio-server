@@ -30,6 +30,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -89,7 +90,7 @@ import { TenantGuard } from './common/guards/tenant.guard';
       },
     ]),
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     // Global guards
     {

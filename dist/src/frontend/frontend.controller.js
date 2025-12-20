@@ -32,6 +32,7 @@ let FrontendController = class FrontendController {
                 req.url.startsWith('/blog') ||
                 req.url.startsWith('/media') ||
                 req.url.startsWith('/site-settings') ||
+                req.url.startsWith('/health') ||
                 req.url.includes('api-docs')) {
                 return;
             }
