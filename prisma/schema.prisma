@@ -113,6 +113,10 @@ model Page {
   translations PageTranslation[]
   tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // Performance indexes for common queries
+  @@index([tenantId, status])           // Status filtering per tenant
+  @@index([tenantId, createdAt])        // Date sorting per tenant
+  @@index([tenantId, updatedAt])        // Most common sort (default)
   @@map("pages")
 }
 
@@ -127,7 +131,13 @@ model PageTranslation {
   metaDescription String?
   page            Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
+  // Existing constraint
   @@unique([pageId, language])
+
+  // Performance indexes for slug lookups and language filtering
+  @@index([language, slug])             // Public page lookups by language+slug
+  @@index([pageId, language])           // Translation loading per page
+  @@index([slug])                       // General slug searches
   @@map("page_translations")
 }
 
