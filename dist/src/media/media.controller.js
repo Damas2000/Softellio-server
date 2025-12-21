@@ -46,15 +46,6 @@ let MediaController = class MediaController {
     getMediaStats(tenantId) {
         return this.mediaService.getMediaStats(tenantId);
     }
-    findOneMedia(id, tenantId) {
-        return this.mediaService.findOneMedia(id, tenantId);
-    }
-    updateMedia(id, updateMediaDto, tenantId) {
-        return this.mediaService.updateMedia(id, updateMediaDto, tenantId);
-    }
-    deleteMedia(id, tenantId) {
-        return this.mediaService.deleteMedia(id, tenantId);
-    }
     bulkDeleteMedia(body, tenantId) {
         return this.mediaService.bulkDeleteMedia(body.ids, tenantId);
     }
@@ -68,6 +59,15 @@ let MediaController = class MediaController {
             crop: crop,
         });
         return { url: optimizedUrl, publicId: media.publicId };
+    }
+    findOneMedia(id, tenantId) {
+        return this.mediaService.findOneMedia(id, tenantId);
+    }
+    updateMedia(id, updateMediaDto, tenantId) {
+        return this.mediaService.updateMedia(id, updateMediaDto, tenantId);
+    }
+    deleteMedia(id, tenantId) {
+        return this.mediaService.deleteMedia(id, tenantId);
     }
     async getPublicOptimizedImage(publicId, width, height, quality, format, crop) {
         const optimizedUrl = await this.mediaService.getOptimizedImageUrl(publicId, {
@@ -205,6 +205,41 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], MediaController.prototype, "getMediaStats", null);
 __decorate([
+    (0, common_1.Delete)('admin/bulk'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Bulk delete media files (Admin)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Bulk delete completed' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", void 0)
+], MediaController.prototype, "bulkDeleteMedia", null);
+__decorate([
+    (0, common_1.Get)('admin/:id/optimized'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Get optimized image URL (Admin)' }),
+    (0, swagger_1.ApiQuery)({ name: 'width', type: Number, required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'height', type: Number, required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'quality', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'format', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'crop', required: false }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Optimized image URL' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Media not found' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
+    __param(2, (0, common_1.Query)('width')),
+    __param(3, (0, common_1.Query)('height')),
+    __param(4, (0, common_1.Query)('quality')),
+    __param(5, (0, common_1.Query)('format')),
+    __param(6, (0, common_1.Query)('crop')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String, String]),
+    __metadata("design:returntype", Promise)
+], MediaController.prototype, "getOptimizedImage", null);
+__decorate([
     (0, common_1.Get)('admin/:id'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
@@ -245,41 +280,6 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], MediaController.prototype, "deleteMedia", null);
-__decorate([
-    (0, common_1.Delete)('admin/bulk'),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
-    (0, swagger_1.ApiOperation)({ summary: 'Bulk delete media files (Admin)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Bulk delete completed' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Number]),
-    __metadata("design:returntype", void 0)
-], MediaController.prototype, "bulkDeleteMedia", null);
-__decorate([
-    (0, common_1.Get)('admin/:id/optimized'),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
-    (0, swagger_1.ApiOperation)({ summary: 'Get optimized image URL (Admin)' }),
-    (0, swagger_1.ApiQuery)({ name: 'width', type: Number, required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'height', type: Number, required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'quality', required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'format', required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'crop', required: false }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Optimized image URL' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Media not found' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
-    __param(2, (0, common_1.Query)('width')),
-    __param(3, (0, common_1.Query)('height')),
-    __param(4, (0, common_1.Query)('quality')),
-    __param(5, (0, common_1.Query)('format')),
-    __param(6, (0, common_1.Query)('crop')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, Number, Number, String, String, String]),
-    __metadata("design:returntype", Promise)
-], MediaController.prototype, "getOptimizedImage", null);
 __decorate([
     (0, common_1.Get)('public/image/:publicId/optimized'),
     (0, public_decorator_1.Public)(),

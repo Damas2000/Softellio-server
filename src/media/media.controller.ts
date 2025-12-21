@@ -168,6 +168,52 @@ export class MediaController {
     return this.mediaService.getMediaStats(tenantId);
   }
 
+  @Delete('admin/bulk')
+  @ApiBearerAuth()
+  @Roles(Role.TENANT_ADMIN, Role.EDITOR)
+  @ApiOperation({ summary: 'Bulk delete media files (Admin)' })
+  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  bulkDeleteMedia(
+    @Body() body: { ids: number[] },
+    @CurrentTenant() tenantId: number,
+  ) {
+    return this.mediaService.bulkDeleteMedia(body.ids, tenantId);
+  }
+
+  @Get('admin/:id/optimized')
+  @ApiBearerAuth()
+  @Roles(Role.TENANT_ADMIN, Role.EDITOR)
+  @ApiOperation({ summary: 'Get optimized image URL (Admin)' })
+  @ApiQuery({ name: 'width', type: Number, required: false })
+  @ApiQuery({ name: 'height', type: Number, required: false })
+  @ApiQuery({ name: 'quality', required: false })
+  @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'crop', required: false })
+  @ApiResponse({ status: 200, description: 'Optimized image URL' })
+  @ApiResponse({ status: 404, description: 'Media not found' })
+  async getOptimizedImage(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentTenant() tenantId: number,
+    @Query('width') width?: number,
+    @Query('height') height?: number,
+    @Query('quality') quality?: string,
+    @Query('format') format?: string,
+    @Query('crop') crop?: string,
+  ) {
+    // First, get the media to verify it exists and get publicId
+    const media = await this.mediaService.findOneMedia(id, tenantId);
+
+    const optimizedUrl = await this.mediaService.getOptimizedImageUrl(media.publicId, {
+      width: width ? Number(width) : undefined,
+      height: height ? Number(height) : undefined,
+      quality: quality === 'auto' ? 'auto' : quality ? Number(quality) : 'auto',
+      format: format as any,
+      crop: crop as any,
+    });
+
+    return { url: optimizedUrl, publicId: media.publicId };
+  }
+
   @Get('admin/:id')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
@@ -209,53 +255,7 @@ export class MediaController {
     return this.mediaService.deleteMedia(id, tenantId);
   }
 
-  @Delete('admin/bulk')
-  @ApiBearerAuth()
-  @Roles(Role.TENANT_ADMIN, Role.EDITOR)
-  @ApiOperation({ summary: 'Bulk delete media files (Admin)' })
-  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
-  bulkDeleteMedia(
-    @Body() body: { ids: number[] },
-    @CurrentTenant() tenantId: number,
-  ) {
-    return this.mediaService.bulkDeleteMedia(body.ids, tenantId);
-  }
-
   // ==================== IMAGE OPTIMIZATION ROUTES ====================
-
-  @Get('admin/:id/optimized')
-  @ApiBearerAuth()
-  @Roles(Role.TENANT_ADMIN, Role.EDITOR)
-  @ApiOperation({ summary: 'Get optimized image URL (Admin)' })
-  @ApiQuery({ name: 'width', type: Number, required: false })
-  @ApiQuery({ name: 'height', type: Number, required: false })
-  @ApiQuery({ name: 'quality', required: false })
-  @ApiQuery({ name: 'format', required: false })
-  @ApiQuery({ name: 'crop', required: false })
-  @ApiResponse({ status: 200, description: 'Optimized image URL' })
-  @ApiResponse({ status: 404, description: 'Media not found' })
-  async getOptimizedImage(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentTenant() tenantId: number,
-    @Query('width') width?: number,
-    @Query('height') height?: number,
-    @Query('quality') quality?: string,
-    @Query('format') format?: string,
-    @Query('crop') crop?: string,
-  ) {
-    // First, get the media to verify it exists and get publicId
-    const media = await this.mediaService.findOneMedia(id, tenantId);
-
-    const optimizedUrl = await this.mediaService.getOptimizedImageUrl(media.publicId, {
-      width: width ? Number(width) : undefined,
-      height: height ? Number(height) : undefined,
-      quality: quality === 'auto' ? 'auto' : quality ? Number(quality) : 'auto',
-      format: format as any,
-      crop: crop as any,
-    });
-
-    return { url: optimizedUrl, publicId: media.publicId };
-  }
 
   // ==================== PUBLIC ROUTES (for content delivery) ====================
 

@@ -53,6 +53,16 @@ export declare class MediaController {
         totalSize: number;
         typeBreakdown: Record<string, number>;
     }>;
+    bulkDeleteMedia(body: {
+        ids: number[];
+    }, tenantId: number): Promise<{
+        deleted: number;
+        failed: number;
+    }>;
+    getOptimizedImage(id: number, tenantId: number, width?: number, height?: number, quality?: string, format?: string, crop?: string): Promise<{
+        url: string;
+        publicId: string;
+    }>;
     findOneMedia(id: number, tenantId: number): Promise<{
         format: string | null;
         id: number;
@@ -77,16 +87,6 @@ export declare class MediaController {
     }>;
     deleteMedia(id: number, tenantId: number): Promise<{
         message: string;
-    }>;
-    bulkDeleteMedia(body: {
-        ids: number[];
-    }, tenantId: number): Promise<{
-        deleted: number;
-        failed: number;
-    }>;
-    getOptimizedImage(id: number, tenantId: number, width?: number, height?: number, quality?: string, format?: string, crop?: string): Promise<{
-        url: string;
-        publicId: string;
     }>;
     getPublicOptimizedImage(publicId: string, width?: number, height?: number, quality?: string, format?: string, crop?: string): Promise<{
         url: string;
