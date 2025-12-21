@@ -178,7 +178,8 @@ describe('Pages (e2e)', () => {
   }
 
   async function generateToken(user: any): Promise<string> {
-    return authService.generateTokens(user).accessToken;
+    const tokens = await authService.generateTokens(user);
+    return tokens.accessToken;
   }
 
   async function cleanupTestData() {
