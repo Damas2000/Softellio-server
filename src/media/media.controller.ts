@@ -25,6 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { UploadMediaDto, MediaType } from './dto/upload-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -185,13 +186,14 @@ export class MediaController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Update media metadata (Admin)' })
   @ApiResponse({ status: 200, description: 'Media updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body - only fileName is allowed' })
   @ApiResponse({ status: 404, description: 'Media not found' })
   updateMedia(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateData: { fileName?: string },
+    @Body() updateMediaDto: UpdateMediaDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.mediaService.updateMedia(id, updateData, tenantId);
+    return this.mediaService.updateMedia(id, updateMediaDto, tenantId);
   }
 
   @Delete('admin/:id')

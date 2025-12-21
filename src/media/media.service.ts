@@ -1,6 +1,7 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { UploadMediaDto, MediaType } from './dto/upload-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 import { CLOUDINARY } from '../config/cloudinary.provider';
 import { Media } from '@prisma/client';
 import { v2 as cloudinary } from 'cloudinary';
@@ -171,7 +172,7 @@ export class MediaService {
 
   async updateMedia(
     id: number,
-    updateData: { fileName?: string },
+    updateMediaDto: UpdateMediaDto,
     tenantId: number,
   ): Promise<Media> {
     // Check if media exists
@@ -179,7 +180,7 @@ export class MediaService {
 
     return this.prisma.media.update({
       where: { id },
-      data: updateData,
+      data: updateMediaDto,
     });
   }
 
