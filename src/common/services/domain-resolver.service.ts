@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Tenant, TenantDomain } from '@prisma/client';
 
@@ -211,7 +211,11 @@ export class DomainResolverService {
     });
 
     if (existingDomain) {
-      throw new ForbiddenException('Domain is already registered to another tenant');
+      if (existingDomain.tenantId === tenantId) {
+        throw new ConflictException('Domain is already registered to this tenant');
+      } else {
+        throw new ConflictException('Domain is already registered to another tenant');
+      }
     }
 
     // If setting as primary, remove primary flag from other domains
@@ -245,6 +249,93 @@ export class DomainResolverService {
    */
   private generateVerificationToken(): string {
     return `softellio-verify-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+  }
+
+  /**
+   * Update domain settings
+   */
+  async updateDomain(tenantId: number, domainId: number, updateData: {
+    isPrimary?: boolean;
+    isActive?: boolean;
+  }): Promise<TenantDomain> {
+    // Check if domain exists and belongs to tenant
+    const existingDomain = await this.prisma.tenantDomain.findFirst({
+      where: {
+        id: domainId,
+        tenantId,
+      }
+    });
+
+    if (!existingDomain) {
+      throw new NotFoundException('Domain not found or does not belong to this tenant');
+    }
+
+    // If setting as primary, remove primary flag from other domains
+    if (updateData.isPrimary === true) {
+      await this.prisma.tenantDomain.updateMany({
+        where: {
+          tenantId,
+          id: { not: domainId },
+          isPrimary: true
+        },
+        data: {
+          isPrimary: false
+        }
+      });
+    }
+
+    // Update the domain
+    return this.prisma.tenantDomain.update({
+      where: {
+        id: domainId
+      },
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  /**
+   * Remove domain from tenant
+   */
+  async removeDomain(tenantId: number, domainId: number): Promise<void> {
+    // Check if domain exists and belongs to tenant
+    const existingDomain = await this.prisma.tenantDomain.findFirst({
+      where: {
+        id: domainId,
+        tenantId,
+      }
+    });
+
+    if (!existingDomain) {
+      throw new NotFoundException('Domain not found or does not belong to this tenant');
+    }
+
+    // Prevent deletion of the last domain if it's primary
+    if (existingDomain.isPrimary) {
+      const domainCount = await this.prisma.tenantDomain.count({
+        where: {
+          tenantId,
+          isActive: true
+        }
+      });
+
+      if (domainCount === 1) {
+        throw new ConflictException('Cannot delete the last active domain. Please add another domain before removing this one.');
+      }
+    }
+
+    // Soft delete by setting isActive to false
+    await this.prisma.tenantDomain.update({
+      where: {
+        id: domainId
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
   }
 
   /**

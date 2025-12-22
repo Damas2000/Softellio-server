@@ -21,12 +21,8 @@ const roles_guard_1 = require("../guards/roles.guard");
 const roles_decorator_1 = require("../decorators/roles.decorator");
 const current_tenant_decorator_1 = require("../decorators/current-tenant.decorator");
 const client_1 = require("@prisma/client");
-class AddDomainDto {
-}
-class UpdateDomainDto {
-}
-class DomainHealthCheckDto {
-}
+const create_domain_dto_1 = require("../dto/create-domain.dto");
+const update_domain_dto_1 = require("../dto/update-domain.dto");
 let DomainManagementController = class DomainManagementController {
     constructor(domainResolver) {
         this.domainResolver = domainResolver;
@@ -34,14 +30,14 @@ let DomainManagementController = class DomainManagementController {
     async getTenantDomains(tenantId) {
         return this.domainResolver.getTenantDomains(tenantId);
     }
-    async addCustomDomain(tenantId, addDomainDto) {
-        return this.domainResolver.addCustomDomain(tenantId, addDomainDto.domain, addDomainDto.isPrimary || false);
+    async addCustomDomain(tenantId, createDomainDto) {
+        return this.domainResolver.addCustomDomain(tenantId, createDomainDto.domain, createDomainDto.isPrimary || false);
     }
     async updateDomain(tenantId, domainId, updateDomainDto) {
-        throw new Error('Method not implemented');
+        return this.domainResolver.updateDomain(tenantId, domainId, updateDomainDto);
     }
     async removeDomain(tenantId, domainId) {
-        throw new Error('Method not implemented');
+        await this.domainResolver.removeDomain(tenantId, domainId);
     }
     async checkDomainHealth(domainParam) {
         const domain = isNaN(Number(domainParam)) ? domainParam : domainParam;
@@ -121,9 +117,36 @@ exports.DomainManagementController = DomainManagementController;
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get all domains for current tenant' }),
+    (0, swagger_1.ApiHeader)({
+        name: 'X-Tenant-Host',
+        description: 'Tenant domain for multi-tenant operations',
+        required: true,
+        example: 'demo.softellio.com',
+    }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.OK,
         description: 'List of tenant domains retrieved successfully',
+        schema: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    id: { type: 'number' },
+                    tenantId: { type: 'number' },
+                    domain: { type: 'string' },
+                    isPrimary: { type: 'boolean' },
+                    isActive: { type: 'boolean' },
+                    type: { type: 'string' },
+                    isVerified: { type: 'boolean' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.FORBIDDEN,
+        description: 'Insufficient permissions',
     }),
     (0, roles_decorator_1.Roles)(client_1.Role.SUPER_ADMIN, client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
     __param(0, (0, current_tenant_decorator_1.CurrentTenant)()),
@@ -134,44 +157,123 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: 'Add custom domain to tenant' }),
+    (0, swagger_1.ApiBody)({
+        type: create_domain_dto_1.CreateDomainDto,
+        description: 'Domain details to add to the tenant',
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'X-Tenant-Host',
+        description: 'Tenant domain for multi-tenant operations',
+        required: true,
+        example: 'demo.softellio.com',
+    }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.CREATED,
         description: 'Custom domain added successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                id: { type: 'number' },
+                tenantId: { type: 'number' },
+                domain: { type: 'string' },
+                isPrimary: { type: 'boolean' },
+                isActive: { type: 'boolean' },
+                type: { type: 'string' },
+                isVerified: { type: 'boolean' },
+                verificationToken: { type: 'string' },
+                createdAt: { type: 'string', format: 'date-time' },
+                updatedAt: { type: 'string', format: 'date-time' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Invalid domain format or reserved domain',
     }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.CONFLICT,
-        description: 'Domain already exists',
+        description: 'Domain already exists for another tenant',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.FORBIDDEN,
+        description: 'Insufficient permissions or tenant inactive',
     }),
     (0, roles_decorator_1.Roles)(client_1.Role.SUPER_ADMIN, client_1.Role.TENANT_ADMIN),
     __param(0, (0, current_tenant_decorator_1.CurrentTenant)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, AddDomainDto]),
+    __metadata("design:paramtypes", [Number, create_domain_dto_1.CreateDomainDto]),
     __metadata("design:returntype", Promise)
 ], DomainManagementController.prototype, "addCustomDomain", null);
 __decorate([
     (0, common_1.Patch)(':domainId'),
     (0, swagger_1.ApiOperation)({ summary: 'Update domain settings' }),
-    (0, swagger_1.ApiParam)({ name: 'domainId', description: 'Domain ID' }),
+    (0, swagger_1.ApiParam)({ name: 'domainId', description: 'Domain ID', type: 'number' }),
+    (0, swagger_1.ApiBody)({
+        type: update_domain_dto_1.UpdateDomainDto,
+        description: 'Domain settings to update',
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'X-Tenant-Host',
+        description: 'Tenant domain for multi-tenant operations',
+        required: true,
+        example: 'demo.softellio.com',
+    }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.OK,
         description: 'Domain updated successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                id: { type: 'number' },
+                tenantId: { type: 'number' },
+                domain: { type: 'string' },
+                isPrimary: { type: 'boolean' },
+                isActive: { type: 'boolean' },
+                type: { type: 'string' },
+                isVerified: { type: 'boolean' },
+                createdAt: { type: 'string', format: 'date-time' },
+                updatedAt: { type: 'string', format: 'date-time' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Domain not found',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.FORBIDDEN,
+        description: 'Insufficient permissions',
     }),
     (0, roles_decorator_1.Roles)(client_1.Role.SUPER_ADMIN, client_1.Role.TENANT_ADMIN),
     __param(0, (0, current_tenant_decorator_1.CurrentTenant)()),
     __param(1, (0, common_1.Param)('domainId')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, UpdateDomainDto]),
+    __metadata("design:paramtypes", [Number, Number, update_domain_dto_1.UpdateDomainDto]),
     __metadata("design:returntype", Promise)
 ], DomainManagementController.prototype, "updateDomain", null);
 __decorate([
     (0, common_1.Delete)(':domainId'),
     (0, swagger_1.ApiOperation)({ summary: 'Remove domain from tenant' }),
-    (0, swagger_1.ApiParam)({ name: 'domainId', description: 'Domain ID' }),
+    (0, swagger_1.ApiParam)({ name: 'domainId', description: 'Domain ID', type: 'number' }),
+    (0, swagger_1.ApiHeader)({
+        name: 'X-Tenant-Host',
+        description: 'Tenant domain for multi-tenant operations',
+        required: true,
+        example: 'demo.softellio.com',
+    }),
     (0, swagger_1.ApiResponse)({
         status: common_1.HttpStatus.NO_CONTENT,
         description: 'Domain removed successfully',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Domain not found',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.FORBIDDEN,
+        description: 'Insufficient permissions',
     }),
     (0, roles_decorator_1.Roles)(client_1.Role.SUPER_ADMIN, client_1.Role.TENANT_ADMIN),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),

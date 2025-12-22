@@ -19,6 +19,11 @@ export declare class DomainResolverService {
     getTenantDomains(tenantId: number): Promise<TenantDomain[]>;
     addCustomDomain(tenantId: number, domain: string, isPrimary?: boolean): Promise<TenantDomain>;
     private generateVerificationToken;
+    updateDomain(tenantId: number, domainId: number, updateData: {
+        isPrimary?: boolean;
+        isActive?: boolean;
+    }): Promise<TenantDomain>;
+    removeDomain(tenantId: number, domainId: number): Promise<void>;
     checkDomainHealth(domain: string): Promise<{
         domain: string;
         isReachable: boolean;

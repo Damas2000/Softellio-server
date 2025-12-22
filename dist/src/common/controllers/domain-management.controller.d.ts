@@ -1,27 +1,13 @@
 import { DomainResolverService } from '../services/domain-resolver.service';
 import { TenantDomain } from '@prisma/client';
-declare class AddDomainDto {
-    domain: string;
-    isPrimary?: boolean;
-    type?: 'custom' | 'subdomain';
-}
-declare class UpdateDomainDto {
-    isPrimary?: boolean;
-    isActive?: boolean;
-}
-declare class DomainHealthCheckDto {
-    domain: string;
-    isReachable: boolean;
-    responseTime: number | null;
-    statusCode: number | null;
-    error: string | null;
-    checkedAt: Date;
-}
+import { CreateDomainDto } from '../dto/create-domain.dto';
+import { UpdateDomainDto } from '../dto/update-domain.dto';
+import { DomainHealthCheckDto } from '../dto/domain-health-check.dto';
 export declare class DomainManagementController {
     private domainResolver;
     constructor(domainResolver: DomainResolverService);
     getTenantDomains(tenantId: number): Promise<TenantDomain[]>;
-    addCustomDomain(tenantId: number, addDomainDto: AddDomainDto): Promise<TenantDomain>;
+    addCustomDomain(tenantId: number, createDomainDto: CreateDomainDto): Promise<TenantDomain>;
     updateDomain(tenantId: number, domainId: number, updateDomainDto: UpdateDomainDto): Promise<TenantDomain>;
     removeDomain(tenantId: number, domainId: number): Promise<void>;
     checkDomainHealth(domainParam: string): Promise<DomainHealthCheckDto>;
@@ -75,4 +61,3 @@ export declare class DomainManagementController {
         }[];
     }>;
 }
-export {};

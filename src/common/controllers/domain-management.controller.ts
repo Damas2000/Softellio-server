@@ -10,6 +10,8 @@ import {
   HttpStatus,
   HttpCode,
   Query,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +20,8 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiParam,
+  ApiBody,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { DomainResolverService } from '../services/domain-resolver.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -26,26 +30,10 @@ import { Roles } from '../decorators/roles.decorator';
 import { CurrentTenant } from '../decorators/current-tenant.decorator';
 import { Role } from '@prisma/client';
 import { TenantDomain } from '@prisma/client';
+import { CreateDomainDto } from '../dto/create-domain.dto';
+import { UpdateDomainDto } from '../dto/update-domain.dto';
+import { DomainHealthCheckDto } from '../dto/domain-health-check.dto';
 
-class AddDomainDto {
-  domain: string;
-  isPrimary?: boolean;
-  type?: 'custom' | 'subdomain';
-}
-
-class UpdateDomainDto {
-  isPrimary?: boolean;
-  isActive?: boolean;
-}
-
-class DomainHealthCheckDto {
-  domain: string;
-  isReachable: boolean;
-  responseTime: number | null;
-  statusCode: number | null;
-  error: string | null;
-  checkedAt: Date;
-}
 
 @ApiTags('Domain Management')
 @Controller('domains')
@@ -56,9 +44,36 @@ export class DomainManagementController {
 
   @Get()
   @ApiOperation({ summary: 'Get all domains for current tenant' })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant domain for multi-tenant operations',
+    required: true,
+    example: 'demo.softellio.com',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of tenant domains retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          tenantId: { type: 'number' },
+          domain: { type: 'string' },
+          isPrimary: { type: 'boolean' },
+          isActive: { type: 'boolean' },
+          type: { type: 'string' },
+          isVerified: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
   })
   @Roles(Role.SUPER_ADMIN, Role.TENANT_ADMIN, Role.EDITOR)
   async getTenantDomains(@CurrentTenant() tenantId: number): Promise<TenantDomain[]> {
@@ -67,32 +82,97 @@ export class DomainManagementController {
 
   @Post()
   @ApiOperation({ summary: 'Add custom domain to tenant' })
+  @ApiBody({
+    type: CreateDomainDto,
+    description: 'Domain details to add to the tenant',
+  })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant domain for multi-tenant operations',
+    required: true,
+    example: 'demo.softellio.com',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Custom domain added successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        tenantId: { type: 'number' },
+        domain: { type: 'string' },
+        isPrimary: { type: 'boolean' },
+        isActive: { type: 'boolean' },
+        type: { type: 'string' },
+        isVerified: { type: 'boolean' },
+        verificationToken: { type: 'string' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid domain format or reserved domain',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Domain already exists',
+    description: 'Domain already exists for another tenant',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions or tenant inactive',
   })
   @Roles(Role.SUPER_ADMIN, Role.TENANT_ADMIN)
   async addCustomDomain(
     @CurrentTenant() tenantId: number,
-    @Body() addDomainDto: AddDomainDto,
+    @Body() createDomainDto: CreateDomainDto,
   ): Promise<TenantDomain> {
     return this.domainResolver.addCustomDomain(
       tenantId,
-      addDomainDto.domain,
-      addDomainDto.isPrimary || false,
+      createDomainDto.domain,
+      createDomainDto.isPrimary || false,
     );
   }
 
   @Patch(':domainId')
   @ApiOperation({ summary: 'Update domain settings' })
-  @ApiParam({ name: 'domainId', description: 'Domain ID' })
+  @ApiParam({ name: 'domainId', description: 'Domain ID', type: 'number' })
+  @ApiBody({
+    type: UpdateDomainDto,
+    description: 'Domain settings to update',
+  })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant domain for multi-tenant operations',
+    required: true,
+    example: 'demo.softellio.com',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Domain updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        tenantId: { type: 'number' },
+        domain: { type: 'string' },
+        isPrimary: { type: 'boolean' },
+        isActive: { type: 'boolean' },
+        type: { type: 'string' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Domain not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
   })
   @Roles(Role.SUPER_ADMIN, Role.TENANT_ADMIN)
   async updateDomain(
@@ -100,17 +180,29 @@ export class DomainManagementController {
     @Param('domainId') domainId: number,
     @Body() updateDomainDto: UpdateDomainDto,
   ): Promise<TenantDomain> {
-    // Implementation would go here - updating domain in database
-    // This is a simplified version for demonstration
-    throw new Error('Method not implemented');
+    return this.domainResolver.updateDomain(tenantId, domainId, updateDomainDto);
   }
 
   @Delete(':domainId')
   @ApiOperation({ summary: 'Remove domain from tenant' })
-  @ApiParam({ name: 'domainId', description: 'Domain ID' })
+  @ApiParam({ name: 'domainId', description: 'Domain ID', type: 'number' })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant domain for multi-tenant operations',
+    required: true,
+    example: 'demo.softellio.com',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Domain removed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Domain not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
   })
   @Roles(Role.SUPER_ADMIN, Role.TENANT_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -118,9 +210,7 @@ export class DomainManagementController {
     @CurrentTenant() tenantId: number,
     @Param('domainId') domainId: number,
   ): Promise<void> {
-    // Implementation would go here - removing domain from database
-    // This is a simplified version for demonstration
-    throw new Error('Method not implemented');
+    await this.domainResolver.removeDomain(tenantId, domainId);
   }
 
   @Get(':domainId/health')
