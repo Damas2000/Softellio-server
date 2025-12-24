@@ -120,12 +120,11 @@ export class ServicesController {
     return this.servicesService.remove(id, tenantId);
   }
 
-  @Delete('admin/bulk')
+  @Post('admin/bulk-delete')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete services (Admin)' })
   @ApiResponse({ status: 200, description: 'Bulk delete completed' })
-  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   bulkDelete(
     @Body() bulkDeleteDto: BulkServiceDeleteDto,
     @CurrentTenant() tenantId: number,

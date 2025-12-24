@@ -291,7 +291,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ContactInfoController.prototype, "deleteSubmission", null);
 __decorate([
-    (0, common_1.Delete)('admin/submissions/bulk'),
+    (0, common_1.Post)('admin/submissions/bulk-delete'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
     (0, swagger_1.ApiOperation)({ summary: 'Bulk delete contact submissions (Admin)' }),

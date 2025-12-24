@@ -176,7 +176,7 @@ export class ContactInfoController {
     return this.contactInfoService.deleteSubmission(id, tenantId);
   }
 
-  @Delete('admin/submissions/bulk')
+  @Post('admin/submissions/bulk-delete')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete contact submissions (Admin)' })

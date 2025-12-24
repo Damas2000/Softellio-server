@@ -168,7 +168,7 @@ export class MediaController {
     return this.mediaService.getMediaStats(tenantId);
   }
 
-  @Delete('admin/bulk')
+  @Post('admin/bulk-delete')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete media files (Admin)' })

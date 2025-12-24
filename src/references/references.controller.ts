@@ -141,12 +141,11 @@ export class ReferencesController {
     return this.referencesService.remove(id, tenantId);
   }
 
-  @Delete('admin/bulk')
+  @Post('admin/bulk-delete')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete references (Admin)' })
   @ApiResponse({ status: 200, description: 'Bulk delete completed' })
-  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   bulkDelete(
     @Body() bulkDeleteDto: BulkReferenceDeleteDto,
     @CurrentTenant() tenantId: number,
