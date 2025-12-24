@@ -4,6 +4,7 @@ const testing_1 = require("@nestjs/testing");
 const common_1 = require("@nestjs/common");
 const domain_management_controller_1 = require("./domain-management.controller");
 const domain_resolver_service_1 = require("../services/domain-resolver.service");
+const client_1 = require("@prisma/client");
 const mockDomainResolverService = {
     getTenantDomains: jest.fn(),
     addCustomDomain: jest.fn(),
@@ -28,7 +29,7 @@ const mockTenantDomain = {
 const mockCreateDomainDto = {
     domain: 'hamza.com',
     isPrimary: false,
-    type: 'custom',
+    type: client_1.DomainType.CUSTOM,
 };
 describe('DomainManagementController', () => {
     let controller;

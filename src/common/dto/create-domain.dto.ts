@@ -4,12 +4,13 @@ import {
   MaxLength,
   IsOptional,
   IsBoolean,
-  IsIn,
+  IsEnum,
   Matches
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { BadRequestException } from '@nestjs/common';
+import { DomainType } from '@prisma/client';
 
 // Custom transform function to normalize domain
 function normalizeDomain(value: string): string {
@@ -143,14 +144,13 @@ export class CreateDomainDto {
   isPrimary?: boolean = false;
 
   @ApiProperty({
-    example: 'custom',
+    example: DomainType.CUSTOM,
     description: 'The type of domain being added',
-    enum: ['custom', 'subdomain'],
+    enum: DomainType,
     required: false,
-    default: 'custom',
+    default: DomainType.CUSTOM,
   })
   @IsOptional()
-  @IsString({ message: 'Type must be a string' })
-  @IsIn(['custom', 'subdomain'], { message: 'Type must be either "custom" or "subdomain"' })
-  type?: 'custom' | 'subdomain' = 'custom';
+  @IsEnum(DomainType, { message: 'Type must be either CUSTOM or SYSTEM' })
+  type?: DomainType = DomainType.CUSTOM;
 }

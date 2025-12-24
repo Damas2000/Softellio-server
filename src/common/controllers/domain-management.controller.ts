@@ -18,6 +18,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiExcludeEndpoint,
   ApiQuery,
   ApiParam,
   ApiBody,
@@ -299,37 +300,20 @@ export class DomainManagementController {
   }
 
   @Get('netlify-config')
-  @ApiOperation({ summary: 'Get Netlify configuration for current tenant' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Netlify configuration retrieved',
-  })
-  @Roles(Role.SUPER_ADMIN, Role.TENANT_ADMIN)
-  async getNetlifyConfig(@CurrentTenant() tenantId: number) {
-    const domains = await this.domainResolver.getTenantDomains(tenantId);
-
-    // Generate Netlify-compatible configuration
+  @ApiExcludeEndpoint()
+  @HttpCode(HttpStatus.GONE)
+  async getNetlifyConfigDeprecated() {
     return {
-      redirects: domains
-        .filter(d => d.type === 'CUSTOM' && d.isActive)
-        .map(d => ({
-          from: `https://${d.domain}/*`,
-          to: `https://connect.softellio.com/:splat`,
-          status: 200,
-          headers: {
-            'X-Tenant-Domain': d.domain,
-          },
-        })),
-      headers: [
-        {
-          for: '/*',
-          values: {
-            'X-Frame-Options': 'DENY',
-            'X-Content-Type-Options': 'nosniff',
-            'Referrer-Policy': 'strict-origin-when-cross-origin',
-          },
-        },
-      ],
+      statusCode: 410,
+      error: 'Gone',
+      message: 'This endpoint has been permanently removed. Softellio now uses Vercel for deployments.',
+      details: {
+        deprecated: 'GET /domains/netlify-config',
+        reason: 'Netlify is no longer supported. All deployments now use Vercel.',
+        migration: 'Configure domains directly in Vercel dashboard: https://vercel.com/docs/concepts/projects/custom-domains',
+        documentation: 'https://docs.softellio.com/domains/vercel-setup'
+      },
+      timestamp: new Date().toISOString()
     };
   }
 }

@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 function normalizeDomain(value) {
     if (!value || typeof value !== 'string') {
         return value;
@@ -73,7 +74,7 @@ function isNotReservedDomain(domain) {
 class CreateDomainDto {
     constructor() {
         this.isPrimary = false;
-        this.type = 'custom';
+        this.type = client_1.DomainType.CUSTOM;
     }
 }
 exports.CreateDomainDto = CreateDomainDto;
@@ -114,15 +115,14 @@ __decorate([
 ], CreateDomainDto.prototype, "isPrimary", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: 'custom',
+        example: client_1.DomainType.CUSTOM,
         description: 'The type of domain being added',
-        enum: ['custom', 'subdomain'],
+        enum: client_1.DomainType,
         required: false,
-        default: 'custom',
+        default: client_1.DomainType.CUSTOM,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Type must be a string' }),
-    (0, class_validator_1.IsIn)(['custom', 'subdomain'], { message: 'Type must be either "custom" or "subdomain"' }),
+    (0, class_validator_1.IsEnum)(client_1.DomainType, { message: 'Type must be either CUSTOM or SYSTEM' }),
     __metadata("design:type", String)
 ], CreateDomainDto.prototype, "type", void 0);
 //# sourceMappingURL=create-domain.dto.js.map

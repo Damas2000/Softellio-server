@@ -87,29 +87,18 @@ let DomainManagementController = class DomainManagementController {
             verificationToken: `softellio-verify-${Date.now()}`,
         };
     }
-    async getNetlifyConfig(tenantId) {
-        const domains = await this.domainResolver.getTenantDomains(tenantId);
+    async getNetlifyConfigDeprecated() {
         return {
-            redirects: domains
-                .filter(d => d.type === 'CUSTOM' && d.isActive)
-                .map(d => ({
-                from: `https://${d.domain}/*`,
-                to: `https://connect.softellio.com/:splat`,
-                status: 200,
-                headers: {
-                    'X-Tenant-Domain': d.domain,
-                },
-            })),
-            headers: [
-                {
-                    for: '/*',
-                    values: {
-                        'X-Frame-Options': 'DENY',
-                        'X-Content-Type-Options': 'nosniff',
-                        'Referrer-Policy': 'strict-origin-when-cross-origin',
-                    },
-                },
-            ],
+            statusCode: 410,
+            error: 'Gone',
+            message: 'This endpoint has been permanently removed. Softellio now uses Vercel for deployments.',
+            details: {
+                deprecated: 'GET /domains/netlify-config',
+                reason: 'Netlify is no longer supported. All deployments now use Vercel.',
+                migration: 'Configure domains directly in Vercel dashboard: https://vercel.com/docs/concepts/projects/custom-domains',
+                documentation: 'https://docs.softellio.com/domains/vercel-setup'
+            },
+            timestamp: new Date().toISOString()
         };
     }
 };
@@ -328,17 +317,12 @@ __decorate([
 ], DomainManagementController.prototype, "verifyDomain", null);
 __decorate([
     (0, common_1.Get)('netlify-config'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get Netlify configuration for current tenant' }),
-    (0, swagger_1.ApiResponse)({
-        status: common_1.HttpStatus.OK,
-        description: 'Netlify configuration retrieved',
-    }),
-    (0, roles_decorator_1.Roles)(client_1.Role.SUPER_ADMIN, client_1.Role.TENANT_ADMIN),
-    __param(0, (0, current_tenant_decorator_1.CurrentTenant)()),
+    (0, swagger_1.ApiExcludeEndpoint)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.GONE),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], DomainManagementController.prototype, "getNetlifyConfig", null);
+], DomainManagementController.prototype, "getNetlifyConfigDeprecated", null);
 exports.DomainManagementController = DomainManagementController = __decorate([
     (0, swagger_1.ApiTags)('Domain Management'),
     (0, common_1.Controller)('domains'),

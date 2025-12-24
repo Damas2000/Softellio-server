@@ -42,22 +42,16 @@ export declare class DomainManagementController {
         message: string;
         verificationToken?: string;
     }>;
-    getNetlifyConfig(tenantId: number): Promise<{
-        redirects: {
-            from: string;
-            to: string;
-            status: number;
-            headers: {
-                'X-Tenant-Domain': string;
-            };
-        }[];
-        headers: {
-            for: string;
-            values: {
-                'X-Frame-Options': string;
-                'X-Content-Type-Options': string;
-                'Referrer-Policy': string;
-            };
-        }[];
+    getNetlifyConfigDeprecated(): Promise<{
+        statusCode: number;
+        error: string;
+        message: string;
+        details: {
+            deprecated: string;
+            reason: string;
+            migration: string;
+            documentation: string;
+        };
+        timestamp: string;
     }>;
 }

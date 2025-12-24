@@ -4,7 +4,7 @@ import { DomainManagementController } from './domain-management.controller';
 import { DomainResolverService } from '../services/domain-resolver.service';
 import { CreateDomainDto } from '../dto/create-domain.dto';
 import { UpdateDomainDto } from '../dto/update-domain.dto';
-import { TenantDomain } from '@prisma/client';
+import { TenantDomain, DomainType } from '@prisma/client';
 
 const mockDomainResolverService = {
   getTenantDomains: jest.fn(),
@@ -32,7 +32,7 @@ const mockTenantDomain: TenantDomain = {
 const mockCreateDomainDto: CreateDomainDto = {
   domain: 'hamza.com',
   isPrimary: false,
-  type: 'custom',
+  type: DomainType.CUSTOM,
 };
 
 describe('DomainManagementController', () => {
