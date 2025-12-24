@@ -171,7 +171,7 @@ let DomainResolverService = DomainResolverService_1 = class DomainResolverServic
             data: {
                 tenantId,
                 domain: normalizedDomain,
-                type: 'custom',
+                type: 'CUSTOM',
                 isPrimary,
                 isActive: true,
                 isVerified: false,

@@ -20,11 +20,11 @@ export declare class DomainManagementController {
             name: string;
             status: string;
         };
-        resolvedBy: "default" | "subdomain" | "custom_domain" | "fallback" | "portal_jwt";
+        resolvedBy: "default" | "custom_domain" | "subdomain" | "fallback" | "portal_jwt";
         tenantDomain: {
             id: number;
             domain: string;
-            type: string;
+            type: import(".prisma/client").$Enums.DomainType;
             isPrimary: boolean;
             isVerified: boolean;
         };

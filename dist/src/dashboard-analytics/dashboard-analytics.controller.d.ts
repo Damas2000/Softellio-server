@@ -11,7 +11,6 @@ export declare class DashboardAnalyticsController {
         data: {
             id: number;
             createdAt: Date;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             value: number | null;
             ipAddress: string | null;
             userAgent: string | null;
@@ -20,6 +19,7 @@ export declare class DashboardAnalyticsController {
             utmSource: string | null;
             utmMedium: string | null;
             utmCampaign: string | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             currency: string | null;
             goalId: number;
             convertedAt: Date;
@@ -302,7 +302,6 @@ export declare class DashboardAnalyticsController {
             id: number;
             tenantId: number | null;
             createdAt: Date;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             value: number;
             category: string;
             metricType: string;
@@ -311,6 +310,7 @@ export declare class DashboardAnalyticsController {
             component: string | null;
             warningThreshold: number | null;
             criticalThreshold: number | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             recordedAt: Date;
         };
     }>;
@@ -383,7 +383,6 @@ export declare class DashboardAnalyticsController {
             conversions: {
                 id: number;
                 createdAt: Date;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 value: number | null;
                 ipAddress: string | null;
                 userAgent: string | null;
@@ -392,6 +391,7 @@ export declare class DashboardAnalyticsController {
                 utmSource: string | null;
                 utmMedium: string | null;
                 utmCampaign: string | null;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 currency: string | null;
                 goalId: number;
                 convertedAt: Date;

@@ -7,6 +7,7 @@ import { CloudinaryModule } from './config/cloudinary.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { DomainsModule } from './domains/domains.module';
 import { PagesModule } from './pages/pages.module';
 import { BlogModule } from './blog/blog.module';
 import { MenuModule } from './menu/menu.module';
@@ -51,6 +52,8 @@ import { AppController } from './app.controller';
     UsersModule,
     // Tenant management module
     TenantsModule,
+    // Domain management module
+    DomainsModule,
     // Content management modules
     PagesModule,
     BlogModule,

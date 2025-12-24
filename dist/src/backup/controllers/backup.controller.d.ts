@@ -19,8 +19,8 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         fileName: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
         duration: number | null;
@@ -108,9 +108,9 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         nextRunAt: Date | null;
         lastRunAt: Date | null;
         retentionDays: number;
@@ -135,9 +135,9 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         nextRunAt: Date | null;
         lastRunAt: Date | null;
         retentionDays: number;
@@ -165,9 +165,9 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         nextRunAt: Date | null;
         lastRunAt: Date | null;
         retentionDays: number;
@@ -192,9 +192,9 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
         timezone: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         nextRunAt: Date | null;
         lastRunAt: Date | null;
         retentionDays: number;
@@ -222,8 +222,8 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
@@ -261,8 +261,8 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
@@ -302,8 +302,8 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;
@@ -341,8 +341,8 @@ export declare class BackupController {
         tenantId: number | null;
         createdAt: Date;
         updatedAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         recipients: string[];
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         startedAt: Date | null;
         completedAt: Date | null;
         errorMessage: string | null;

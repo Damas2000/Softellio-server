@@ -235,7 +235,7 @@ let TenantsService = class TenantsService {
                 data: {
                     tenantId: tenant.id,
                     domain: publicDomain,
-                    type: 'subdomain',
+                    type: 'SYSTEM',
                     isPrimary: true,
                     isActive: true,
                     isVerified: true,
@@ -292,44 +292,64 @@ let TenantsService = class TenantsService {
         });
     }
     async findByDomain(host) {
-        const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
-        let tenant = await this.prisma.tenant.findFirst({
+        const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0].toLowerCase();
+        const customDomain = await this.prisma.tenantDomain.findFirst({
             where: {
                 domain: cleanHost,
+                type: 'CUSTOM',
                 isActive: true,
-                status: 'active'
+                isVerified: true,
+                tenant: {
+                    isActive: true,
+                    status: 'active'
+                }
+            },
+            include: {
+                tenant: true
             }
         });
-        if (!tenant) {
-            const tenantDomain = await this.prisma.tenantDomain.findFirst({
-                where: {
-                    domain: cleanHost,
-                    isActive: true,
-                    tenant: {
-                        isActive: true,
-                        status: 'active'
-                    }
-                },
-                include: {
-                    tenant: true
-                }
-            });
-            if (tenantDomain) {
-                tenant = tenantDomain.tenant;
-            }
+        if (customDomain) {
+            return customDomain.tenant;
         }
-        if (!tenant && cleanHost.includes('.softellio.com')) {
+        const systemDomain = await this.prisma.tenantDomain.findFirst({
+            where: {
+                domain: cleanHost,
+                type: 'SYSTEM',
+                isActive: true,
+                tenant: {
+                    isActive: true,
+                    status: 'active'
+                }
+            },
+            include: {
+                tenant: true
+            }
+        });
+        if (systemDomain) {
+            return systemDomain.tenant;
+        }
+        if (cleanHost.includes('.softellio.com')) {
             const subdomain = cleanHost.replace('.softellio.com', '');
             const slug = subdomain.replace(/panel$/, '');
-            tenant = await this.prisma.tenant.findFirst({
+            const tenantBySlug = await this.prisma.tenant.findFirst({
                 where: {
                     slug: slug,
                     isActive: true,
                     status: 'active'
                 }
             });
+            if (tenantBySlug) {
+                return tenantBySlug;
+            }
         }
-        return tenant;
+        const tenantByMainDomain = await this.prisma.tenant.findFirst({
+            where: {
+                domain: cleanHost,
+                isActive: true,
+                status: 'active'
+            }
+        });
+        return tenantByMainDomain;
     }
     generateSlug(name) {
         return name

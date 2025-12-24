@@ -91,7 +91,7 @@ let DomainManagementController = class DomainManagementController {
         const domains = await this.domainResolver.getTenantDomains(tenantId);
         return {
             redirects: domains
-                .filter(d => d.type === 'custom' && d.isActive)
+                .filter(d => d.type === 'CUSTOM' && d.isActive)
                 .map(d => ({
                 from: `https://${d.domain}/*`,
                 to: `https://connect.softellio.com/:splat`,

@@ -235,7 +235,7 @@ export class DomainResolverService {
       data: {
         tenantId,
         domain: normalizedDomain,
-        type: 'custom',
+        type: 'CUSTOM',
         isPrimary,
         isActive: true,
         isVerified: false,
