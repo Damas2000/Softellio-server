@@ -10,7 +10,7 @@ export declare class AuthController {
     constructor(authService: AuthService, tenantsService: TenantsService);
     login(loginDto: LoginDto, request: Request, response: Response): Promise<AuthResponseDto>;
     refresh(user: any): Promise<RefreshResponseDto>;
-    logout(response: Response): Promise<{
+    logout(user: any, request: Request, response: Response): Promise<{
         message: string;
     }>;
     me(user: any): Promise<{
@@ -24,4 +24,5 @@ export declare class AuthController {
     private extractHost;
     private isReservedDomain;
     private isSuperAdminEmail;
+    private getClientIp;
 }

@@ -17,7 +17,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SiteSettingsService } from './site-settings.service';
-import { CreateSiteSettingDto, UpdateSiteSettingDto, SiteSettingTranslationDto } from './dto/site-setting.dto';
+import { CreateSiteSettingDto, UpdateSiteSettingDto, SiteSettingTranslationDto, UpsertSiteSettingTranslationDto } from './dto/site-setting.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -93,9 +93,10 @@ export class SiteSettingsController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Upsert translation for specific language (Admin)' })
   @ApiResponse({ status: 200, description: 'Translation updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or missing required fields' })
   upsertTranslation(
     @Param('language') language: string,
-    @Body() translationDto: Omit<SiteSettingTranslationDto, 'language'>,
+    @Body() translationDto: UpsertSiteSettingTranslationDto,
     @CurrentTenant() tenantId: number,
   ) {
     return this.siteSettingsService.upsertTranslation(tenantId, language, translationDto);

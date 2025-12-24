@@ -21,7 +21,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "seed": "ts-node src/seeding/seed.ts",
-    "seed:clear": "ts-node src/seeding/seed.ts --clear"
+    "seed:clear": "ts-node src/seeding/seed.ts --clear",
+    "seed:auth-repair": "ts-node src/seeding/auth-repair.ts"
   },
   "keywords": [],
   "author": "",

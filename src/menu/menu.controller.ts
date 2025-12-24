@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
-import { CreateMenuItemDto } from './dto/create-menu-item.dto';
+import { CreateMenuItemDto, MenuReorderDto } from './dto/create-menu-item.dto';
 import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
@@ -137,13 +137,14 @@ export class MenuController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Reorder menu items (Admin)' })
   @ApiResponse({ status: 200, description: 'Menu items reordered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   @ApiResponse({ status: 404, description: 'Menu not found' })
   reorderMenuItems(
     @Param('menuId', ParseIntPipe) menuId: number,
-    @Body() body: { items: { id: number; order: number }[] },
+    @Body() reorderDto: MenuReorderDto,
     @CurrentTenant() tenantId: number
   ) {
-    return this.menuService.reorderMenuItems(menuId, tenantId, body.items);
+    return this.menuService.reorderMenuItems(menuId, tenantId, reorderDto.items);
   }
 
   // ==================== PUBLIC MENU ROUTES ====================

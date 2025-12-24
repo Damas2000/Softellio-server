@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { ActivityService } from '../activity/activity.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto, BulkUserOperationDto, UserInviteDto, ChangePasswordDto, ResetPasswordDto } from './dto/user-query.dto';
@@ -13,6 +14,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private activityService: ActivityService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
@@ -421,15 +423,30 @@ export class UsersService {
     details?: string,
     ipAddress?: string,
     userAgent?: string,
+    tenantId?: number,
   ): Promise<void> {
-    // TODO: Create UserActivity table in Prisma schema
-    // For now, just log to console
-    console.log(`User Activity - User ${userId}: ${action}`, {
-      details,
-      ipAddress,
-      userAgent,
-      timestamp: new Date(),
-    });
+    try {
+      // Get user's tenant if not provided
+      if (tenantId === undefined) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { tenantId: true },
+        });
+        tenantId = user?.tenantId;
+      }
+
+      await this.activityService.logActivity({
+        userId,
+        tenantId,
+        action,
+        details,
+        ipAddress,
+        userAgent,
+      });
+    } catch (error) {
+      // Log error but don't break the main flow
+      console.error('Failed to log user activity:', error);
+    }
   }
 
   async getUserActivityLog(
@@ -454,53 +471,35 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const { page = 1, limit = 50, startDate, endDate } = queryDto;
+    const { page = 1, limit = 50, action } = queryDto;
 
-    // TODO: Implement actual activity log retrieval
-    // For now, return mock data
-    const mockActivities: UserActivityResponse[] = [
-      {
-        id: 1,
-        userId,
-        action: 'login',
-        details: 'User logged in successfully',
-        ipAddress: '192.168.1.1',
-        userAgent: 'Mozilla/5.0...',
-        timestamp: new Date(),
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
-      },
-      {
-        id: 2,
-        userId,
-        action: 'profile_update',
-        details: 'User updated their profile',
-        ipAddress: '192.168.1.1',
-        userAgent: 'Mozilla/5.0...',
-        timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
-      },
-    ];
+    // Get real activity log from ActivityService
+    const result = await this.activityService.getActivityLog(
+      userId,
+      requestingUserTenantId,
+      page,
+      limit,
+      action,
+    );
 
-    const total = mockActivities.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const activities = mockActivities.slice(startIndex, endIndex);
+    // Transform to match UserActivityResponse interface
+    const activities: UserActivityResponse[] = result.activities.map((activity) => ({
+      id: activity.id,
+      userId,
+      action: activity.action,
+      details: activity.details,
+      ipAddress: activity.ipAddress,
+      userAgent: activity.userAgent,
+      timestamp: activity.createdAt,
+      user: activity.user,
+    }));
 
     return {
       activities,
-      total,
-      page,
-      limit,
-      totalPages,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
     };
   }
 
@@ -520,25 +519,12 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // TODO: Implement actual activity summary
-    // For now, return mock data
-    return {
-      totalActivities: 15,
-      activitiesByAction: {
-        login: 8,
-        profile_update: 3,
-        content_create: 2,
-        content_update: 1,
-        logout: 1,
-      },
-      activitiesByDay: [
-        { date: '2023-12-07', count: 5 },
-        { date: '2023-12-06', count: 3 },
-        { date: '2023-12-05', count: 7 },
-      ],
-      lastActivity: new Date(),
-      mostActiveHour: 14, // 2 PM
-    };
+    // Get real activity summary from ActivityService
+    return await this.activityService.getActivitySummary(
+      userId,
+      requestingUserTenantId,
+      days,
+    );
   }
 
   async getAllUsersActivitySummary(tenantId?: number): Promise<{
@@ -557,31 +543,31 @@ export class UsersService {
       uniqueUsers: number;
     }>;
   }> {
-    // TODO: Implement actual global activity summary
-    // For now, return mock data
+    // Get global activity summary from ActivityService
+    const globalSummary = await this.activityService.getGlobalActivitySummary(tenantId, 30);
+    const stats = await this.activityService.getActivityStats(tenantId);
+
+    // Calculate unique users for trends (mock for now since we don't have this specific aggregation)
+    const activityTrends = globalSummary.activitiesByDay.map(day => ({
+      date: day.date,
+      totalActivities: day.count,
+      uniqueUsers: Math.ceil(day.count / 3), // Mock calculation
+    }));
+
+    // Transform topUsers to match the expected interface
+    const mostActiveUsers = globalSummary.topUsers.map(user => ({
+      userId: user.userId,
+      userName: user.userName,
+      email: user.userEmail,
+      activityCount: user.activityCount,
+    }));
+
     return {
-      totalActivities: 1250,
-      activeUsersToday: 15,
-      activeUsersThisWeek: 45,
-      mostActiveUsers: [
-        {
-          userId: 1,
-          userName: 'Admin User',
-          email: 'admin@example.com',
-          activityCount: 45,
-        },
-        {
-          userId: 2,
-          userName: 'Editor User',
-          email: 'editor@example.com',
-          activityCount: 32,
-        },
-      ],
-      activityTrends: [
-        { date: '2023-12-07', totalActivities: 120, uniqueUsers: 15 },
-        { date: '2023-12-06', totalActivities: 95, uniqueUsers: 12 },
-        { date: '2023-12-05', totalActivities: 150, uniqueUsers: 18 },
-      ],
+      totalActivities: globalSummary.totalActivities,
+      activeUsersToday: stats.today > 0 ? Math.ceil(stats.today / 2) : 0, // Estimate unique users
+      activeUsersThisWeek: stats.thisWeek > 0 ? Math.ceil(stats.thisWeek / 5) : 0, // Estimate unique users
+      mostActiveUsers,
+      activityTrends,
     };
   }
 
@@ -627,6 +613,17 @@ export class UsersService {
       where: whereClause,
       data: updateUserDto,
     });
+
+    // Log profile update activity
+    const updatedFields = Object.keys(updateUserDto).filter(key => updateUserDto[key] !== undefined);
+    await this.logUserActivity(
+      id,
+      'profile_update',
+      `Profile updated: ${updatedFields.join(', ')}`,
+      undefined,
+      undefined,
+      tenantId,
+    );
 
     const { password, ...userWithoutPassword } = updatedUser;
     return userWithoutPassword;

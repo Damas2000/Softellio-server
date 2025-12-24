@@ -55,7 +55,9 @@ let AuthController = AuthController_1 = class AuthController {
         if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email)) {
             throw new common_2.BadRequestException('Tenant information is required for this login');
         }
-        const result = await this.authService.login(loginDto, tenant);
+        const ipAddress = this.getClientIp(request);
+        const userAgent = request.headers['user-agent'];
+        const result = await this.authService.login(loginDto, tenant, ipAddress, userAgent);
         const tokens = await this.authService.generateTokens({
             id: result.user.id,
             email: result.user.email,
@@ -78,9 +80,11 @@ let AuthController = AuthController_1 = class AuthController {
     async refresh(user) {
         return this.authService.refresh(user.id);
     }
-    async logout(response) {
+    async logout(user, request, response) {
         response.clearCookie('refreshToken');
-        return this.authService.logout();
+        const ipAddress = this.getClientIp(request);
+        const userAgent = request.headers['user-agent'];
+        return this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
     }
     async me(user) {
         return {
@@ -116,6 +120,21 @@ let AuthController = AuthController_1 = class AuthController {
     }
     isSuperAdminEmail(email) {
         return email && email.endsWith('@softellio.com');
+    }
+    getClientIp(request) {
+        const xForwardedFor = request.headers['x-forwarded-for'];
+        if (xForwardedFor) {
+            return Array.isArray(xForwardedFor)
+                ? xForwardedFor[0]
+                : xForwardedFor.split(',')[0].trim();
+        }
+        const xRealIp = request.headers['x-real-ip'];
+        if (xRealIp) {
+            return Array.isArray(xRealIp) ? xRealIp[0] : xRealIp;
+        }
+        return request.connection?.remoteAddress ||
+            request.socket?.remoteAddress ||
+            'unknown';
     }
 };
 exports.AuthController = AuthController;
@@ -167,9 +186,11 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'User logout' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Logout successful' }),
-    __param(0, (0, common_1.Res)({ passthrough: true })),
+    __param(0, (0, current_tenant_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
 __decorate([

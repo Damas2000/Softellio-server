@@ -82,7 +82,11 @@ export class AuthController {
       throw new BadRequestException('Tenant information is required for this login');
     }
 
-    const result = await this.authService.login(loginDto, tenant);
+    // Extract IP address and user agent for activity logging
+    const ipAddress = this.getClientIp(request);
+    const userAgent = request.headers['user-agent'];
+
+    const result = await this.authService.login(loginDto, tenant, ipAddress, userAgent);
 
     // Generate refresh token and set as HTTP-only cookie
     const tokens = await this.authService.generateTokens({
@@ -129,12 +133,18 @@ export class AuthController {
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
+    @CurrentUser() user: any,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ message: string }> {
     // Clear refresh token cookie
     response.clearCookie('refreshToken');
 
-    return this.authService.logout();
+    // Extract IP address and user agent for activity logging
+    const ipAddress = this.getClientIp(request);
+    const userAgent = request.headers['user-agent'];
+
+    return this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
   }
 
   @Post('me')
@@ -194,5 +204,29 @@ export class AuthController {
   private isSuperAdminEmail(email: string): boolean {
     // Check if email is for SUPER_ADMIN (can login without tenant)
     return email && email.endsWith('@softellio.com');
+  }
+
+  /**
+   * Extract client IP address from request headers
+   */
+  private getClientIp(request: Request): string {
+    // Priority: X-Forwarded-For, X-Real-IP, connection.remoteAddress
+    const xForwardedFor = request.headers['x-forwarded-for'];
+    if (xForwardedFor) {
+      // X-Forwarded-For can contain multiple IPs, take the first one
+      return Array.isArray(xForwardedFor)
+        ? xForwardedFor[0]
+        : xForwardedFor.split(',')[0].trim();
+    }
+
+    const xRealIp = request.headers['x-real-ip'];
+    if (xRealIp) {
+      return Array.isArray(xRealIp) ? xRealIp[0] : xRealIp;
+    }
+
+    // Fallback to connection remote address
+    return request.connection?.remoteAddress ||
+           request.socket?.remoteAddress ||
+           'unknown';
   }
 }

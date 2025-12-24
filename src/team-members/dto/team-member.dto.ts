@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsEmail, IsUrl, ValidateNested, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsEmail, IsUrl, ValidateNested, IsArray, IsInt, ArrayMinSize } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -293,4 +293,48 @@ export class TeamMemberQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'asc';
+}
+
+export class BulkTeamMemberDeleteDto {
+  @ApiProperty({
+    description: 'Array of team member IDs to delete',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsArray({ message: 'IDs must be an array' })
+  @ArrayMinSize(1, { message: 'At least one team member ID is required' })
+  @IsInt({ each: true, message: 'Each ID must be a valid integer' })
+  @Type(() => Number)
+  ids: number[];
+}
+
+export class TeamMemberReorderDto {
+  @ApiProperty({
+    description: 'Array of team members with their new order',
+    example: [{ id: 1, order: 1 }, { id: 2, order: 2 }],
+    type: [Object],
+  })
+  @IsArray({ message: 'Team members must be an array' })
+  @ArrayMinSize(1, { message: 'At least one team member is required' })
+  @ValidateNested({ each: true })
+  @Type(() => TeamMemberOrderDto)
+  teamMembers: TeamMemberOrderDto[];
+}
+
+export class TeamMemberOrderDto {
+  @ApiProperty({
+    description: 'Team member ID',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'ID must be a number' })
+  @Type(() => Number)
+  id: number;
+
+  @ApiProperty({
+    description: 'New order position',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'Order must be a number' })
+  @Type(() => Number)
+  order: number;
 }

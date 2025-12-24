@@ -15,11 +15,13 @@ const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = require("bcrypt");
 const prisma_service_1 = require("../config/prisma.service");
+const activity_service_1 = require("../activity/activity.service");
 let AuthService = class AuthService {
-    constructor(prisma, jwtService, configService) {
+    constructor(prisma, jwtService, configService, activityService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.configService = configService;
+        this.activityService = activityService;
     }
     async validateUser(email, password, tenant) {
         const whereConditions = {
@@ -41,12 +43,25 @@ let AuthService = class AuthService {
         }
         return user;
     }
-    async login(loginDto, tenant) {
+    async login(loginDto, tenant, ipAddress, userAgent) {
         const user = await this.validateUser(loginDto.email, loginDto.password, tenant);
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const tokens = await this.generateTokens(user);
+        try {
+            await this.activityService.logActivity({
+                userId: user.id,
+                tenantId: user.tenantId,
+                action: 'login',
+                details: `Successful login for user ${user.email}`,
+                ipAddress,
+                userAgent,
+            });
+        }
+        catch (error) {
+            console.error('Failed to log login activity:', error);
+        }
         return {
             accessToken: tokens.accessToken,
             user: {
@@ -110,7 +125,20 @@ let AuthService = class AuthService {
     async validatePassword(password, hashedPassword) {
         return bcrypt.compare(password, hashedPassword);
     }
-    async logout() {
+    async logout(userId, tenantId, ipAddress, userAgent) {
+        try {
+            await this.activityService.logActivity({
+                userId,
+                tenantId,
+                action: 'logout',
+                details: 'User logged out',
+                ipAddress,
+                userAgent,
+            });
+        }
+        catch (error) {
+            console.error('Failed to log logout activity:', error);
+        }
         return { message: 'Logged out successfully' };
     }
 };
@@ -119,6 +147,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        activity_service_1.ActivityService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

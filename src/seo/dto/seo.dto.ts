@@ -1,6 +1,44 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested, IsArray, IsJSON, IsEnum, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested, IsArray, IsJSON, IsEnum, Min, Max, IsObject, ValidatorConstraint, ValidatorConstraintInterface, Validate, ValidationArguments } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+
+// ==================== CUSTOM VALIDATORS ====================
+
+@ValidatorConstraint({ name: 'ValidStructuredData', async: false })
+export class ValidStructuredDataValidator implements ValidatorConstraintInterface {
+  validate(jsonLd: any, args: ValidationArguments) {
+    if (!jsonLd || typeof jsonLd !== 'object') {
+      return false;
+    }
+
+    // Check required Schema.org properties
+    if (!jsonLd['@context'] || !jsonLd['@type']) {
+      return false;
+    }
+
+    // Validate @context
+    if (typeof jsonLd['@context'] !== 'string' || !jsonLd['@context'].includes('schema.org')) {
+      return false;
+    }
+
+    // Validate @type
+    if (typeof jsonLd['@type'] !== 'string') {
+      return false;
+    }
+
+    // Check JSON size limit (100KB)
+    const jsonString = JSON.stringify(jsonLd);
+    if (jsonString.length > 102400) { // 100KB
+      return false;
+    }
+
+    return true;
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return 'JSON-LD must be a valid Schema.org structured data object with @context, @type, and under 100KB size limit';
+  }
+}
 
 // ==================== STRUCTURED DATA DTOs ====================
 
@@ -38,10 +76,11 @@ export class CreateStructuredDataDto {
         "contactType": "customer service"
       }
     },
-    description: 'Complete JSON-LD structured data'
+    description: 'Complete JSON-LD structured data object (will be stored as JSON in database). Must include @context and @type. Size limit: 100KB.'
   })
-  @IsJSON()
-  jsonLd: any;
+  @IsObject()
+  @Validate(ValidStructuredDataValidator)
+  jsonLd: Record<string, any>;
 
   @ApiProperty({
     example: true,
@@ -88,12 +127,24 @@ export class UpdateStructuredDataDto {
   schemaType?: string;
 
   @ApiProperty({
-    description: 'Complete JSON-LD structured data',
+    example: {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Updated ABC İnşaat",
+      "url": "https://abcinsaat.com",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+90-212-555-0123",
+        "contactType": "customer service"
+      }
+    },
+    description: 'Complete JSON-LD structured data object (will be stored as JSON in database). Must include @context and @type. Size limit: 100KB.',
     required: false
   })
   @IsOptional()
-  @IsJSON()
-  jsonLd?: any;
+  @IsObject()
+  @Validate(ValidStructuredDataValidator)
+  jsonLd?: Record<string, any>;
 
   @ApiProperty({
     example: true,

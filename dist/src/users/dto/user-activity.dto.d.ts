@@ -3,6 +3,7 @@ export declare class UserActivityQueryDto {
     endDate?: string;
     page?: number;
     limit?: number;
+    action?: string;
 }
 export interface UserActivityResponse {
     id: number;

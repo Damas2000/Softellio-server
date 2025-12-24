@@ -225,13 +225,10 @@ export class MenuService {
       }
     }
 
-    // Validate that either pageId or externalUrl is provided, but not both
+    // Validate mutual exclusivity - can't have both pageId and externalUrl
+    // But allow both to be null (for group/parent menu items)
     if (createMenuItemDto.pageId && createMenuItemDto.externalUrl) {
       throw new BadRequestException('Menu item cannot have both pageId and externalUrl');
-    }
-
-    if (!createMenuItemDto.pageId && !createMenuItemDto.externalUrl) {
-      throw new BadRequestException('Menu item must have either pageId or externalUrl');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -385,7 +382,7 @@ export class MenuService {
     return { message: 'Menu item deleted successfully' };
   }
 
-  async reorderMenuItems(menuId: number, tenantId: number, itemOrders: { id: number; order: number }[]): Promise<{ message: string }> {
+  async reorderMenuItems(menuId: number, tenantId: number, itemOrders: { id: number; order: number; parentId?: number | null }[]): Promise<{ message: string }> {
     // Validate menu exists and belongs to tenant
     const menu = await this.prisma.menu.findFirst({
       where: { id: menuId, tenantId },
@@ -395,12 +392,50 @@ export class MenuService {
       throw new NotFoundException('Menu not found');
     }
 
-    // Update orders in transaction
+    // Validate all items belong to this menu and tenant
+    const itemIds = itemOrders.map(item => item.id);
+    const existingItems = await this.prisma.menuItem.findMany({
+      where: {
+        id: { in: itemIds },
+        menuId,
+        tenantId
+      },
+      select: { id: true }
+    });
+
+    if (existingItems.length !== itemIds.length) {
+      throw new BadRequestException('One or more menu items not found or do not belong to this menu');
+    }
+
+    // Validate parent IDs if specified
+    const parentIds = itemOrders
+      .map(item => item.parentId)
+      .filter((parentId): parentId is number => parentId !== null && parentId !== undefined);
+
+    if (parentIds.length > 0) {
+      const existingParents = await this.prisma.menuItem.findMany({
+        where: {
+          id: { in: parentIds },
+          menuId,
+          tenantId
+        },
+        select: { id: true }
+      });
+
+      if (existingParents.length !== new Set(parentIds).size) {
+        throw new BadRequestException('One or more parent items not found or do not belong to this menu');
+      }
+    }
+
+    // Update orders and parentIds in transaction
     await this.prisma.$transaction(
-      itemOrders.map(({ id, order }) =>
+      itemOrders.map(({ id, order, parentId }) =>
         this.prisma.menuItem.update({
           where: { id },
-          data: { order },
+          data: {
+            order,
+            parentId: parentId !== undefined ? parentId : undefined
+          },
         })
       )
     );

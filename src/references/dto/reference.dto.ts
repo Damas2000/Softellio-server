@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested, IsArray, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested, IsArray, IsDateString, IsInt, ArrayMinSize } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -400,4 +400,48 @@ export class ReferenceQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'asc';
+}
+
+export class BulkReferenceDeleteDto {
+  @ApiProperty({
+    description: 'Array of reference IDs to delete',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsArray({ message: 'IDs must be an array' })
+  @ArrayMinSize(1, { message: 'At least one reference ID is required' })
+  @IsInt({ each: true, message: 'Each ID must be a valid integer' })
+  @Type(() => Number)
+  ids: number[];
+}
+
+export class ReferenceReorderDto {
+  @ApiProperty({
+    description: 'Array of references with their new order',
+    example: [{ id: 1, order: 1 }, { id: 2, order: 2 }],
+    type: [Object],
+  })
+  @IsArray({ message: 'References must be an array' })
+  @ArrayMinSize(1, { message: 'At least one reference is required' })
+  @ValidateNested({ each: true })
+  @Type(() => ReferenceOrderDto)
+  references: ReferenceOrderDto[];
+}
+
+export class ReferenceOrderDto {
+  @ApiProperty({
+    description: 'Reference ID',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'ID must be a number' })
+  @Type(() => Number)
+  id: number;
+
+  @ApiProperty({
+    description: 'New order position',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'Order must be a number' })
+  @Type(() => Number)
+  order: number;
 }

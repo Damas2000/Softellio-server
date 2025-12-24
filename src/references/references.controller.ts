@@ -18,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ReferencesService } from './references.service';
-import { CreateReferenceDto, UpdateReferenceDto, ReferenceQueryDto } from './dto/reference.dto';
+import { CreateReferenceDto, UpdateReferenceDto, ReferenceQueryDto, BulkReferenceDeleteDto, ReferenceReorderDto } from './dto/reference.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -146,11 +146,12 @@ export class ReferencesController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete references (Admin)' })
   @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   bulkDelete(
-    @Body() body: { ids: number[] },
+    @Body() bulkDeleteDto: BulkReferenceDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.referencesService.bulkDelete(body.ids, tenantId);
+    return this.referencesService.bulkDelete(bulkDeleteDto.ids, tenantId);
   }
 
   @Patch('admin/reorder')
@@ -158,11 +159,12 @@ export class ReferencesController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Reorder references (Admin)' })
   @ApiResponse({ status: 200, description: 'References reordered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   reorder(
-    @Body() body: { references: { id: number; order: number }[] },
+    @Body() reorderDto: ReferenceReorderDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.referencesService.reorder(body.references, tenantId);
+    return this.referencesService.reorder(reorderDto.references, tenantId);
   }
 
   // ==================== PUBLIC ROUTES ====================

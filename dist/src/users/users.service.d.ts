@@ -1,5 +1,6 @@
 import { PrismaService } from '../config/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { ActivityService } from '../activity/activity.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto, BulkUserOperationDto, UserInviteDto, ChangePasswordDto, ResetPasswordDto } from './dto/user-query.dto';
@@ -8,7 +9,8 @@ import { User, Role } from '@prisma/client';
 export declare class UsersService {
     private prisma;
     private authService;
-    constructor(prisma: PrismaService, authService: AuthService);
+    private activityService;
+    constructor(prisma: PrismaService, authService: AuthService, activityService: ActivityService);
     create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>>;
     findAll(tenantId?: number): Promise<Omit<User, 'password'>[]>;
     findAllWithQuery(queryDto: UserQueryDto, requestingUserTenantId?: number): Promise<{
@@ -51,7 +53,7 @@ export declare class UsersService {
         lastActivity?: Date;
         createdContent: number;
     }>;
-    logUserActivity(userId: number, action: string, details?: string, ipAddress?: string, userAgent?: string): Promise<void>;
+    logUserActivity(userId: number, action: string, details?: string, ipAddress?: string, userAgent?: string, tenantId?: number): Promise<void>;
     getUserActivityLog(userId: number, queryDto: UserActivityQueryDto, requestingUserTenantId?: number): Promise<{
         activities: UserActivityResponse[];
         total: number;

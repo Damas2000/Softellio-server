@@ -1,5 +1,5 @@
 import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './config/prisma.module';
@@ -31,6 +31,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { AppController } from './app.controller';
 
 @Module({
@@ -95,6 +96,11 @@ import { AppController } from './app.controller';
   ],
   controllers: [AppController],
   providers: [
+    // Global exception filters
+    {
+      provide: APP_FILTER,
+      useClass: PrismaExceptionFilter,
+    },
     // Global guards
     {
       provide: APP_GUARD,

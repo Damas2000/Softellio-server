@@ -371,6 +371,17 @@ export class PagesController {
     return this.pagesService.findAll(tenantId, publicQuery);
   }
 
+  @Get('public/:language/list')
+  @Public()
+  @ApiOperation({ summary: 'Get all published pages in a language (Public)' })
+  @ApiResponse({ status: 200, type: [PageResponseDto], description: 'List of published pages for navigation/sitemap' })
+  async getPagesByLanguage(
+    @Param('language') language: string,
+    @CurrentTenant() tenantId: number
+  ): Promise<PageResponseDto[]> {
+    return this.pagesService.getPagesByLanguage(language, tenantId, true);
+  }
+
   @Get('public/:language/:slug')
   @Public()
   @ApiOperation({ summary: 'Get published page by slug and language (Public)' })
@@ -382,17 +393,6 @@ export class PagesController {
     @CurrentTenant() tenantId: number
   ): Promise<PageResponseDto> {
     return this.pagesService.findBySlug(slug, language, tenantId, false);
-  }
-
-  @Get('public/:language/list')
-  @Public()
-  @ApiOperation({ summary: 'Get all published pages in a language (Public)' })
-  @ApiResponse({ status: 200, type: [PageResponseDto], description: 'List of published pages for navigation/sitemap' })
-  async getPagesByLanguage(
-    @Param('language') language: string,
-    @CurrentTenant() tenantId: number
-  ): Promise<PageResponseDto[]> {
-    return this.pagesService.getPagesByLanguage(language, tenantId, true);
   }
 
   // ==================== PREVIEW ROUTES (Admin with unpublished) ====================

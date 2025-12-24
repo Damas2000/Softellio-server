@@ -8,25 +8,25 @@ export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
     create(createUserDto: CreateUserDto): Promise<Omit<{
+        name: string | null;
+        id: number;
+        tenantId: number | null;
+        createdAt: Date;
+        role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
-        id: number;
-        name: string | null;
-        role: import(".prisma/client").$Enums.Role;
-        tenantId: number | null;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     findAll(user: any, tenantId: number): Promise<Omit<{
+        name: string | null;
+        id: number;
+        tenantId: number | null;
+        createdAt: Date;
+        role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
-        id: number;
-        name: string | null;
-        role: import(".prisma/client").$Enums.Role;
-        tenantId: number | null;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">[]>;
     findAllAdvanced(queryDto: UserQueryDto, user: any, tenantId: number): Promise<{
@@ -61,25 +61,25 @@ export declare class UsersController {
         message: string;
     }>;
     findOne(id: number, user: any, tenantId: number): Promise<Omit<{
+        name: string | null;
+        id: number;
+        tenantId: number | null;
+        createdAt: Date;
+        role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
-        id: number;
-        name: string | null;
-        role: import(".prisma/client").$Enums.Role;
-        tenantId: number | null;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     update(id: number, updateUserDto: UpdateUserDto, user: any, tenantId: number): Promise<Omit<{
+        name: string | null;
+        id: number;
+        tenantId: number | null;
+        createdAt: Date;
+        role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
-        id: number;
-        name: string | null;
-        role: import(".prisma/client").$Enums.Role;
-        tenantId: number | null;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     deactivate(id: number, user: any, tenantId: number): Promise<{

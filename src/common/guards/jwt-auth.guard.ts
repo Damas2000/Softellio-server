@@ -23,9 +23,32 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   handleRequest(err: any, user: any, info: any) {
-    if (err || !user) {
-      throw err || new UnauthorizedException('Invalid token');
+    if (err) {
+      throw err;
     }
+
+    if (!user) {
+      // Check for specific JWT errors
+      if (info?.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired. Please login again.');
+      }
+
+      if (info?.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid token. Please login again.');
+      }
+
+      if (info?.name === 'NotBeforeError') {
+        throw new UnauthorizedException('Token not active yet. Please check your system clock.');
+      }
+
+      if (info?.message) {
+        throw new UnauthorizedException(`Authentication failed: ${info.message}`);
+      }
+
+      // Default fallback
+      throw new UnauthorizedException('Invalid token. Please login again.');
+    }
+
     return user;
   }
 }

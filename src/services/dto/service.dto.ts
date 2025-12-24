@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsUrl, ValidateNested, IsArray, IsInt, ArrayMinSize } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -250,4 +250,48 @@ export class ServiceQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'asc';
+}
+
+export class BulkServiceDeleteDto {
+  @ApiProperty({
+    description: 'Array of service IDs to delete',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsArray({ message: 'IDs must be an array' })
+  @ArrayMinSize(1, { message: 'At least one service ID is required' })
+  @IsInt({ each: true, message: 'Each ID must be a valid integer' })
+  @Type(() => Number)
+  ids: number[];
+}
+
+export class ServiceReorderDto {
+  @ApiProperty({
+    description: 'Array of services with their new order',
+    example: [{ id: 1, order: 1 }, { id: 2, order: 2 }],
+    type: [Object],
+  })
+  @IsArray({ message: 'Services must be an array' })
+  @ArrayMinSize(1, { message: 'At least one service is required' })
+  @ValidateNested({ each: true })
+  @Type(() => ServiceOrderDto)
+  services: ServiceOrderDto[];
+}
+
+export class ServiceOrderDto {
+  @ApiProperty({
+    description: 'Service ID',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'ID must be a number' })
+  @Type(() => Number)
+  id: number;
+
+  @ApiProperty({
+    description: 'New order position',
+    example: 1,
+  })
+  @IsNumber({}, { message: 'Order must be a number' })
+  @Type(() => Number)
+  order: number;
 }

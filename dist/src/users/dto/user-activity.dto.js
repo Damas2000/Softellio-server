@@ -66,4 +66,13 @@ __decorate([
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], UserActivityQueryDto.prototype, "limit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        required: false,
+        description: 'Filter activities by action type',
+        example: 'login',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UserActivityQueryDto.prototype, "action", void 0);
 //# sourceMappingURL=user-activity.dto.js.map

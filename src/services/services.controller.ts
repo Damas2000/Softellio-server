@@ -18,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
-import { CreateServiceDto, UpdateServiceDto, ServiceQueryDto } from './dto/service.dto';
+import { CreateServiceDto, UpdateServiceDto, ServiceQueryDto, BulkServiceDeleteDto, ServiceReorderDto } from './dto/service.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -125,11 +125,12 @@ export class ServicesController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete services (Admin)' })
   @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   bulkDelete(
-    @Body() body: { ids: number[] },
+    @Body() bulkDeleteDto: BulkServiceDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.servicesService.bulkDelete(body.ids, tenantId);
+    return this.servicesService.bulkDelete(bulkDeleteDto.ids, tenantId);
   }
 
   @Patch('admin/reorder')
@@ -137,11 +138,12 @@ export class ServicesController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Reorder services (Admin)' })
   @ApiResponse({ status: 200, description: 'Services reordered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   reorder(
-    @Body() body: { services: { id: number; order: number }[] },
+    @Body() reorderDto: ServiceReorderDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.servicesService.reorder(body.services, tenantId);
+    return this.servicesService.reorder(reorderDto.services, tenantId);
   }
 
   // ==================== PUBLIC ROUTES ====================

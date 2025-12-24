@@ -18,7 +18,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { TeamMembersService } from './team-members.service';
-import { CreateTeamMemberDto, UpdateTeamMemberDto, TeamMemberQueryDto } from './dto/team-member.dto';
+import { CreateTeamMemberDto, UpdateTeamMemberDto, TeamMemberQueryDto, BulkTeamMemberDeleteDto, TeamMemberReorderDto } from './dto/team-member.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -115,11 +115,12 @@ export class TeamMembersController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete team members (Admin)' })
   @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   bulkDelete(
-    @Body() body: { ids: number[] },
+    @Body() bulkDeleteDto: BulkTeamMemberDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.teamMembersService.bulkDelete(body.ids, tenantId);
+    return this.teamMembersService.bulkDelete(bulkDeleteDto.ids, tenantId);
   }
 
   @Patch('admin/reorder')
@@ -127,11 +128,12 @@ export class TeamMembersController {
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Reorder team members (Admin)' })
   @ApiResponse({ status: 200, description: 'Team members reordered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body or validation error' })
   reorder(
-    @Body() body: { teamMembers: { id: number; order: number }[] },
+    @Body() reorderDto: TeamMemberReorderDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.teamMembersService.reorder(body.teamMembers, tenantId);
+    return this.teamMembersService.reorder(reorderDto.teamMembers, tenantId);
   }
 
   // ==================== PUBLIC ROUTES ====================

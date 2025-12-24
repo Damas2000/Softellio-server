@@ -44,6 +44,14 @@ export class UserActivityQueryDto {
   @Min(1)
   @Type(() => Number)
   limit?: number = 50;
+
+  @ApiProperty({
+    required: false,
+    description: 'Filter activities by action type',
+    example: 'login',
+  })
+  @IsOptional()
+  action?: string;
 }
 
 export interface UserActivityResponse {

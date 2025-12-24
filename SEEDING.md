@@ -113,13 +113,98 @@ if (process.env.NODE_ENV === 'production') {
 }
 ```
 
+## Auth Repair
+
+If login credentials stop working after API testing or database changes, use the auth repair tool to fix authentication issues.
+
+### When to Use Auth Repair
+
+Use `npm run seed:auth-repair` when:
+- Login returns "invalid username/password" for known credentials
+- Users become inactive in the database
+- Password hashes get corrupted
+- Role assignments get changed
+- Tenant associations get broken
+
+### Auth Repair Command
+
+```bash
+# Fix authentication for super admin and tenant admin
+npm run seed:auth-repair
+```
+
+### What Auth Repair Does
+
+The auth repair tool safely:
+1. **Ensures demo tenant exists** with domain `demo.softellio.com`
+2. **Repairs Super Admin user**:
+   - Email: `admin@softellio.com`
+   - Password: `SuperAdmin123!`
+   - Role: `SUPER_ADMIN`
+   - Status: `isActive = true`
+   - Tenant: `null` (system-wide access)
+3. **Repairs Tenant Admin user**:
+   - Email: `admin@demo.softellio.com`
+   - Password: `TenantAdmin123!`
+   - Role: `TENANT_ADMIN`
+   - TenantId: Links to demo tenant
+   - Status: `isActive = true`
+
+### Safety Features
+
+- **Idempotent**: Safe to run multiple times
+- **Production-safe**: Only fixes auth users, doesn't touch other data
+- **Password consistency**: Uses the same hashing method as AuthService (12 salt rounds)
+- **Preserves data**: Only updates what needs fixing
+
+### Sample Output
+
+```
+🔧 Starting Auth Repair Tool...
+
+🏢 Checking demo tenant...
+   ✅ Demo tenant (demo.softellio.com) is ready
+
+👤 Checking Super Admin...
+   🔄 Updating Super Admin...
+   ✅ Super Admin updated (password, role, status fixed)
+
+👨‍💼 Checking Tenant Admin...
+   ✅ Tenant Admin already valid
+
+📋 REPAIR SUMMARY
+─────────────────
+   Demo Tenant: ✅ already_exists
+   Super Admin: 🔄 updated
+   Tenant Admin: ✅ already_valid
+
+🔑 VERIFIED CREDENTIALS
+─────────────────────────
+   Super Admin:
+     Email: admin@softellio.com
+     Password: SuperAdmin123!
+     Role: SUPER_ADMIN
+     Tenant: None (system-wide access)
+
+   Tenant Admin:
+     Email: admin@demo.softellio.com
+     Password: TenantAdmin123!
+     Role: TENANT_ADMIN
+     Tenant: demo.softellio.com
+
+✨ Auth repair completed successfully!
+🚀 You can now test login with the credentials above.
+```
+
 ## Seeding Commands
 
 | Command | Description |
 |---------|-------------|
 | `npm run seed` | Add demo data to existing database |
 | `npm run seed:clear` | Clear all data and reseed |
+| `npm run seed:auth-repair` | Repair authentication credentials |
 | `npx ts-node src/seeding/seed.ts` | Direct seeding execution |
+| `npx ts-node src/seeding/auth-repair.ts` | Direct auth repair execution |
 
 ## Database Schema Requirements
 

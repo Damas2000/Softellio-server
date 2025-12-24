@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../config/prisma.service';
+import { ActivityService } from '../activity/activity.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
 import { User } from '@prisma/client';
@@ -13,6 +14,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private activityService: ActivityService,
   ) {}
 
   async validateUser(email: string, password: string, tenant?: any): Promise<User | null> {
@@ -43,7 +45,12 @@ export class AuthService {
     return user;
   }
 
-  async login(loginDto: LoginDto, tenant?: any): Promise<AuthResponseDto> {
+  async login(
+    loginDto: LoginDto,
+    tenant?: any,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<AuthResponseDto> {
     const user = await this.validateUser(loginDto.email, loginDto.password, tenant);
 
     if (!user) {
@@ -51,6 +58,21 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
+
+    // Log successful login activity
+    try {
+      await this.activityService.logActivity({
+        userId: user.id,
+        tenantId: user.tenantId,
+        action: 'login',
+        details: `Successful login for user ${user.email}`,
+        ipAddress,
+        userAgent,
+      });
+    } catch (error) {
+      // Log error but don't block the login process
+      console.error('Failed to log login activity:', error);
+    }
 
     return {
       accessToken: tokens.accessToken,
@@ -128,7 +150,22 @@ export class AuthService {
     return bcrypt.compare(password, hashedPassword);
   }
 
-  async logout(): Promise<{ message: string }> {
+  async logout(userId: number, tenantId?: number, ipAddress?: string, userAgent?: string): Promise<{ message: string }> {
+    // Log logout activity
+    try {
+      await this.activityService.logActivity({
+        userId,
+        tenantId,
+        action: 'logout',
+        details: 'User logged out',
+        ipAddress,
+        userAgent,
+      });
+    } catch (error) {
+      // Log error but don't block the logout process
+      console.error('Failed to log logout activity:', error);
+    }
+
     return { message: 'Logged out successfully' };
   }
 }

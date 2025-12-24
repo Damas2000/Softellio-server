@@ -8,10 +8,10 @@ export declare class TenantsController {
     constructor(tenantsService: TenantsService);
     create(createTenantDto: CreateTenantDto): Promise<{
         status: string;
-        id: number;
         name: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         domain: string;
         defaultLanguage: string;
@@ -30,10 +30,10 @@ export declare class TenantsController {
     }>;
     findAll(): Promise<{
         status: string;
-        id: number;
         name: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         domain: string;
         defaultLanguage: string;
@@ -44,10 +44,10 @@ export declare class TenantsController {
     }[]>;
     findOne(id: number): Promise<{
         status: string;
-        id: number;
         name: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         domain: string;
         defaultLanguage: string;
@@ -58,10 +58,10 @@ export declare class TenantsController {
     }>;
     update(id: number, updateTenantDto: UpdateTenantDto): Promise<{
         status: string;
-        id: number;
         name: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         domain: string;
         defaultLanguage: string;
@@ -72,10 +72,10 @@ export declare class TenantsController {
     }>;
     toggleActive(id: number): Promise<{
         status: string;
-        id: number;
         name: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         domain: string;
         defaultLanguage: string;
