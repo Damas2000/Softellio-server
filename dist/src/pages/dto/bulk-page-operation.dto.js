@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BulkOperationResultDto = exports.BulkPageOperationDto = exports.BulkPageStatusUpdateDto = exports.BulkPageDeleteDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const create_page_dto_1 = require("./create-page.dto");
 class BulkPageDeleteDto {
 }
@@ -23,7 +24,13 @@ __decorate([
         type: [Number],
     }),
     (0, class_validator_1.IsArray)({ message: 'IDs must be an array' }),
-    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one page ID is required' }),
+    (0, class_validator_1.ArrayNotEmpty)({ message: 'At least one page ID is required' }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (Array.isArray(value)) {
+            return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+        }
+        return value;
+    }),
     (0, class_validator_1.IsInt)({ each: true, message: 'Each ID must be a valid integer' }),
     __metadata("design:type", Array)
 ], BulkPageDeleteDto.prototype, "ids", void 0);
@@ -37,7 +44,13 @@ __decorate([
         type: [Number],
     }),
     (0, class_validator_1.IsArray)({ message: 'IDs must be an array' }),
-    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one page ID is required' }),
+    (0, class_validator_1.ArrayNotEmpty)({ message: 'At least one page ID is required' }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (Array.isArray(value)) {
+            return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+        }
+        return value;
+    }),
     (0, class_validator_1.IsInt)({ each: true, message: 'Each ID must be a valid integer' }),
     __metadata("design:type", Array)
 ], BulkPageStatusUpdateDto.prototype, "ids", void 0);
@@ -60,7 +73,13 @@ __decorate([
         type: [Number],
     }),
     (0, class_validator_1.IsArray)({ message: 'IDs must be an array' }),
-    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one page ID is required' }),
+    (0, class_validator_1.ArrayNotEmpty)({ message: 'At least one page ID is required' }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (Array.isArray(value)) {
+            return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+        }
+        return value;
+    }),
     (0, class_validator_1.IsInt)({ each: true, message: 'Each ID must be a valid integer' }),
     __metadata("design:type", Array)
 ], BulkPageOperationDto.prototype, "ids", void 0);

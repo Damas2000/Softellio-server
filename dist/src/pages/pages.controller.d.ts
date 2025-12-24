@@ -16,8 +16,15 @@ export declare class PagesController {
     remove(id: number, tenantId: number, req: Request): Promise<PageDeleteResponseDto>;
     duplicate(id: number, tenantId: number, req: Request): Promise<PageResponseDto>;
     bulkDelete(bulkDeleteDto: BulkPageDeleteDto, tenantId: number, req: Request): Promise<BulkDeleteResponseDto>;
-    findPublicPages(language: string, tenantId: number, query: PageQueryDto): Promise<PaginatedPageResponseDto>;
     findBySlug(language: string, slug: string, tenantId: number): Promise<PageResponseDto>;
-    getPagesByLanguage(language: string, tenantId: number): Promise<PageResponseDto[]>;
+    findPublicPages(language: string, tenantId: number, query: PageQueryDto): Promise<PaginatedPageResponseDto>;
     previewBySlug(language: string, slug: string, tenantId: number): Promise<PageResponseDto>;
+    debugBulkDelete(body: any, tenantId: number): Promise<{
+        message: string;
+        tenantId: number;
+        bodyReceived: any;
+        idsType: "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
+        idsLength: any;
+        idsFirstElement: string;
+    }>;
 }

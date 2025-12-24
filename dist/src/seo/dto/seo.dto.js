@@ -9,10 +9,38 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SEOQueryDto = exports.UpdateOGTemplateDto = exports.CreateOGTemplateDto = exports.OGTemplateTranslationDto = exports.UpdateSEOIntegrationDto = exports.UpdateSitemapConfigDto = exports.UpdateRedirectDto = exports.CreateRedirectDto = exports.UpdatePageSEODto = exports.CreatePageSEODto = exports.PageSEOTranslationDto = exports.UpdateStructuredDataDto = exports.CreateStructuredDataDto = void 0;
+exports.SEOQueryDto = exports.UpdateOGTemplateDto = exports.CreateOGTemplateDto = exports.OGTemplateTranslationDto = exports.UpdateSEOIntegrationDto = exports.UpdateSitemapConfigDto = exports.UpdateRedirectDto = exports.CreateRedirectDto = exports.UpdatePageSEODto = exports.CreatePageSEODto = exports.PageSEOTranslationDto = exports.UpdateStructuredDataDto = exports.CreateStructuredDataDto = exports.ValidStructuredDataValidator = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
+let ValidStructuredDataValidator = class ValidStructuredDataValidator {
+    validate(jsonLd, args) {
+        if (!jsonLd || typeof jsonLd !== 'object') {
+            return false;
+        }
+        if (!jsonLd['@context'] || !jsonLd['@type']) {
+            return false;
+        }
+        if (typeof jsonLd['@context'] !== 'string' || !jsonLd['@context'].includes('schema.org')) {
+            return false;
+        }
+        if (typeof jsonLd['@type'] !== 'string') {
+            return false;
+        }
+        const jsonString = JSON.stringify(jsonLd);
+        if (jsonString.length > 102400) {
+            return false;
+        }
+        return true;
+    }
+    defaultMessage(args) {
+        return 'JSON-LD must be a valid Schema.org structured data object with @context, @type, and under 100KB size limit';
+    }
+};
+exports.ValidStructuredDataValidator = ValidStructuredDataValidator;
+exports.ValidStructuredDataValidator = ValidStructuredDataValidator = __decorate([
+    (0, class_validator_1.ValidatorConstraint)({ name: 'ValidStructuredData', async: false })
+], ValidStructuredDataValidator);
 class CreateStructuredDataDto {
     constructor() {
         this.isActive = true;
@@ -56,9 +84,10 @@ __decorate([
                 "contactType": "customer service"
             }
         },
-        description: 'Complete JSON-LD structured data'
+        description: 'Complete JSON-LD structured data object (will be stored as JSON in database). Must include @context and @type. Size limit: 100KB.'
     }),
-    (0, class_validator_1.IsJSON)(),
+    (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.Validate)(ValidStructuredDataValidator),
     __metadata("design:type", Object)
 ], CreateStructuredDataDto.prototype, "jsonLd", void 0);
 __decorate([
@@ -114,11 +143,23 @@ __decorate([
 ], UpdateStructuredDataDto.prototype, "schemaType", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Complete JSON-LD structured data',
+        example: {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Updated ABC İnşaat",
+            "url": "https://abcinsaat.com",
+            "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+90-212-555-0123",
+                "contactType": "customer service"
+            }
+        },
+        description: 'Complete JSON-LD structured data object (will be stored as JSON in database). Must include @context and @type. Size limit: 100KB.',
         required: false
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsJSON)(),
+    (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.Validate)(ValidStructuredDataValidator),
     __metadata("design:type", Object)
 ], UpdateStructuredDataDto.prototype, "jsonLd", void 0);
 __decorate([

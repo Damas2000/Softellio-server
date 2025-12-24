@@ -37,3 +37,13 @@ export declare class TeamMemberQueryDto {
     sortBy?: 'order' | 'createdAt' | 'updatedAt' | 'name';
     sortOrder?: 'asc' | 'desc';
 }
+export declare class BulkTeamMemberDeleteDto {
+    ids: number[];
+}
+export declare class TeamMemberReorderDto {
+    teamMembers: TeamMemberOrderDto[];
+}
+export declare class TeamMemberOrderDto {
+    id: number;
+    order: number;
+}

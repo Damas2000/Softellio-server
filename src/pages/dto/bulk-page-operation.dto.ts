@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsInt, IsEnum, IsOptional, ArrayMinSize } from 'class-validator';
+import { IsArray, IsInt, IsEnum, IsOptional, ArrayNotEmpty } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { PageStatus } from './create-page.dto';
 
 export class BulkPageDeleteDto {
@@ -9,7 +10,13 @@ export class BulkPageDeleteDto {
     type: [Number],
   })
   @IsArray({ message: 'IDs must be an array' })
-  @ArrayMinSize(1, { message: 'At least one page ID is required' })
+  @ArrayNotEmpty({ message: 'At least one page ID is required' })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+    }
+    return value;
+  })
   @IsInt({ each: true, message: 'Each ID must be a valid integer' })
   ids: number[];
 }
@@ -21,7 +28,13 @@ export class BulkPageStatusUpdateDto {
     type: [Number],
   })
   @IsArray({ message: 'IDs must be an array' })
-  @ArrayMinSize(1, { message: 'At least one page ID is required' })
+  @ArrayNotEmpty({ message: 'At least one page ID is required' })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+    }
+    return value;
+  })
   @IsInt({ each: true, message: 'Each ID must be a valid integer' })
   ids: number[];
 
@@ -41,7 +54,13 @@ export class BulkPageOperationDto {
     type: [Number],
   })
   @IsArray({ message: 'IDs must be an array' })
-  @ArrayMinSize(1, { message: 'At least one page ID is required' })
+  @ArrayNotEmpty({ message: 'At least one page ID is required' })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map(v => typeof v === 'string' ? parseInt(v, 10) : v);
+    }
+    return value;
+  })
   @IsInt({ each: true, message: 'Each ID must be a valid integer' })
   ids: number[];
 

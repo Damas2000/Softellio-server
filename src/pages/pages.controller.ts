@@ -11,6 +11,8 @@ import {
   UseGuards,
   Logger,
   Req,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -309,7 +311,7 @@ export class PagesController {
     }
   }
 
-  @Delete('admin/bulk')
+  @Post('admin/bulk-delete')
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete pages (Admin)' })
@@ -352,6 +354,20 @@ export class PagesController {
 
   // ==================== PUBLIC ROUTES ====================
 
+
+  @Get('public/:language/:slug')
+  @Public()
+  @ApiOperation({ summary: 'Get published page by slug and language (Public)' })
+  @ApiResponse({ status: 200, type: PageResponseDto, description: 'Page content in specified language' })
+  @ApiResponse({ status: 404, description: 'Page not found' })
+  async findBySlug(
+    @Param('language') language: string,
+    @Param('slug') slug: string,
+    @CurrentTenant() tenantId: number
+  ): Promise<PageResponseDto> {
+    return this.pagesService.findBySlug(slug, language, tenantId, false);
+  }
+
   @Get('public/:language')
   @Public()
   @ApiOperation({ summary: 'Get published pages by language (Public)' })
@@ -371,30 +387,6 @@ export class PagesController {
     return this.pagesService.findAll(tenantId, publicQuery);
   }
 
-  @Get('public/:language/list')
-  @Public()
-  @ApiOperation({ summary: 'Get all published pages in a language (Public)' })
-  @ApiResponse({ status: 200, type: [PageResponseDto], description: 'List of published pages for navigation/sitemap' })
-  async getPagesByLanguage(
-    @Param('language') language: string,
-    @CurrentTenant() tenantId: number
-  ): Promise<PageResponseDto[]> {
-    return this.pagesService.getPagesByLanguage(language, tenantId, true);
-  }
-
-  @Get('public/:language/:slug')
-  @Public()
-  @ApiOperation({ summary: 'Get published page by slug and language (Public)' })
-  @ApiResponse({ status: 200, type: PageResponseDto, description: 'Page content in specified language' })
-  @ApiResponse({ status: 404, description: 'Page not found' })
-  async findBySlug(
-    @Param('language') language: string,
-    @Param('slug') slug: string,
-    @CurrentTenant() tenantId: number
-  ): Promise<PageResponseDto> {
-    return this.pagesService.findBySlug(slug, language, tenantId, false);
-  }
-
   // ==================== PREVIEW ROUTES (Admin with unpublished) ====================
 
   @Get('preview/:language/:slug')
@@ -409,5 +401,25 @@ export class PagesController {
     @CurrentTenant() tenantId: number
   ): Promise<PageResponseDto> {
     return this.pagesService.findBySlug(slug, language, tenantId, true);
+  }
+
+  // ==================== DEBUG ROUTE ====================
+
+  @Post('admin/debug-bulk')
+  @ApiBearerAuth()
+  @Roles(Role.TENANT_ADMIN, Role.EDITOR)
+  @ApiOperation({ summary: 'Debug endpoint to test bulk delete payload (Admin)' })
+  async debugBulkDelete(
+    @Body() body: any,
+    @CurrentTenant() tenantId: number,
+  ) {
+    return {
+      message: 'Debug endpoint reached',
+      tenantId,
+      bodyReceived: body,
+      idsType: typeof body.ids,
+      idsLength: Array.isArray(body.ids) ? body.ids.length : 'not an array',
+      idsFirstElement: Array.isArray(body.ids) && body.ids.length > 0 ? typeof body.ids[0] : 'no first element'
+    };
   }
 }

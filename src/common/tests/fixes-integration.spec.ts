@@ -298,7 +298,7 @@ describe('Backend Fixes Integration Tests', () => {
         .set('Authorization', `Bearer ${expiredToken}`)
         .expect(401);
 
-      expect(response.body.message).toContain('expired' || 'Invalid token');
+      expect(response.body.message).toMatch(/(expired|Invalid token)/);
     });
 
     it('should return specific error message for invalid token', async () => {
@@ -327,16 +327,23 @@ describe('Backend Fixes Integration Tests', () => {
     });
     testTenantId = tenant.id;
 
-    // Create test admin user
-    const adminUser = await authService.register({
-      name: 'Test Admin',
+    // Create test admin user manually in the database since register is not available in service
+    const adminUser = await prisma.user.create({
+      data: {
+        name: 'Test Admin',
+        email: 'test-admin@test.com',
+        password: 'TestPassword123!', // In real app this would be hashed
+        role: 'TENANT_ADMIN',
+        tenantId: testTenantId,
+        isActive: true,
+      },
+    });
+
+    // Generate token - use available method or create manually
+    const tokenResult = await authService.login({
       email: 'test-admin@test.com',
       password: 'TestPassword123!',
-      role: 'TENANT_ADMIN',
-    }, testTenantId);
-
-    // Generate token
-    const tokenResult = await authService.login('test-admin@test.com', 'TestPassword123!', 'test.softellio.com');
+    }, 'test.softellio.com');
     adminToken = tokenResult.accessToken;
   }
 

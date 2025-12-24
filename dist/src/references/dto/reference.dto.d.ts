@@ -47,3 +47,13 @@ export declare class ReferenceQueryDto {
     sortBy?: 'order' | 'createdAt' | 'updatedAt' | 'projectDate' | 'title';
     sortOrder?: 'asc' | 'desc';
 }
+export declare class BulkReferenceDeleteDto {
+    ids: number[];
+}
+export declare class ReferenceReorderDto {
+    references: ReferenceOrderDto[];
+}
+export declare class ReferenceOrderDto {
+    id: number;
+    order: number;
+}

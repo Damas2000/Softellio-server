@@ -29,8 +29,23 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
         return super.canActivate(context);
     }
     handleRequest(err, user, info) {
-        if (err || !user) {
-            throw err || new common_1.UnauthorizedException('Invalid token');
+        if (err) {
+            throw err;
+        }
+        if (!user) {
+            if (info?.name === 'TokenExpiredError') {
+                throw new common_1.UnauthorizedException('Token expired. Please login again.');
+            }
+            if (info?.name === 'JsonWebTokenError') {
+                throw new common_1.UnauthorizedException('Invalid token. Please login again.');
+            }
+            if (info?.name === 'NotBeforeError') {
+                throw new common_1.UnauthorizedException('Token not active yet. Please check your system clock.');
+            }
+            if (info?.message) {
+                throw new common_1.UnauthorizedException(`Authentication failed: ${info.message}`);
+            }
+            throw new common_1.UnauthorizedException('Invalid token. Please login again.');
         }
         return user;
     }

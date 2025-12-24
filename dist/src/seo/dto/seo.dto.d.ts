@@ -1,15 +1,20 @@
+import { ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+export declare class ValidStructuredDataValidator implements ValidatorConstraintInterface {
+    validate(jsonLd: any, args: ValidationArguments): boolean;
+    defaultMessage(args: ValidationArguments): string;
+}
 export declare class CreateStructuredDataDto {
     entityType: string;
     entityId: string;
     schemaType: string;
-    jsonLd: any;
+    jsonLd: Record<string, any>;
     isActive?: boolean;
 }
 export declare class UpdateStructuredDataDto {
     entityType?: string;
     entityId?: string;
     schemaType?: string;
-    jsonLd?: any;
+    jsonLd?: Record<string, any>;
     isActive?: boolean;
 }
 export declare class PageSEOTranslationDto {

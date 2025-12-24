@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TeamMemberQueryDto = exports.UpdateTeamMemberDto = exports.CreateTeamMemberDto = exports.TeamMemberSocialLinkDto = exports.TeamMemberTranslationDto = void 0;
+exports.TeamMemberOrderDto = exports.TeamMemberReorderDto = exports.BulkTeamMemberDeleteDto = exports.TeamMemberQueryDto = exports.UpdateTeamMemberDto = exports.CreateTeamMemberDto = exports.TeamMemberSocialLinkDto = exports.TeamMemberTranslationDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
@@ -358,4 +358,55 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TeamMemberQueryDto.prototype, "sortOrder", void 0);
+class BulkTeamMemberDeleteDto {
+}
+exports.BulkTeamMemberDeleteDto = BulkTeamMemberDeleteDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of team member IDs to delete',
+        example: [1, 2, 3],
+        type: [Number],
+    }),
+    (0, class_validator_1.IsArray)({ message: 'IDs must be an array' }),
+    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one team member ID is required' }),
+    (0, class_validator_1.IsInt)({ each: true, message: 'Each ID must be a valid integer' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Array)
+], BulkTeamMemberDeleteDto.prototype, "ids", void 0);
+class TeamMemberReorderDto {
+}
+exports.TeamMemberReorderDto = TeamMemberReorderDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of team members with their new order',
+        example: [{ id: 1, order: 1 }, { id: 2, order: 2 }],
+        type: [Object],
+    }),
+    (0, class_validator_1.IsArray)({ message: 'Team members must be an array' }),
+    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one team member is required' }),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => TeamMemberOrderDto),
+    __metadata("design:type", Array)
+], TeamMemberReorderDto.prototype, "teamMembers", void 0);
+class TeamMemberOrderDto {
+}
+exports.TeamMemberOrderDto = TeamMemberOrderDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Team member ID',
+        example: 1,
+    }),
+    (0, class_validator_1.IsNumber)({}, { message: 'ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], TeamMemberOrderDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'New order position',
+        example: 1,
+    }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Order must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], TeamMemberOrderDto.prototype, "order", void 0);
 //# sourceMappingURL=team-member.dto.js.map

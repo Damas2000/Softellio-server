@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReferenceQueryDto = exports.UpdateReferenceDto = exports.CreateReferenceDto = exports.ReferenceGalleryDto = exports.ReferenceTranslationDto = void 0;
+exports.ReferenceOrderDto = exports.ReferenceReorderDto = exports.BulkReferenceDeleteDto = exports.ReferenceQueryDto = exports.UpdateReferenceDto = exports.CreateReferenceDto = exports.ReferenceGalleryDto = exports.ReferenceTranslationDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
@@ -477,4 +477,55 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ReferenceQueryDto.prototype, "sortOrder", void 0);
+class BulkReferenceDeleteDto {
+}
+exports.BulkReferenceDeleteDto = BulkReferenceDeleteDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of reference IDs to delete',
+        example: [1, 2, 3],
+        type: [Number],
+    }),
+    (0, class_validator_1.IsArray)({ message: 'IDs must be an array' }),
+    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one reference ID is required' }),
+    (0, class_validator_1.IsInt)({ each: true, message: 'Each ID must be a valid integer' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Array)
+], BulkReferenceDeleteDto.prototype, "ids", void 0);
+class ReferenceReorderDto {
+}
+exports.ReferenceReorderDto = ReferenceReorderDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of references with their new order',
+        example: [{ id: 1, order: 1 }, { id: 2, order: 2 }],
+        type: [Object],
+    }),
+    (0, class_validator_1.IsArray)({ message: 'References must be an array' }),
+    (0, class_validator_1.ArrayMinSize)(1, { message: 'At least one reference is required' }),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => ReferenceOrderDto),
+    __metadata("design:type", Array)
+], ReferenceReorderDto.prototype, "references", void 0);
+class ReferenceOrderDto {
+}
+exports.ReferenceOrderDto = ReferenceOrderDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Reference ID',
+        example: 1,
+    }),
+    (0, class_validator_1.IsNumber)({}, { message: 'ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], ReferenceOrderDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'New order position',
+        example: 1,
+    }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Order must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], ReferenceOrderDto.prototype, "order", void 0);
 //# sourceMappingURL=reference.dto.js.map

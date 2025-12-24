@@ -351,10 +351,10 @@ describe('PagesController', () => {
                 expect(pagesService.findBySlug).toHaveBeenCalledWith('test-sayfa', 'tr', 5, false);
             });
         });
-        describe('getPagesByLanguage', () => {
-            it('should return all published pages for language', async () => {
+        describe('findBySlug with list', () => {
+            it('should return all published pages when slug is "list"', async () => {
                 mockPagesService.getPagesByLanguage.mockResolvedValue([mockPageResponse]);
-                const result = await controller.getPagesByLanguage('tr', 5);
+                const result = await controller.findBySlug('tr', 'list', 5);
                 expect(result).toEqual([mockPageResponse]);
                 expect(pagesService.getPagesByLanguage).toHaveBeenCalledWith('tr', 5, true);
             });

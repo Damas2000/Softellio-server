@@ -241,6 +241,9 @@ let PagesController = PagesController_1 = class PagesController {
             throw error;
         }
     }
+    async findBySlug(language, slug, tenantId) {
+        return this.pagesService.findBySlug(slug, language, tenantId, false);
+    }
     async findPublicPages(language, tenantId, query) {
         const publicQuery = {
             ...query,
@@ -249,14 +252,18 @@ let PagesController = PagesController_1 = class PagesController {
         };
         return this.pagesService.findAll(tenantId, publicQuery);
     }
-    async findBySlug(language, slug, tenantId) {
-        return this.pagesService.findBySlug(slug, language, tenantId, false);
-    }
-    async getPagesByLanguage(language, tenantId) {
-        return this.pagesService.getPagesByLanguage(language, tenantId, true);
-    }
     async previewBySlug(language, slug, tenantId) {
         return this.pagesService.findBySlug(slug, language, tenantId, true);
+    }
+    async debugBulkDelete(body, tenantId) {
+        return {
+            message: 'Debug endpoint reached',
+            tenantId,
+            bodyReceived: body,
+            idsType: typeof body.ids,
+            idsLength: Array.isArray(body.ids) ? body.ids.length : 'not an array',
+            idsFirstElement: Array.isArray(body.ids) && body.ids.length > 0 ? typeof body.ids[0] : 'no first element'
+        };
     }
 };
 exports.PagesController = PagesController;
@@ -348,7 +355,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PagesController.prototype, "duplicate", null);
 __decorate([
-    (0, common_1.Delete)('admin/bulk'),
+    (0, common_1.Post)('admin/bulk-delete'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
     (0, swagger_1.ApiOperation)({ summary: 'Bulk delete pages (Admin)' }),
@@ -360,18 +367,6 @@ __decorate([
     __metadata("design:paramtypes", [bulk_page_operation_dto_1.BulkPageDeleteDto, Number, Object]),
     __metadata("design:returntype", Promise)
 ], PagesController.prototype, "bulkDelete", null);
-__decorate([
-    (0, common_1.Get)('public/:language'),
-    (0, public_decorator_1.Public)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get published pages by language (Public)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, type: page_response_dto_1.PaginatedPageResponseDto, description: 'List of published pages in specified language' }),
-    __param(0, (0, common_1.Param)('language')),
-    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
-    __param(2, (0, common_1.Query)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, page_query_dto_1.PageQueryDto]),
-    __metadata("design:returntype", Promise)
-], PagesController.prototype, "findPublicPages", null);
 __decorate([
     (0, common_1.Get)('public/:language/:slug'),
     (0, public_decorator_1.Public)(),
@@ -386,16 +381,17 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PagesController.prototype, "findBySlug", null);
 __decorate([
-    (0, common_1.Get)('public/:language/list'),
+    (0, common_1.Get)('public/:language'),
     (0, public_decorator_1.Public)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get all published pages in a language (Public)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, type: [page_response_dto_1.PageResponseDto], description: 'List of published pages for navigation/sitemap' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get published pages by language (Public)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, type: page_response_dto_1.PaginatedPageResponseDto, description: 'List of published pages in specified language' }),
     __param(0, (0, common_1.Param)('language')),
     __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
+    __param(2, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number]),
+    __metadata("design:paramtypes", [String, Number, page_query_dto_1.PageQueryDto]),
     __metadata("design:returntype", Promise)
-], PagesController.prototype, "getPagesByLanguage", null);
+], PagesController.prototype, "findPublicPages", null);
 __decorate([
     (0, common_1.Get)('preview/:language/:slug'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -410,6 +406,17 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Number]),
     __metadata("design:returntype", Promise)
 ], PagesController.prototype, "previewBySlug", null);
+__decorate([
+    (0, common_1.Post)('admin/debug-bulk'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Debug endpoint to test bulk delete payload (Admin)' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], PagesController.prototype, "debugBulkDelete", null);
 exports.PagesController = PagesController = PagesController_1 = __decorate([
     (0, swagger_1.ApiTags)('Pages'),
     (0, common_1.Controller)('pages'),
