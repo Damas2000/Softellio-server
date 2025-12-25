@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const contact_info_service_1 = require("./contact-info.service");
 const contact_info_dto_1 = require("./dto/contact-info.dto");
+const bulk_delete_dto_1 = require("../common/dto/bulk-delete.dto");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const current_tenant_decorator_1 = require("../common/decorators/current-tenant.decorator");
 const public_decorator_1 = require("../common/decorators/public.decorator");
@@ -58,8 +59,11 @@ let ContactInfoController = class ContactInfoController {
     deleteSubmission(id, tenantId) {
         return this.contactInfoService.deleteSubmission(id, tenantId);
     }
-    bulkDeleteSubmissions(body, tenantId) {
-        return this.contactInfoService.bulkDeleteSubmissions(body.ids, tenantId);
+    bulkDeleteSubmissions(bulkDeleteDto, tenantId) {
+        return this.contactInfoService.bulkDeleteSubmissions(bulkDeleteDto.ids, tenantId);
+    }
+    bulkDeleteSubmissionsDeprecated(body) {
+        throw new common_1.GoneException('This endpoint is deprecated. Use POST /contact-info/admin/submissions/bulk-delete');
     }
     async getPublicContactInfo(tenantId, language) {
         const lang = language || 'tr';
@@ -295,13 +299,24 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, roles_decorator_1.Roles)(client_1.Role.TENANT_ADMIN, client_1.Role.EDITOR),
     (0, swagger_1.ApiOperation)({ summary: 'Bulk delete contact submissions (Admin)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Bulk delete completed' }),
+    (0, swagger_1.ApiBody)({ type: bulk_delete_dto_1.BulkDeleteDto, description: 'Array of submission IDs to delete' }),
+    (0, swagger_1.ApiResponse)({ status: 200, type: bulk_delete_dto_1.BulkDeleteResponseDto, description: 'Submissions deleted successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Validation error' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, current_tenant_decorator_1.CurrentTenant)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:paramtypes", [bulk_delete_dto_1.BulkDeleteDto, Number]),
     __metadata("design:returntype", void 0)
 ], ContactInfoController.prototype, "bulkDeleteSubmissions", null);
+__decorate([
+    (0, common_1.Delete)('admin/submissions/bulk'),
+    (0, public_decorator_1.Public)(),
+    (0, swagger_1.ApiExcludeEndpoint)(),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ContactInfoController.prototype, "bulkDeleteSubmissionsDeprecated", null);
 __decorate([
     (0, common_1.Get)('public'),
     (0, public_decorator_1.Public)(),

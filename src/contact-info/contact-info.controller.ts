@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Req,
+  GoneException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ContactInfoService } from './contact-info.service';
@@ -26,6 +29,7 @@ import {
   ContactSubmissionDto,
   ContactSubmissionQueryDto
 } from './dto/contact-info.dto';
+import { BulkDeleteDto, BulkDeleteResponseDto } from '../common/dto/bulk-delete.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -180,12 +184,21 @@ export class ContactInfoController {
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete contact submissions (Admin)' })
-  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiBody({ type: BulkDeleteDto, description: 'Array of submission IDs to delete' })
+  @ApiResponse({ status: 200, type: BulkDeleteResponseDto, description: 'Submissions deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   bulkDeleteSubmissions(
-    @Body() body: { ids: number[] },
+    @Body() bulkDeleteDto: BulkDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.contactInfoService.bulkDeleteSubmissions(body.ids, tenantId);
+    return this.contactInfoService.bulkDeleteSubmissions(bulkDeleteDto.ids, tenantId);
+  }
+
+  @Delete('admin/submissions/bulk')
+  @Public()
+  @ApiExcludeEndpoint()
+  bulkDeleteSubmissionsDeprecated(@Body() body: any): never {
+    throw new GoneException('This endpoint is deprecated. Use POST /contact-info/admin/submissions/bulk-delete');
   }
 
   // ==================== PUBLIC ROUTES ====================

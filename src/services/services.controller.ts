@@ -9,6 +9,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  GoneException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,9 +17,12 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, UpdateServiceDto, ServiceQueryDto, BulkServiceDeleteDto, ServiceReorderDto } from './dto/service.dto';
+import { BulkDeleteDto, BulkDeleteResponseDto } from '../common/dto/bulk-delete.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -124,12 +128,21 @@ export class ServicesController {
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete services (Admin)' })
-  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiBody({ type: BulkDeleteDto, description: 'Array of service IDs to delete' })
+  @ApiResponse({ status: 200, type: BulkDeleteResponseDto, description: 'Services deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   bulkDelete(
-    @Body() bulkDeleteDto: BulkServiceDeleteDto,
+    @Body() bulkDeleteDto: BulkDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
     return this.servicesService.bulkDelete(bulkDeleteDto.ids, tenantId);
+  }
+
+  @Delete('admin/bulk')
+  @Public()
+  @ApiExcludeEndpoint()
+  bulkDeleteDeprecated(@Body() body: any): never {
+    throw new GoneException('This endpoint is deprecated. Use POST /services/admin/bulk-delete');
   }
 
   @Patch('admin/reorder')

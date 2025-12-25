@@ -1,6 +1,7 @@
 import { MediaService } from './media.service';
 import { UploadMediaDto, MediaType } from './dto/upload-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { BulkDeleteDto } from '../common/dto/bulk-delete.dto';
 export declare class MediaController {
     private readonly mediaService;
     constructor(mediaService: MediaService);
@@ -53,12 +54,11 @@ export declare class MediaController {
         totalSize: number;
         typeBreakdown: Record<string, number>;
     }>;
-    bulkDeleteMedia(body: {
-        ids: number[];
-    }, tenantId: number): Promise<{
+    bulkDeleteMedia(bulkDeleteDto: BulkDeleteDto, tenantId: number): Promise<{
         deleted: number;
         failed: number;
     }>;
+    bulkDeleteDeprecated(body: any): never;
     getOptimizedImage(id: number, tenantId: number, width?: number, height?: number, quality?: string, format?: string, crop?: string): Promise<{
         url: string;
         publicId: string;

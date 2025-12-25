@@ -13,8 +13,9 @@ import {
   Req,
   UsePipes,
   ValidationPipe,
+  GoneException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PagesService } from './pages.service';
 import { CreatePageDto, PageStatus } from './dto/create-page.dto';
@@ -27,6 +28,7 @@ import {
   BulkDeleteResponseDto
 } from './dto/page-response.dto';
 import { BulkPageDeleteDto } from './dto/bulk-page-operation.dto';
+import { BulkDeleteDto, BulkDeleteResponseDto as CommonBulkDeleteResponseDto } from '../common/dto/bulk-delete.dto';
 import { PageWithTranslations } from '../common/types';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
@@ -315,12 +317,14 @@ export class PagesController {
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete pages (Admin)' })
-  @ApiResponse({ status: 200, type: BulkDeleteResponseDto, description: 'Pages deleted successfully' })
+  @ApiBody({ type: BulkDeleteDto, description: 'Array of page IDs to delete' })
+  @ApiResponse({ status: 200, type: CommonBulkDeleteResponseDto, description: 'Pages deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   async bulkDelete(
-    @Body() bulkDeleteDto: BulkPageDeleteDto,
+    @Body() bulkDeleteDto: BulkDeleteDto,
     @CurrentTenant() tenantId: number,
     @Req() req: Request,
-  ): Promise<BulkDeleteResponseDto> {
+  ): Promise<CommonBulkDeleteResponseDto> {
     const correlationId = req.headers['x-correlation-id'] as string || `page-bulk-delete-${Date.now()}`;
 
     this.logger.log(`Bulk deleting ${bulkDeleteDto.ids.length} pages for tenant ${tenantId}`, {
@@ -350,6 +354,13 @@ export class PagesController {
       });
       throw error;
     }
+  }
+
+  @Delete('admin/bulk')
+  @Public()
+  @ApiExcludeEndpoint()
+  bulkDeleteDeprecated(@Body() body: any): never {
+    throw new GoneException('This endpoint is deprecated. Use POST /pages/admin/bulk-delete');
   }
 
   // ==================== PUBLIC ROUTES ====================

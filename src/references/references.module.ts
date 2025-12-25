@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { ReferencesService } from './references.service';
-import { ReferencesController } from './references.controller';
+import { Module } from "@nestjs/common";
+import { ReferencesService } from "./references.service";
+import { ReferencesController } from "./references.controller";
 
 @Module({
   controllers: [ReferencesController],

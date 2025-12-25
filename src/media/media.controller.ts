@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UploadedFiles,
   UseGuards,
+  GoneException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -22,10 +23,12 @@ import {
   ApiConsumes,
   ApiBody,
   ApiQuery,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { UploadMediaDto, MediaType } from './dto/upload-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { BulkDeleteDto, BulkDeleteResponseDto } from '../common/dto/bulk-delete.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -172,12 +175,21 @@ export class MediaController {
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete media files (Admin)' })
-  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiBody({ type: BulkDeleteDto, description: 'Array of media IDs to delete' })
+  @ApiResponse({ status: 200, type: BulkDeleteResponseDto, description: 'Media files deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   bulkDeleteMedia(
-    @Body() body: { ids: number[] },
+    @Body() bulkDeleteDto: BulkDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
-    return this.mediaService.bulkDeleteMedia(body.ids, tenantId);
+    return this.mediaService.bulkDeleteMedia(bulkDeleteDto.ids, tenantId);
+  }
+
+  @Delete('admin/bulk')
+  @Public()
+  @ApiExcludeEndpoint()
+  bulkDeleteDeprecated(@Body() body: any): never {
+    throw new GoneException('This endpoint is deprecated. Use POST /media/admin/bulk-delete');
   }
 
   @Get('admin/:id/optimized')

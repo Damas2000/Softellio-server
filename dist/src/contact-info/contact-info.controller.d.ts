@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import { ContactInfoService } from './contact-info.service';
 import { CreateContactInfoDto, UpdateContactInfoDto, ContactSubmissionDto, ContactSubmissionQueryDto } from './dto/contact-info.dto';
+import { BulkDeleteDto } from '../common/dto/bulk-delete.dto';
 export declare class ContactInfoController {
     private readonly contactInfoService;
     constructor(contactInfoService: ContactInfoService);
@@ -77,12 +78,11 @@ export declare class ContactInfoController {
         isReplied: boolean;
     }>;
     deleteSubmission(id: number, tenantId: number): Promise<void>;
-    bulkDeleteSubmissions(body: {
-        ids: number[];
-    }, tenantId: number): Promise<{
+    bulkDeleteSubmissions(bulkDeleteDto: BulkDeleteDto, tenantId: number): Promise<{
         deleted: number;
         failed: number;
     }>;
+    bulkDeleteSubmissionsDeprecated(body: any): never;
     getPublicContactInfo(tenantId: number, language?: string): Promise<{
         companyName: string;
         tagline: string;

@@ -12,12 +12,14 @@ var TenantMiddleware_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TenantMiddleware = void 0;
 const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
 const prisma_service_1 = require("../../config/prisma.service");
 const domain_resolver_service_1 = require("../services/domain-resolver.service");
 let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
-    constructor(prisma, domainResolver) {
+    constructor(prisma, domainResolver, reflector) {
         this.prisma = prisma;
         this.domainResolver = domainResolver;
+        this.reflector = reflector;
         this.logger = new common_1.Logger(TenantMiddleware_1.name);
     }
     async use(req, res, next) {
@@ -27,6 +29,18 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
                 return next();
             }
             if (req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
+                return next();
+            }
+            const deprecatedEndpoints = [
+                '/pages/admin/bulk',
+                '/services/admin/bulk',
+                '/media/admin/bulk',
+                '/references/admin/bulk',
+                '/team-members/admin/bulk',
+                '/contact-info/admin/submissions/bulk'
+            ];
+            if (req.method === 'DELETE' && deprecatedEndpoints.includes(req.path)) {
+                this.logger.debug(`Skipping tenant resolution for deprecated @Public() endpoint: ${req.method} ${req.path}`);
                 return next();
             }
             const isApiRoute = req.path.startsWith('/api') ||
@@ -124,6 +138,7 @@ exports.TenantMiddleware = TenantMiddleware;
 exports.TenantMiddleware = TenantMiddleware = TenantMiddleware_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        domain_resolver_service_1.DomainResolverService])
+        domain_resolver_service_1.DomainResolverService,
+        core_1.Reflector])
 ], TenantMiddleware);
 //# sourceMappingURL=tenant.middleware.js.map

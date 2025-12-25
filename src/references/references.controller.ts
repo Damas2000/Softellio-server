@@ -9,6 +9,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  GoneException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,9 +17,12 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { ReferencesService } from './references.service';
 import { CreateReferenceDto, UpdateReferenceDto, ReferenceQueryDto, BulkReferenceDeleteDto, ReferenceReorderDto } from './dto/reference.dto';
+import { BulkDeleteDto, BulkDeleteResponseDto } from '../common/dto/bulk-delete.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -145,12 +149,21 @@ export class ReferencesController {
   @ApiBearerAuth()
   @Roles(Role.TENANT_ADMIN, Role.EDITOR)
   @ApiOperation({ summary: 'Bulk delete references (Admin)' })
-  @ApiResponse({ status: 200, description: 'Bulk delete completed' })
+  @ApiBody({ type: BulkDeleteDto, description: 'Array of reference IDs to delete' })
+  @ApiResponse({ status: 200, type: BulkDeleteResponseDto, description: 'References deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   bulkDelete(
-    @Body() bulkDeleteDto: BulkReferenceDeleteDto,
+    @Body() bulkDeleteDto: BulkDeleteDto,
     @CurrentTenant() tenantId: number,
   ) {
     return this.referencesService.bulkDelete(bulkDeleteDto.ids, tenantId);
+  }
+
+  @Delete('admin/bulk')
+  @Public()
+  @ApiExcludeEndpoint()
+  bulkDeleteDeprecated(@Body() body: any): never {
+    throw new GoneException('This endpoint is deprecated. Use POST /references/admin/bulk-delete');
   }
 
   @Patch('admin/reorder')

@@ -1,8 +1,10 @@
 import { Injectable, NestMiddleware, BadRequestException, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../config/prisma.service';
 import { DomainResolverService } from '../services/domain-resolver.service';
 import { RequestWithTenant } from '../interfaces/request.interface';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
@@ -11,6 +13,7 @@ export class TenantMiddleware implements NestMiddleware {
   constructor(
     private prisma: PrismaService,
     private domainResolver: DomainResolverService,
+    private reflector: Reflector,
   ) {}
 
   async use(req: RequestWithTenant, res: Response, next: NextFunction) {
@@ -23,6 +26,21 @@ export class TenantMiddleware implements NestMiddleware {
 
       // Skip tenant resolution for health check and monitoring endpoints
       if (req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
+        return next();
+      }
+
+      // Skip tenant resolution for deprecated @Public() bulk delete endpoints
+      const deprecatedEndpoints = [
+        '/pages/admin/bulk',
+        '/services/admin/bulk',
+        '/media/admin/bulk',
+        '/references/admin/bulk',
+        '/team-members/admin/bulk',
+        '/contact-info/admin/submissions/bulk'
+      ];
+
+      if (req.method === 'DELETE' && deprecatedEndpoints.includes(req.path)) {
+        this.logger.debug(`Skipping tenant resolution for deprecated @Public() endpoint: ${req.method} ${req.path}`);
         return next();
       }
 
