@@ -26,11 +26,13 @@ import { SystemSettingsModule } from './system-settings/system-settings.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { CommonModule } from './common/common.module';
 import { BackupModule } from './backup/backup.module';
+import { BillingModule } from './billing/billing.module';
 import { FrontendModule } from './frontend/frontend.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
+import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { AppController } from './app.controller';
 
@@ -73,6 +75,7 @@ import { AppController } from './app.controller';
     SystemSettingsModule,
     MonitoringModule,
     BackupModule,
+    BillingModule,
     // Frontend serving module
     FrontendModule,
     // Rate limiting
@@ -113,6 +116,10 @@ import { AppController } from './app.controller';
     {
       provide: APP_GUARD,
       useClass: TenantGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
   ],
 })

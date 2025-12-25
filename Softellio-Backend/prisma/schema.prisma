@@ -20,6 +20,11 @@ model Tenant {
   isActive              Boolean                @default(true)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+  // Subscription/Billing fields
+  subscriptionStatus    SubscriptionStatus     @default(trial)
+  planKey               PlanKey                @default(basic)
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
   activeSessions        ActiveSession[]
   alertRules            AlertRule[]
   analyticsReports      AnalyticsReport[]
@@ -1727,4 +1732,18 @@ enum ModuleName {
   MENU
   MEDIA
   SETTINGS
+}
+
+enum SubscriptionStatus {
+  trial
+  active
+  expired
+  canceled
+  past_due
+}
+
+enum PlanKey {
+  basic
+  pro
+  custom
 }

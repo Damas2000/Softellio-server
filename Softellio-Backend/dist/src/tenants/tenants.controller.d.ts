@@ -19,6 +19,10 @@ export declare class TenantsController {
         theme: string | null;
         primaryColor: string | null;
         slug: string;
+        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        planKey: import(".prisma/client").$Enums.PlanKey;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
     }>;
     createWithDomains(createTenantDto: CreateTenantWithDomainsDto): Promise<{
         tenant: import(".prisma/client").Tenant;
@@ -41,6 +45,10 @@ export declare class TenantsController {
         theme: string | null;
         primaryColor: string | null;
         slug: string;
+        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        planKey: import(".prisma/client").$Enums.PlanKey;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
     }[]>;
     findOne(id: number): Promise<{
         status: string;
@@ -55,6 +63,10 @@ export declare class TenantsController {
         theme: string | null;
         primaryColor: string | null;
         slug: string;
+        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        planKey: import(".prisma/client").$Enums.PlanKey;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
     }>;
     update(id: number, updateTenantDto: UpdateTenantDto): Promise<{
         status: string;
@@ -69,6 +81,10 @@ export declare class TenantsController {
         theme: string | null;
         primaryColor: string | null;
         slug: string;
+        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        planKey: import(".prisma/client").$Enums.PlanKey;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
     }>;
     toggleActive(id: number): Promise<{
         status: string;
@@ -83,6 +99,10 @@ export declare class TenantsController {
         theme: string | null;
         primaryColor: string | null;
         slug: string;
+        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        planKey: import(".prisma/client").$Enums.PlanKey;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
     }>;
     remove(id: number): Promise<{
         message: string;

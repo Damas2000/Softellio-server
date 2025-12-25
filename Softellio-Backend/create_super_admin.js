@@ -1,41 +1,40 @@
+const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const { Client } = require('pg');
 
 async function createSuperAdmin() {
-  const client = new Client({
-    connectionString: 'postgresql://postgres:paIvAuMFwAEqMENtLISHZQKDmMdViJcL@gondola.proxy.rlwy.net:20241/railway?sslmode=require'
-  });
+  const prisma = new PrismaClient();
 
   try {
-    await client.connect();
+    // Check if super admin already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { email: 'admin@softellio.com' }
+    });
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash('SuperAdmin123!', 12);
-
-    // Create the super admin user
-    const result = await client.query(`
-      INSERT INTO users (email, password, name, role, "isActive", "createdAt", "updatedAt")
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      RETURNING id, email, name, role
-    `, [
-      'admin@softellio.com',
-      hashedPassword,
-      'Super Admin',
-      'SUPER_ADMIN',
-      true
-    ]);
-
-    console.log('✅ Super Admin user created successfully:');
-    console.log(result.rows[0]);
-
-  } catch (error) {
-    if (error.code === '23505') {
-      console.log('⚠️ Super Admin user already exists');
-    } else {
-      console.error('❌ Error creating Super Admin:', error.message);
+    if (existingUser) {
+      console.log('Super admin already exists:', existingUser.email);
+      return;
     }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    // Create super admin
+    const superAdmin = await prisma.user.create({
+      data: {
+        email: 'admin@softellio.com',
+        password: hashedPassword,
+        role: 'SUPER_ADMIN',
+        name: 'Super Admin',
+        isActive: true,
+        tenantId: null // Super admin is not associated with any tenant
+      }
+    });
+
+    console.log('Super admin created:', superAdmin.email);
+  } catch (error) {
+    console.error('Error creating super admin:', error);
   } finally {
-    await client.end();
+    await prisma.$disconnect();
   }
 }
 

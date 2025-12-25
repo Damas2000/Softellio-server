@@ -35,11 +35,13 @@ const system_settings_module_1 = require("./system-settings/system-settings.modu
 const monitoring_module_1 = require("./monitoring/monitoring.module");
 const common_module_1 = require("./common/common.module");
 const backup_module_1 = require("./backup/backup.module");
+const billing_module_1 = require("./billing/billing.module");
 const frontend_module_1 = require("./frontend/frontend.module");
 const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const tenant_guard_1 = require("./common/guards/tenant.guard");
+const subscription_guard_1 = require("./common/guards/subscription.guard");
 const prisma_exception_filter_1 = require("./common/filters/prisma-exception.filter");
 const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
@@ -81,6 +83,7 @@ exports.AppModule = AppModule = __decorate([
             system_settings_module_1.SystemSettingsModule,
             monitoring_module_1.MonitoringModule,
             backup_module_1.BackupModule,
+            billing_module_1.BillingModule,
             frontend_module_1.FrontendModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
@@ -117,6 +120,10 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: tenant_guard_1.TenantGuard,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: subscription_guard_1.SubscriptionGuard,
             },
         ],
     })

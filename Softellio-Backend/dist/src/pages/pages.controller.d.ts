@@ -17,7 +17,6 @@ export declare class PagesController {
     duplicate(id: number, tenantId: number, req: Request): Promise<PageResponseDto>;
     bulkDelete(bulkDeleteDto: BulkDeleteDto, tenantId: number, req: Request): Promise<CommonBulkDeleteResponseDto>;
     bulkDeleteDeprecated(body: any): never;
-    testBulkDeleteDeprecated(body: any): never;
     findBySlug(language: string, slug: string, tenantId: number): Promise<PageResponseDto>;
     findPublicPages(language: string, tenantId: number, query: PageQueryDto): Promise<PaginatedPageResponseDto>;
     previewBySlug(language: string, slug: string, tenantId: number): Promise<PageResponseDto>;

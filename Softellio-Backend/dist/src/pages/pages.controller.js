@@ -244,9 +244,6 @@ let PagesController = PagesController_1 = class PagesController {
     bulkDeleteDeprecated(body) {
         throw new common_1.GoneException('This endpoint is deprecated. Use POST /pages/admin/bulk-delete');
     }
-    testBulkDeleteDeprecated(body) {
-        throw new common_1.GoneException('This is a test endpoint - should return 410 Gone');
-    }
     async findBySlug(language, slug, tenantId) {
         return this.pagesService.findBySlug(slug, language, tenantId, false);
     }
@@ -384,15 +381,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PagesController.prototype, "bulkDeleteDeprecated", null);
-__decorate([
-    (0, common_1.Delete)('admin/test-bulk'),
-    (0, public_decorator_1.Public)(),
-    (0, swagger_1.ApiExcludeEndpoint)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], PagesController.prototype, "testBulkDeleteDeprecated", null);
 __decorate([
     (0, common_1.Get)('public/:language/:slug'),
     (0, public_decorator_1.Public)(),
