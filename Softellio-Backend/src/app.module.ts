@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod, OnModuleInit, Logger } from '@nestjs/common';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -28,6 +28,7 @@ import { CommonModule } from './common/common.module';
 import { BackupModule } from './backup/backup.module';
 import { BillingModule } from './billing/billing.module';
 import { FrontendModule } from './frontend/frontend.module';
+import { FrontendBootstrapService } from './frontend/frontend-bootstrap.service';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -123,10 +124,45 @@ import { AppController } from './app.controller';
     },
   ],
 })
-export class AppModule {
+export class AppModule implements OnModuleInit {
+  private readonly logger = new Logger(AppModule.name);
+
+  constructor(private frontendBootstrapService: FrontendBootstrapService) {}
+
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+
+  async onModuleInit() {
+    // Production-safe bootstrap logic
+    const shouldBootstrap = this.shouldRunBootstrap();
+
+    if (shouldBootstrap) {
+      this.logger.log('🎯 Starting frontend bootstrap...');
+      try {
+        await this.frontendBootstrapService.bootstrapAllTenants();
+        this.logger.log('✅ Frontend bootstrap completed');
+      } catch (error) {
+        this.logger.error('❌ Frontend bootstrap failed:', error.message);
+        // Don't throw - allow app to start even if bootstrap fails
+      }
+    } else {
+      this.logger.log('🔒 Bootstrap disabled (production safety)');
+    }
+  }
+
+  private shouldRunBootstrap(): boolean {
+    const env = process.env.NODE_ENV;
+    const bootstrapDemo = process.env.BOOTSTRAP_DEMO === 'true';
+    const bootstrapAll = process.env.BOOTSTRAP_ALL_TENANTS === 'true';
+
+    // Allow bootstrap in development OR if explicitly enabled
+    const shouldRun = env !== 'production' || bootstrapDemo || bootstrapAll;
+
+    this.logger.log(`🔍 Bootstrap check: NODE_ENV=${env}, BOOTSTRAP_DEMO=${bootstrapDemo}, BOOTSTRAP_ALL_TENANTS=${bootstrapAll} → ${shouldRun ? 'ENABLED' : 'DISABLED'}`);
+
+    return shouldRun;
   }
 }

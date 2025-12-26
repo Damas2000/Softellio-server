@@ -78,6 +78,9 @@ model Tenant {
   users                 User[]
   userActivities        UserActivity[]
   websiteAnalytics      WebsiteAnalytics[]
+  themeSetting          ThemeSetting?
+  pageLayouts           PageLayout[]
+  pageSections          PageSection[]
 
   @@map("tenants")
 }
@@ -1718,6 +1721,67 @@ model SystemUpdate {
   @@index([updateType, status])
   @@index([version])
   @@map("system_updates")
+}
+
+model ThemeSetting {
+  id                  Int      @id @default(autoincrement())
+  tenantId            Int      @unique
+  primaryColor        String   @default("#3B82F6")
+  secondaryColor      String   @default("#6B7280")
+  backgroundColor     String   @default("#FFFFFF")
+  textColor           String   @default("#111827")
+  fontFamily          String   @default("Inter, sans-serif")
+  radius              Int      @default(8)
+  shadowLevel         Int      @default(1)
+  containerMaxWidth   Int      @default(1200)
+  gridGap             Int      @default(24)
+  buttonStyle         String   @default("solid")
+  headerVariant       String   @default("default")
+  footerVariant       String   @default("default")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("theme_settings")
+}
+
+model PageLayout {
+  id        Int           @id @default(autoincrement())
+  tenantId  Int
+  key       String        // "HOME", "PAGE:123", "ABOUT", etc.
+  language  String?       // nullable for global; but we will use explicit "tr" first
+  status    String        @default("published") // minimal publish control
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  sections  PageSection[]
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key, language])
+  @@index([tenantId, key])
+  @@index([tenantId, language])
+  @@map("page_layouts")
+}
+
+model PageSection {
+  id        Int        @id @default(autoincrement())
+  tenantId  Int        // for tenant isolation
+  layoutId  Int
+  type      String     // hero, stats, servicesGrid, promoCards, testimonials, faq, etc.
+  variant   String?    // v1, v2, v3, etc.
+  order     Int
+  isEnabled Boolean    @default(true)
+  status    String     @default("published")
+  propsJson Json       // JSON props for the section
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  layout    PageLayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([layoutId, order]) // Ensure unique order per layout
+  @@index([tenantId, layoutId])
+  @@index([tenantId, type])
+  @@map("page_sections")
 }
 
 enum Role {

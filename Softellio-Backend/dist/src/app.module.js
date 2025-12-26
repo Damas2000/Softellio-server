@@ -5,6 +5,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var AppModule_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
@@ -37,6 +41,7 @@ const common_module_1 = require("./common/common.module");
 const backup_module_1 = require("./backup/backup.module");
 const billing_module_1 = require("./billing/billing.module");
 const frontend_module_1 = require("./frontend/frontend.module");
+const frontend_bootstrap_service_1 = require("./frontend/frontend-bootstrap.service");
 const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
@@ -44,15 +49,43 @@ const tenant_guard_1 = require("./common/guards/tenant.guard");
 const subscription_guard_1 = require("./common/guards/subscription.guard");
 const prisma_exception_filter_1 = require("./common/filters/prisma-exception.filter");
 const app_controller_1 = require("./app.controller");
-let AppModule = class AppModule {
+let AppModule = AppModule_1 = class AppModule {
+    constructor(frontendBootstrapService) {
+        this.frontendBootstrapService = frontendBootstrapService;
+        this.logger = new common_1.Logger(AppModule_1.name);
+    }
     configure(consumer) {
         consumer
             .apply(tenant_middleware_1.TenantMiddleware)
             .forRoutes({ path: '*', method: common_1.RequestMethod.ALL });
     }
+    async onModuleInit() {
+        const shouldBootstrap = this.shouldRunBootstrap();
+        if (shouldBootstrap) {
+            this.logger.log('🎯 Starting frontend bootstrap...');
+            try {
+                await this.frontendBootstrapService.bootstrapAllTenants();
+                this.logger.log('✅ Frontend bootstrap completed');
+            }
+            catch (error) {
+                this.logger.error('❌ Frontend bootstrap failed:', error.message);
+            }
+        }
+        else {
+            this.logger.log('🔒 Bootstrap disabled (production safety)');
+        }
+    }
+    shouldRunBootstrap() {
+        const env = process.env.NODE_ENV;
+        const bootstrapDemo = process.env.BOOTSTRAP_DEMO === 'true';
+        const bootstrapAll = process.env.BOOTSTRAP_ALL_TENANTS === 'true';
+        const shouldRun = env !== 'production' || bootstrapDemo || bootstrapAll;
+        this.logger.log(`🔍 Bootstrap check: NODE_ENV=${env}, BOOTSTRAP_DEMO=${bootstrapDemo}, BOOTSTRAP_ALL_TENANTS=${bootstrapAll} → ${shouldRun ? 'ENABLED' : 'DISABLED'}`);
+        return shouldRun;
+    }
 };
 exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.AppModule = AppModule = AppModule_1 = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({
@@ -126,6 +159,7 @@ exports.AppModule = AppModule = __decorate([
                 useClass: subscription_guard_1.SubscriptionGuard,
             },
         ],
-    })
+    }),
+    __metadata("design:paramtypes", [frontend_bootstrap_service_1.FrontendBootstrapService])
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

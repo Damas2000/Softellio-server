@@ -1,7 +1,8 @@
-import { Controller, Get, Res, Req } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Controller, Get, Res, Req, Next } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 import { DomainResolverService } from '../common/services/domain-resolver.service';
+import { RouteDetectionUtil } from '../common/utils/route-detection.util';
 
 @Controller()
 export class FrontendController {
@@ -9,40 +10,33 @@ export class FrontendController {
 
   @Public()
   @Get('*')
-  async serveFrontend(@Req() req: Request, @Res() res: Response) {
+  async serveFrontend(@Req() req: Request, @Res() res: Response, @Next() next: NextFunction) {
+    // 🚨 CRITICAL: Portal domain must NEVER serve HTML
+    const host = req.get('host') || req.hostname;
+    const domain = host.split(':')[0]; // Remove port if present
+
+    if (this.isPortalDomain(domain)) {
+      return next(); // Pass to other controllers (portal controller handles this)
+    }
+
+    // ✅ API routes MUST NOT be handled by frontend controller
+    if (RouteDetectionUtil.isApiRoute(req.url)) {
+      return next(); // Pass to API controllers, don't return 404
+    }
+
     try {
-      // Get domain from request
-      const domain = req.get('host') || req.hostname;
 
-      // Check if it's API request or health endpoint
-      if (req.url.startsWith('/api') ||
-          req.url.startsWith('/auth') ||
-          req.url.startsWith('/super-admin') ||
-          req.url.startsWith('/users') ||
-          req.url.startsWith('/tenants') ||
-          req.url.startsWith('/pages') ||
-          req.url.startsWith('/blog') ||
-          req.url.startsWith('/media') ||
-          req.url.startsWith('/site-settings') ||
-          req.url.startsWith('/health') ||
-          req.url.includes('api-docs')) {
-        return; // Let other controllers handle API routes
-      }
-
-      // Extract company info from subdomain
       const companyInfo = this.extractCompanyInfo(domain);
 
       if (!companyInfo) {
         return this.renderDefaultPage(res, domain);
       }
 
-      // Render company-specific template
       if (companyInfo.isAdmin) {
         return this.renderAdminPage(res, companyInfo, domain);
       } else {
         return this.renderCompanyPage(res, companyInfo, domain);
       }
-
     } catch (error) {
       console.error('Frontend serving error:', error);
       return this.renderErrorPage(res, 'Site yüklenirken hata oluştu');
@@ -63,6 +57,12 @@ export class FrontendController {
     const parts = domain.split('.');
     if (parts.length >= 3 && parts[1] === 'softellio') {
       const subdomain = parts[0];
+
+      // Portal subdomain is special - not a tenant
+      if (subdomain === 'portal' || subdomain === 'www.portal') {
+        return null;
+      }
+
       const isAdmin = subdomain.endsWith('panel');
       const companySlug = isAdmin ? subdomain.replace('panel', '') : subdomain;
 
@@ -74,6 +74,18 @@ export class FrontendController {
     }
 
     return null;
+  }
+
+  /**
+   * Check if domain is the central portal domain
+   * Portal domain should NEVER serve HTML from frontend controller
+   */
+  private isPortalDomain(domain: string): boolean {
+    if (!domain) return false;
+
+    const normalizedDomain = domain.toLowerCase();
+    return normalizedDomain === 'portal.softellio.com' ||
+           normalizedDomain === 'www.portal.softellio.com';
   }
 
   private renderCompanyPage(res: Response, companyInfo: any, domain: string) {
@@ -204,7 +216,7 @@ export class FrontendController {
             <li>📊 Analytics ve raporlar</li>
         </ul>
         <a href="/iletisim" class="btn">📞 İletişime Geç</a>
-        <a href="https://${companyInfo.slug}panel.softellio.com" class="btn">⚙️ Admin Panel</a>
+        <a href="https://portal.softellio.com/login?tenant=${companyInfo.slug}" class="btn">⚙️ Admin Panel</a>
 
         <div class="powered">
             🎯 Powered by Softellio Multi-Tenant Backend<br>

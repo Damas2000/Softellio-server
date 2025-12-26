@@ -16,26 +16,21 @@ exports.FrontendController = void 0;
 const common_1 = require("@nestjs/common");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const domain_resolver_service_1 = require("../common/services/domain-resolver.service");
+const route_detection_util_1 = require("../common/utils/route-detection.util");
 let FrontendController = class FrontendController {
     constructor(domainResolver) {
         this.domainResolver = domainResolver;
     }
-    async serveFrontend(req, res) {
+    async serveFrontend(req, res, next) {
+        const host = req.get('host') || req.hostname;
+        const domain = host.split(':')[0];
+        if (this.isPortalDomain(domain)) {
+            return next();
+        }
+        if (route_detection_util_1.RouteDetectionUtil.isApiRoute(req.url)) {
+            return next();
+        }
         try {
-            const domain = req.get('host') || req.hostname;
-            if (req.url.startsWith('/api') ||
-                req.url.startsWith('/auth') ||
-                req.url.startsWith('/super-admin') ||
-                req.url.startsWith('/users') ||
-                req.url.startsWith('/tenants') ||
-                req.url.startsWith('/pages') ||
-                req.url.startsWith('/blog') ||
-                req.url.startsWith('/media') ||
-                req.url.startsWith('/site-settings') ||
-                req.url.startsWith('/health') ||
-                req.url.includes('api-docs')) {
-                return;
-            }
             const companyInfo = this.extractCompanyInfo(domain);
             if (!companyInfo) {
                 return this.renderDefaultPage(res, domain);
@@ -64,6 +59,9 @@ let FrontendController = class FrontendController {
         const parts = domain.split('.');
         if (parts.length >= 3 && parts[1] === 'softellio') {
             const subdomain = parts[0];
+            if (subdomain === 'portal' || subdomain === 'www.portal') {
+                return null;
+            }
             const isAdmin = subdomain.endsWith('panel');
             const companySlug = isAdmin ? subdomain.replace('panel', '') : subdomain;
             return {
@@ -73,6 +71,13 @@ let FrontendController = class FrontendController {
             };
         }
         return null;
+    }
+    isPortalDomain(domain) {
+        if (!domain)
+            return false;
+        const normalizedDomain = domain.toLowerCase();
+        return normalizedDomain === 'portal.softellio.com' ||
+            normalizedDomain === 'www.portal.softellio.com';
     }
     renderCompanyPage(res, companyInfo, domain) {
         const html = `
@@ -202,7 +207,7 @@ let FrontendController = class FrontendController {
             <li>📊 Analytics ve raporlar</li>
         </ul>
         <a href="/iletisim" class="btn">📞 İletişime Geç</a>
-        <a href="https://${companyInfo.slug}panel.softellio.com" class="btn">⚙️ Admin Panel</a>
+        <a href="https://portal.softellio.com/login?tenant=${companyInfo.slug}" class="btn">⚙️ Admin Panel</a>
 
         <div class="powered">
             🎯 Powered by Softellio Multi-Tenant Backend<br>
@@ -344,8 +349,9 @@ __decorate([
     (0, common_1.Get)('*'),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Next)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, Function]),
     __metadata("design:returntype", Promise)
 ], FrontendController.prototype, "serveFrontend", null);
 exports.FrontendController = FrontendController = __decorate([
