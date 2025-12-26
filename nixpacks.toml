@@ -1,3 +1,6 @@
+[providers]
+nodejs = "20"
+
 [phases.build]
   workdir = "Softellio-Backend"
 
