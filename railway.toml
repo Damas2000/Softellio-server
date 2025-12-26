@@ -1,6 +1,5 @@
 [build]
   builder = "nixpacks"
-  workdir = "Softellio-Backend"
 
 [deploy]
   startCommand = "cd Softellio-Backend && npm run start:prod"
