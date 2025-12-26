@@ -1,0 +1,11 @@
+[phases.build]
+  workdir = "Softellio-Backend"
+
+[phases.install]
+  workdir = "Softellio-Backend"
+
+[phases.setup]
+  workdir = "Softellio-Backend"
+
+[start]
+  cmd = "cd Softellio-Backend && npm run start:prod"

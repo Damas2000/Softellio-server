@@ -1,0 +1,13 @@
+{
+  "name": "softellio-full-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd Softellio-Backend && npm install && npm run build",
+    "start": "cd Softellio-Backend && npm run start:prod",
+    "start:dev": "cd Softellio-Backend && npm run start:dev"
+  },
+  "workspaces": [
+    "Softellio-Backend"
+  ]
+}
