@@ -25,4 +25,5 @@ export declare class AuthService {
     logout(userId: number, tenantId?: number, ipAddress?: string, userAgent?: string): Promise<{
         message: string;
     }>;
+    validateJwtToken(token: string): Promise<any>;
 }

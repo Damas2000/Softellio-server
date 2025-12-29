@@ -121,7 +121,7 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '15m';
+    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '7d';
     return this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
       expiresIn: expiresIn as any,
@@ -167,5 +167,35 @@ export class AuthService {
     }
 
     return { message: 'Logged out successfully' };
+  }
+
+  async validateJwtToken(token: string): Promise<any> {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      // Get user from database to ensure they're still active
+      const user = await this.prisma.user.findFirst({
+        where: {
+          id: payload.sub,
+          isActive: true
+        }
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found or inactive');
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

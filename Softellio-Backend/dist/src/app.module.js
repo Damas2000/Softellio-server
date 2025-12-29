@@ -18,6 +18,8 @@ const throttler_1 = require("@nestjs/throttler");
 const prisma_module_1 = require("./config/prisma.module");
 const cloudinary_module_1 = require("./config/cloudinary.module");
 const auth_module_1 = require("./auth/auth.module");
+const admin_module_1 = require("./admin/admin.module");
+const cms_module_1 = require("./cms/cms.module");
 const users_module_1 = require("./users/users.module");
 const tenants_module_1 = require("./tenants/tenants.module");
 const domains_module_1 = require("./domains/domains.module");
@@ -96,6 +98,8 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             common_module_1.CommonModule,
             cloudinary_module_1.CloudinaryModule,
             auth_module_1.AuthModule,
+            admin_module_1.AdminModule,
+            cms_module_1.CmsModule,
             users_module_1.UsersModule,
             tenants_module_1.TenantsModule,
             domains_module_1.DomainsModule,

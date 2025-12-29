@@ -18,9 +18,15 @@ const prisma_service_1 = require("../../config/prisma.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor(configService, prisma) {
         super({
-            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
+                (request) => {
+                    return request?.cookies?.auth_token || null;
+                },
+                passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
             ignoreExpiration: false,
             secretOrKey: configService.get('JWT_SECRET'),
+            passReqToCallback: false,
         });
         this.configService = configService;
         this.prisma = prisma;

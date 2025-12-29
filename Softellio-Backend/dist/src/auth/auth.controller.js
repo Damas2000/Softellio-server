@@ -16,13 +16,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
-const passport_1 = require("@nestjs/passport");
 const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const auth_response_dto_1 = require("./dto/auth-response.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
-const current_tenant_decorator_1 = require("../common/decorators/current-tenant.decorator");
 const tenants_service_1 = require("../tenants/tenants.service");
 const common_2 = require("@nestjs/common");
 let AuthController = AuthController_1 = class AuthController {
@@ -58,43 +56,48 @@ let AuthController = AuthController_1 = class AuthController {
         const ipAddress = this.getClientIp(request);
         const userAgent = request.headers['user-agent'];
         const result = await this.authService.login(loginDto, tenant, ipAddress, userAgent);
-        const tokens = await this.authService.generateTokens({
-            id: result.user.id,
-            email: result.user.email,
-            name: result.user.name,
-            role: result.user.role,
-            tenantId: result.user.tenantId,
-            password: '',
-            isActive: result.user.isActive,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        response.cookie('refreshToken', tokens.refreshToken, {
+        response.cookie('auth_token', result.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
-        return result;
+        return { user: result.user };
     }
-    async refresh(user) {
-        return this.authService.refresh(user.id);
-    }
-    async logout(user, request, response) {
-        response.clearCookie('refreshToken');
-        const ipAddress = this.getClientIp(request);
-        const userAgent = request.headers['user-agent'];
-        return this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
-    }
-    async me(user) {
+    async me(request) {
+        const token = this.extractTokenFromCookie(request);
+        if (!token) {
+            throw new common_2.UnauthorizedException('No auth token found');
+        }
+        const user = await this.authService.validateJwtToken(token);
         return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            tenantId: user.tenantId,
-            isActive: user.isActive,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                tenantId: user.tenantId
+            }
         };
+    }
+    async logout(request, response) {
+        response.clearCookie('auth_token', {
+            path: '/',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        });
+        try {
+            const token = this.extractTokenFromCookie(request);
+            if (token) {
+                const user = await this.authService.validateJwtToken(token);
+                const ipAddress = this.getClientIp(request);
+                const userAgent = request.headers['user-agent'];
+                await this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
+            }
+        }
+        catch (error) {
+        }
+        return { ok: true };
     }
     extractHost(request) {
         const rawHost = (request.headers['x-tenant-host'] ||
@@ -136,6 +139,10 @@ let AuthController = AuthController_1 = class AuthController {
             request.socket?.remoteAddress ||
             'unknown';
     }
+    extractTokenFromCookie(request) {
+        const cookies = request.cookies;
+        return cookies?.auth_token || null;
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -164,45 +171,45 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
-    (0, common_1.Post)('refresh'),
-    (0, public_decorator_1.Public)(),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt-refresh')),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Refresh access token' }),
+    (0, common_2.Get)('me'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get current user information' }),
     (0, swagger_1.ApiResponse)({
         status: 200,
-        description: 'Token refreshed successfully',
-        type: auth_response_dto_1.RefreshResponseDto,
+        description: 'Current user information',
+        schema: {
+            type: 'object',
+            properties: {
+                user: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'number', example: 1 },
+                        email: { type: 'string', example: 'admin@softellio.com' },
+                        name: { type: 'string', example: 'Admin User' },
+                        role: { type: 'string', example: 'SUPER_ADMIN' },
+                        tenantId: { type: 'number', example: null }
+                    }
+                }
+            }
+        }
     }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid refresh token' }),
-    __param(0, (0, current_tenant_decorator_1.CurrentUser)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "refresh", null);
-__decorate([
-    (0, common_1.Post)('logout'),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'User logout' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Logout successful' }),
-    __param(0, (0, current_tenant_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Req)()),
-    __param(2, (0, common_1.Res)({ passthrough: true })),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "logout", null);
-__decorate([
-    (0, common_1.Post)('me'),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get current user information' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Current user information' }),
-    __param(0, (0, current_tenant_decorator_1.CurrentUser)()),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, public_decorator_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'User logout' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Logout successful' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, swagger_1.ApiTags)('Authentication'),
     (0, common_1.Controller)('auth'),

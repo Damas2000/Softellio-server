@@ -101,7 +101,7 @@ let AuthService = class AuthService {
             role: user.role,
             tenantId: user.tenantId,
         };
-        const expiresIn = this.configService.get('JWT_EXPIRES_IN') || '15m';
+        const expiresIn = this.configService.get('JWT_EXPIRES_IN') || '7d';
         return this.jwtService.signAsync(payload, {
             secret: this.configService.get('JWT_SECRET'),
             expiresIn: expiresIn,
@@ -140,6 +140,32 @@ let AuthService = class AuthService {
             console.error('Failed to log logout activity:', error);
         }
         return { message: 'Logged out successfully' };
+    }
+    async validateJwtToken(token) {
+        try {
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: this.configService.get('JWT_SECRET'),
+            });
+            const user = await this.prisma.user.findFirst({
+                where: {
+                    id: payload.sub,
+                    isActive: true
+                }
+            });
+            if (!user) {
+                throw new common_1.UnauthorizedException('User not found or inactive');
+            }
+            return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                tenantId: user.tenantId
+            };
+        }
+        catch (error) {
+            throw new common_1.UnauthorizedException('Invalid token');
+        }
     }
 };
 exports.AuthService = AuthService;

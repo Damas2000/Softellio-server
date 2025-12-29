@@ -18,7 +18,7 @@ import { AuthResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
 import { TenantsService } from '../tenants/tenants.service';
-import { Logger, BadRequestException } from '@nestjs/common';
+import { Logger, BadRequestException, UnauthorizedException, Get } from '@nestjs/common';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -52,7 +52,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<AuthResponseDto> {
+  ): Promise<{ user: any }> {
     // Enhanced host extraction with priority order and reserved domain checking
     const host = this.extractHost(request);
     let tenant = null;
@@ -88,78 +88,88 @@ export class AuthController {
 
     const result = await this.authService.login(loginDto, tenant, ipAddress, userAgent);
 
-    // Generate refresh token and set as HTTP-only cookie
-    const tokens = await this.authService.generateTokens({
-      id: result.user.id,
-      email: result.user.email,
-      name: result.user.name,
-      role: result.user.role,
-      tenantId: result.user.tenantId,
-      password: '', // Not needed for token generation
-      isActive: result.user.isActive,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Set refresh token as HTTP-only cookie
-    response.cookie('refreshToken', tokens.refreshToken, {
+    // Set JWT access token as HTTP-only cookie
+    response.cookie('auth_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return result;
+    return { user: result.user };
   }
 
-  @Post('refresh')
-  @Public()
-  @UseGuards(AuthGuard('jwt-refresh'))
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token' })
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user information' })
   @ApiResponse({
     status: 200,
-    description: 'Token refreshed successfully',
-    type: RefreshResponseDto,
+    description: 'Current user information',
+    schema: {
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            email: { type: 'string', example: 'admin@softellio.com' },
+            name: { type: 'string', example: 'Admin User' },
+            role: { type: 'string', example: 'SUPER_ADMIN' },
+            tenantId: { type: 'number', example: null }
+          }
+        }
+      }
+    }
   })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@CurrentUser() user: any): Promise<RefreshResponseDto> {
-    return this.authService.refresh(user.id);
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async me(@Req() request: Request) {
+    const token = this.extractTokenFromCookie(request);
+
+    if (!token) {
+      throw new UnauthorizedException('No auth token found');
+    }
+
+    const user = await this.authService.validateJwtToken(token);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId
+      }
+    };
   }
 
   @Post('logout')
-  @ApiBearerAuth()
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
-    @CurrentUser() user: any,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ message: string }> {
-    // Clear refresh token cookie
-    response.clearCookie('refreshToken');
+  ): Promise<{ ok: boolean }> {
+    // Clear auth_token cookie
+    response.clearCookie('auth_token', {
+      path: '/',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
 
-    // Extract IP address and user agent for activity logging
-    const ipAddress = this.getClientIp(request);
-    const userAgent = request.headers['user-agent'];
+    // Optional: Log logout activity if we can extract user from token
+    try {
+      const token = this.extractTokenFromCookie(request);
+      if (token) {
+        const user = await this.authService.validateJwtToken(token);
+        const ipAddress = this.getClientIp(request);
+        const userAgent = request.headers['user-agent'];
+        await this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
+      }
+    } catch (error) {
+      // Ignore errors in logout activity logging
+    }
 
-    return this.authService.logout(user.id, user.tenantId, ipAddress, userAgent);
-  }
-
-  @Post('me')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user information' })
-  @ApiResponse({ status: 200, description: 'Current user information' })
-  async me(@CurrentUser() user: any) {
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      tenantId: user.tenantId,
-      isActive: user.isActive,
-    };
+    return { ok: true };
   }
 
   /**
@@ -228,5 +238,13 @@ export class AuthController {
     return request.connection?.remoteAddress ||
            request.socket?.remoteAddress ||
            'unknown';
+  }
+
+  /**
+   * Extract JWT token from auth_token cookie
+   */
+  private extractTokenFromCookie(request: Request): string | null {
+    const cookies = request.cookies;
+    return cookies?.auth_token || null;
   }
 }

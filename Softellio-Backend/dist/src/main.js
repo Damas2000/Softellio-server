@@ -30,6 +30,8 @@ async function getAllowedOrigins() {
         }
         const defaultOrigins = [
             'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
             'http://localhost:4200',
             'https://platform.softellio.com',
             'http://platform.softellio.com'
@@ -42,6 +44,8 @@ async function getAllowedOrigins() {
         console.warn('⚠️ Could not load CORS origins from database, using defaults:', error.message);
         return [
             'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:3002',
             'http://localhost:4200',
             'https://platform.softellio.com',
             'http://platform.softellio.com'
@@ -64,6 +68,17 @@ async function bootstrap() {
             callback(new Error(`Origin ${origin} not allowed by CORS`), false);
         },
         credentials: true,
+        allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'X-Tenant-Id',
+            'X-Tenant-Host',
+            'Host',
+            'Accept',
+            'Origin',
+            'X-Requested-With'
+        ],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,

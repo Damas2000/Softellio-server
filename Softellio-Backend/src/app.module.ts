@@ -5,6 +5,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './config/prisma.module';
 import { CloudinaryModule } from './config/cloudinary.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminModule } from './admin/admin.module';
+import { CmsModule } from './cms/cms.module';
 import { UsersModule } from './users/users.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { DomainsModule } from './domains/domains.module';
@@ -52,6 +54,10 @@ import { AppController } from './app.controller';
     CloudinaryModule,
     // Authentication module
     AuthModule,
+    // Admin management module
+    AdminModule,
+    // CMS module
+    CmsModule,
     // User management module
     UsersModule,
     // Tenant management module

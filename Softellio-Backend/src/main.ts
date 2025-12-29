@@ -36,6 +36,8 @@ async function getAllowedOrigins(): Promise<string[]> {
     // Always include development origins and platform.softellio.com
     const defaultOrigins = [
       'http://localhost:3000',
+      'http://localhost:3001',  // Public site (Next.js)
+      'http://localhost:3002',  // Portal CMS (Next.js)
       'http://localhost:4200',
       'https://platform.softellio.com',
       'http://platform.softellio.com'
@@ -50,6 +52,8 @@ async function getAllowedOrigins(): Promise<string[]> {
     console.warn('⚠️ Could not load CORS origins from database, using defaults:', error.message);
     return [
       'http://localhost:3000',
+      'http://localhost:3001',  // Public site (Next.js)
+      'http://localhost:3002',  // Portal CMS (Next.js)
       'http://localhost:4200',
       'https://platform.softellio.com',
       'http://platform.softellio.com'
@@ -83,6 +87,17 @@ async function bootstrap() {
       callback(new Error(`Origin ${origin} not allowed by CORS`), false);
     },
     credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Tenant-Id',
+      'X-Tenant-Host',
+      'Host',
+      'Accept',
+      'Origin',
+      'X-Requested-With'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
 
   // Global validation pipe
