@@ -117,7 +117,7 @@ export class TenantsController {
   @ApiResponse({ status: 404, description: 'Tenant not found' })
   updateFeature(
     @Param('id', ParseIntPipe) id: number,
-    @Param('module', new ParseEnumPipe(ModuleName)) module: ModuleName,
+    @Param('module', new ParseEnumPipe({ enumType: ModuleName })) module: ModuleName,
     @Body() body: { enabled: boolean },
   ) {
     return this.tenantsService.updateFeature(id, module, body.enabled);

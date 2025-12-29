@@ -1,5 +1,5 @@
 /**
- * Centralized utility for detecting API routes
+ * Centralized utility for detecting API routes and tenant host resolution
  * Prevents FrontendController from intercepting backend endpoints
  */
 export class RouteDetectionUtil {
@@ -13,6 +13,19 @@ export class RouteDetectionUtil {
     '/blog',
     '/media',
     '/site-settings',
+    '/theme-settings',
+    '/menu',
+    '/frontend',
+    '/services',
+    '/references',
+    '/contact-info',
+    '/seo',
+    '/section-types',
+    '/layouts',
+    '/banners-sliders',
+    '/social-media-maps',
+    '/dashboard-analytics',
+    '/domains',
     '/health',
     '/docs',
     '/api-docs',
@@ -29,5 +42,20 @@ export class RouteDetectionUtil {
     return this.API_ROUTE_PATTERNS.some(
       (pattern) => cleanUrl.startsWith(pattern) || cleanUrl.includes('api-docs'),
     );
+  }
+
+  /**
+   * Extract tenant host from request headers
+   * Prefers X-Tenant-Host header, falls back to Host header
+   * Strips port and normalizes to lowercase
+   */
+  static getTenantHost(req: { headers: Record<string, string | string[] | undefined> }): string | null {
+    const host = (req.headers['x-tenant-host'] ?? req.headers['host']) as string;
+
+    if (!host) {
+      return null;
+    }
+
+    return host.split(':')[0].toLowerCase().trim();
   }
 }

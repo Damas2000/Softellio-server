@@ -51,12 +51,16 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
                 req.path.startsWith('/blog') ||
                 req.path.startsWith('/media') ||
                 req.path.startsWith('/site-settings') ||
+                req.path.startsWith('/theme-settings') ||
                 req.path.startsWith('/menu') ||
+                req.path.startsWith('/frontend') ||
                 req.path.startsWith('/services') ||
                 req.path.startsWith('/contact-info') ||
                 req.path.startsWith('/team-members') ||
                 req.path.startsWith('/references') ||
                 req.path.startsWith('/seo') ||
+                req.path.startsWith('/section-types') ||
+                req.path.startsWith('/layouts') ||
                 req.path.startsWith('/banners-sliders') ||
                 req.path.startsWith('/social-media-maps') ||
                 req.path.startsWith('/dashboard-analytics') ||

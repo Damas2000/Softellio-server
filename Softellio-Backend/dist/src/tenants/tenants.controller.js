@@ -162,7 +162,7 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Feature updated successfully' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Param)('module', new common_1.ParseEnumPipe(client_1.ModuleName))),
+    __param(1, (0, common_1.Param)('module', new common_1.ParseEnumPipe({ enumType: client_1.ModuleName }))),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, String, Object]),
