@@ -61,7 +61,25 @@ export class ThemeSettingsService {
   /**
    * Get public theme settings (no auth required)
    */
-  async getPublicThemeSetting(tenantId: number) {
+  async getPublicThemeSetting(tenantId: number | null) {
+    // Return defaults for SUPER_ADMIN context (null tenantId)
+    if (tenantId === null) {
+      return {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#6B7280',
+        backgroundColor: '#FFFFFF',
+        textColor: '#111827',
+        fontFamily: 'Inter, sans-serif',
+        radius: 8,
+        shadowLevel: 1,
+        containerMaxWidth: 1200,
+        gridGap: 24,
+        buttonStyle: 'solid',
+        headerVariant: 'default',
+        footerVariant: 'default',
+      };
+    }
+
     const themeSetting = await this.prisma.themeSetting.findUnique({
       where: { tenantId },
       select: {

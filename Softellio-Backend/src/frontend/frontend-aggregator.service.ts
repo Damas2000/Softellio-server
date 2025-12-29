@@ -16,10 +16,16 @@ export class FrontendAggregatorService {
   /**
    * Aggregate all data needed for frontend home page in single request
    */
-  async getHomePageData(tenantId: number, language?: string) {
+  async getHomePageData(tenantId: number | null, language?: string) {
     this.logger.log(`🏠 Aggregating home page data for tenant ${tenantId}, language: ${language}`);
 
     try {
+      // Handle SUPER_ADMIN context (null tenantId) with fallback data
+      if (tenantId === null) {
+        this.logger.debug('🔑 SUPER_ADMIN context detected - using fallback data');
+        return this.getSuperAdminFallbackData(language);
+      }
+
       // Get tenant info to determine default language
       const tenant = await this.getTenantBasics(tenantId);
       const lang = language || tenant.defaultLanguage || 'tr';
@@ -597,6 +603,104 @@ export class FrontendAggregatorService {
       workingHours: null,
       logo: null,
       favicon: null,
+    };
+  }
+
+  /**
+   * Get fallback data for SUPER_ADMIN context (localhost access)
+   */
+  private getSuperAdminFallbackData(language?: string) {
+    const lang = language || 'tr';
+
+    return {
+      tenant: {
+        tenantId: null,
+        companyName: 'Demo Printing Company',
+        slug: 'demo-printing',
+        domain: 'localhost',
+        templateKey: 'printing',
+        defaultLanguage: lang,
+        availableLanguages: [lang],
+        status: 'active',
+      },
+      siteSettings: {
+        siteName: 'Demo Printing Company',
+        siteDescription: 'Kaliteli baskı hizmetleri',
+        seoMetaTitle: 'Demo Printing Company - Ana Sayfa',
+        seoMetaDescription: 'Branda, afiş, tabela üretimi',
+      },
+      theme: {
+        primaryColor: '#3B82F6',
+        secondaryColor: '#6B7280',
+        backgroundColor: '#FFFFFF',
+        textColor: '#111827',
+        fontFamily: 'Inter, sans-serif',
+        radius: 8,
+        shadowLevel: 1,
+        containerMaxWidth: 1200,
+        gridGap: 24,
+        buttonStyle: 'solid',
+        headerVariant: 'default',
+        footerVariant: 'default',
+      },
+      menu: {
+        key: 'main',
+        items: [
+          { id: 1, label: 'Ana Sayfa', url: '/', order: 1, children: [] },
+          { id: 2, label: 'Hizmetler', url: '/services', order: 2, children: [] },
+          { id: 3, label: 'İletişim', url: '/contact', order: 3, children: [] },
+        ],
+      },
+      layout: {
+        key: 'HOME',
+        language: lang,
+        sections: [
+          {
+            id: -1,
+            type: 'hero',
+            variant: 'default',
+            order: 1,
+            propsJson: {
+              title: 'Branda • Afiş • Tabela',
+              subtitle: 'Hızlı üretim, kaliteli baskı, profesyonel montaj.',
+              ctaText: 'Teklif Al',
+              ctaHref: '/contact'
+            }
+          },
+          {
+            id: -2,
+            type: 'services',
+            variant: 'grid',
+            order: 2,
+            propsJson: {
+              title: 'Hizmetlerimiz',
+              subtitle: 'Geniş hizmet yelpazemizle işletmenizin tüm baskı ihtiyaçlarını karşılıyoruz',
+              services: [
+                {
+                  title: 'Branda Üretimi',
+                  description: 'Dış mekan ve iç mekan brandaları',
+                  icon: 'banner'
+                },
+                {
+                  title: 'Afiş Baskısı',
+                  description: 'Reklam ve tanıtım afişleri',
+                  icon: 'poster'
+                },
+                {
+                  title: 'Tabela Üretimi',
+                  description: 'İşletme tabelaları ve yönlendirme levhaları',
+                  icon: 'sign'
+                }
+              ]
+            }
+          }
+        ],
+        meta: {
+          type: 'global',
+          displayName: 'Ana Sayfa / Home',
+          isPageSpecific: false
+        }
+      },
     };
   }
 }

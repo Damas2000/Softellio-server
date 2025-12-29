@@ -599,8 +599,17 @@ export class PageLayoutsService {
     // Add metadata about the layout type
     const keyInfo = this.validateLayoutKey(key);
 
+    // Add fallback content for HOME layout if no sections exist
+    let sections = baseLayout.sections;
+    console.log(`DEBUG: key=${key}, sections.length=${sections.length}, tenantId=${tenantId}`);
+    if (key === 'HOME' && sections.length === 0) {
+      console.log('DEBUG: Applying fallback content for HOME layout');
+      sections = this.getPrintingCompanyFallbackSections();
+    }
+
     return {
       ...baseLayout,
+      sections,
       meta: {
         type: keyInfo.type,
         slug: keyInfo.slug,
@@ -608,5 +617,51 @@ export class PageLayoutsService {
         isPageSpecific: keyInfo.type === 'page'
       }
     };
+  }
+
+  /**
+   * Get fallback sections for printing company template
+   */
+  private getPrintingCompanyFallbackSections() {
+    return [
+      {
+        id: -1,
+        type: 'hero',
+        variant: 'default',
+        order: 1,
+        propsJson: {
+          title: 'Branda • Afiş • Tabela',
+          subtitle: 'Hızlı üretim, kaliteli baskı, profesyonel montaj.',
+          ctaText: 'Teklif Al',
+          ctaHref: '/contact'
+        }
+      },
+      {
+        id: -2,
+        type: 'services',
+        variant: 'grid',
+        order: 2,
+        propsJson: {
+          items: [
+            {
+              title: 'Branda Baskı',
+              description: 'Dış mekan dayanımlı branda, mesh, vinil.'
+            },
+            {
+              title: 'Afiş & Poster',
+              description: 'Yüksek çözünürlük, canlı renkler.'
+            },
+            {
+              title: 'Tabela',
+              description: 'Işıklı/ışıksız tabela, kutu harf, yönlendirme.'
+            },
+            {
+              title: 'Araç Giydirme',
+              description: 'Kurumsal araç kaplama ve folyo uygulama.'
+            }
+          ]
+        }
+      }
+    ];
   }
 }
