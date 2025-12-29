@@ -47,6 +47,7 @@ export class TenantMiddleware implements NestMiddleware {
       // Only apply tenant resolution to specific admin API routes - skip everything else for frontend serving
       const isApiRoute = req.path.startsWith('/api') ||
           req.path.startsWith('/auth') ||
+          req.path.startsWith('/cms') ||
           req.path.startsWith('/users') ||
           req.path.startsWith('/super-admin/tenants') || // Only super-admin tenant routes need tenant resolution
           req.path.startsWith('/pages') ||
@@ -86,10 +87,26 @@ export class TenantMiddleware implements NestMiddleware {
 
       // Method 1: Direct tenant ID header (for API clients with known tenant)
       const tenantIdHeader = req.headers['x-tenant-id'] as string;
+
+      // Development debug logging
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.debug(`🔍 [DEBUG] Headers check: x-tenant-id="${tenantIdHeader}"`);
+        this.logger.debug(`🔍 [DEBUG] All tenant-related headers:`, {
+          'x-tenant-id': req.headers['x-tenant-id'],
+          'x-tenant-host': req.headers['x-tenant-host'],
+          'x-tenant-domain': req.headers['x-tenant-domain'],
+          'host': req.headers['host']
+        });
+      }
+
       if (tenantIdHeader) {
         tenantId = parseInt(tenantIdHeader, 10);
         if (isNaN(tenantId)) {
           throw new BadRequestException('Invalid tenant ID in header');
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          this.logger.debug(`🔍 [DEBUG] Parsed tenantId from header: ${tenantId}`);
         }
 
         // Validate tenant exists and is active
@@ -156,8 +173,13 @@ export class TenantMiddleware implements NestMiddleware {
       req.tenantId = tenantId;
       req.tenant = tenant;
 
+      // Development debug logging for final resolution
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.debug(`🔍 [DEBUG] Final tenant context attached: req.tenantId=${req.tenantId}, tenant.slug=${tenant?.slug || 'null'}`);
+      }
+
       // Log successful resolution
-      this.logger.log(`🏢 Request for tenant: ${tenant.slug} (${tenantId}) - ${req.method} ${req.path}`);
+      this.logger.log(`🏢 Request for tenant: ${tenant?.slug || 'null'} (${tenantId}) - ${req.method} ${req.path}`);
 
       // Optional: Log domain resolution for monitoring
       if (req.domainResolution) {

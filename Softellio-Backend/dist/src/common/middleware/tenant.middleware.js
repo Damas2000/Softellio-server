@@ -45,6 +45,7 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
             }
             const isApiRoute = req.path.startsWith('/api') ||
                 req.path.startsWith('/auth') ||
+                req.path.startsWith('/cms') ||
                 req.path.startsWith('/users') ||
                 req.path.startsWith('/super-admin/tenants') ||
                 req.path.startsWith('/pages') ||
@@ -77,10 +78,22 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
             let tenantId;
             let tenant = null;
             const tenantIdHeader = req.headers['x-tenant-id'];
+            if (process.env.NODE_ENV === 'development') {
+                this.logger.debug(`🔍 [DEBUG] Headers check: x-tenant-id="${tenantIdHeader}"`);
+                this.logger.debug(`🔍 [DEBUG] All tenant-related headers:`, {
+                    'x-tenant-id': req.headers['x-tenant-id'],
+                    'x-tenant-host': req.headers['x-tenant-host'],
+                    'x-tenant-domain': req.headers['x-tenant-domain'],
+                    'host': req.headers['host']
+                });
+            }
             if (tenantIdHeader) {
                 tenantId = parseInt(tenantIdHeader, 10);
                 if (isNaN(tenantId)) {
                     throw new common_1.BadRequestException('Invalid tenant ID in header');
+                }
+                if (process.env.NODE_ENV === 'development') {
+                    this.logger.debug(`🔍 [DEBUG] Parsed tenantId from header: ${tenantId}`);
                 }
                 tenant = await this.prisma.tenant.findFirst({
                     where: {
@@ -123,7 +136,10 @@ let TenantMiddleware = TenantMiddleware_1 = class TenantMiddleware {
             }
             req.tenantId = tenantId;
             req.tenant = tenant;
-            this.logger.log(`🏢 Request for tenant: ${tenant.slug} (${tenantId}) - ${req.method} ${req.path}`);
+            if (process.env.NODE_ENV === 'development') {
+                this.logger.debug(`🔍 [DEBUG] Final tenant context attached: req.tenantId=${req.tenantId}, tenant.slug=${tenant?.slug || 'null'}`);
+            }
+            this.logger.log(`🏢 Request for tenant: ${tenant?.slug || 'null'} (${tenantId}) - ${req.method} ${req.path}`);
             if (req.domainResolution) {
                 this.logger.debug(`Domain resolution: ${req.domainResolution.originalDomain} -> ${tenant.slug} via ${req.domainResolution.resolvedBy}`);
             }

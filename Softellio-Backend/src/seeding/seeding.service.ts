@@ -37,7 +37,7 @@ export class SeedingService {
       return existingAdmin;
     }
 
-    const hashedPassword = await bcrypt.hash('SuperAdmin123!', 10);
+    const hashedPassword = await bcrypt.hash('admin123', 10);
 
     const superAdmin = await this.prisma.user.create({
       data: {
@@ -91,12 +91,12 @@ export class SeedingService {
   private async createTenantAdmin(tenantId: number) {
     console.log('👨‍💼 Creating tenant admin...');
 
-    const hashedPassword = await bcrypt.hash('TenantAdmin123!', 10);
+    const hashedPassword = await bcrypt.hash('demo123', 10);
 
     const tenantAdmin = await this.prisma.user.create({
       data: {
         name: 'Tenant Administrator',
-        email: 'admin@demo.softellio.com',
+        email: 'demo@softellio.com',
         password: hashedPassword,
         role: Role.TENANT_ADMIN,
         tenantId,

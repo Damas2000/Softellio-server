@@ -9,9 +9,9 @@ export declare class MediaController {
         format: string | null;
         id: number;
         tenantId: number;
+        url: string;
         fileName: string | null;
         publicId: string;
-        url: string;
         size: number | null;
         uploadedAt: Date;
         uploadedById: number | null;
@@ -20,9 +20,9 @@ export declare class MediaController {
         format: string | null;
         id: number;
         tenantId: number;
+        url: string;
         fileName: string | null;
         publicId: string;
-        url: string;
         size: number | null;
         uploadedAt: Date;
         uploadedById: number | null;
@@ -38,9 +38,9 @@ export declare class MediaController {
             format: string | null;
             id: number;
             tenantId: number;
+            url: string;
             fileName: string | null;
             publicId: string;
-            url: string;
             size: number | null;
             uploadedAt: Date;
             uploadedById: number | null;
@@ -67,9 +67,9 @@ export declare class MediaController {
         format: string | null;
         id: number;
         tenantId: number;
+        url: string;
         fileName: string | null;
         publicId: string;
-        url: string;
         size: number | null;
         uploadedAt: Date;
         uploadedById: number | null;
@@ -78,9 +78,9 @@ export declare class MediaController {
         format: string | null;
         id: number;
         tenantId: number;
+        url: string;
         fileName: string | null;
         publicId: string;
-        url: string;
         size: number | null;
         uploadedAt: Date;
         uploadedById: number | null;

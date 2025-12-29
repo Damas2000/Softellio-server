@@ -9,8 +9,8 @@ export declare class SocialMediaMapsController {
             id: number;
             order: number;
             url: string;
-            platform: string;
             icon: string;
+            platform: string;
         }[];
     }>;
     getPublicMapConfiguration(mapKey: string, tenantId: number, language?: string): Promise<{
@@ -43,8 +43,8 @@ export declare class SocialMediaMapsController {
                     isActive: boolean;
                     updatedAt: Date;
                     order: number | null;
-                    icon: string | null;
                     color: string | null;
+                    icon: string | null;
                 };
             } & {
                 id: number;
@@ -119,9 +119,9 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             order: number | null;
             url: string;
-            platform: string;
             icon: string | null;
             contactInfoId: number | null;
+            platform: string;
             teamMemberId: number | null;
         })[];
         meta: {
@@ -172,9 +172,9 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             order: number | null;
             url: string;
-            platform: string;
             icon: string | null;
             contactInfoId: number | null;
+            platform: string;
             teamMemberId: number | null;
         };
     }>;
@@ -207,9 +207,9 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             order: number | null;
             url: string;
-            platform: string;
             icon: string | null;
             contactInfoId: number | null;
+            platform: string;
             teamMemberId: number | null;
         };
     }>;
@@ -242,9 +242,9 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             order: number | null;
             url: string;
-            platform: string;
             icon: string | null;
             contactInfoId: number | null;
+            platform: string;
             teamMemberId: number | null;
         };
     }>;
@@ -266,8 +266,8 @@ export declare class SocialMediaMapsController {
                 locationCategory: {
                     name: string;
                     id: number;
-                    icon: string;
                     color: string;
+                    icon: string;
                 };
             } & {
                 id: number;
@@ -321,12 +321,12 @@ export declare class SocialMediaMapsController {
                     isPrimary: boolean;
                     order: number | null;
                     phone: string | null;
+                    contactInfoId: number;
                     fax: string | null;
                     address: string | null;
                     mapUrl: string | null;
                     latitude: number | null;
                     longitude: number | null;
-                    contactInfoId: number;
                 };
                 locationCategory: {
                     translations: {
@@ -345,8 +345,8 @@ export declare class SocialMediaMapsController {
                     isActive: boolean;
                     updatedAt: Date;
                     order: number | null;
-                    icon: string | null;
                     color: string | null;
+                    icon: string | null;
                 };
             } & {
                 id: number;
@@ -394,12 +394,12 @@ export declare class SocialMediaMapsController {
                     isPrimary: boolean;
                     order: number | null;
                     phone: string | null;
+                    contactInfoId: number;
                     fax: string | null;
                     address: string | null;
                     mapUrl: string | null;
                     latitude: number | null;
                     longitude: number | null;
-                    contactInfoId: number;
                 };
                 locationCategory: {
                     description: string | null;
@@ -410,8 +410,8 @@ export declare class SocialMediaMapsController {
                     isActive: boolean;
                     updatedAt: Date;
                     order: number | null;
-                    icon: string | null;
                     color: string | null;
+                    icon: string | null;
                 };
             } & {
                 id: number;
@@ -459,12 +459,12 @@ export declare class SocialMediaMapsController {
                     isPrimary: boolean;
                     order: number | null;
                     phone: string | null;
+                    contactInfoId: number;
                     fax: string | null;
                     address: string | null;
                     mapUrl: string | null;
                     latitude: number | null;
                     longitude: number | null;
-                    contactInfoId: number;
                 };
                 locationCategory: {
                     description: string | null;
@@ -475,8 +475,8 @@ export declare class SocialMediaMapsController {
                     isActive: boolean;
                     updatedAt: Date;
                     order: number | null;
-                    icon: string | null;
                     color: string | null;
+                    icon: string | null;
                 };
             } & {
                 id: number;
@@ -550,8 +550,8 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         })[];
     }>;
     getLocationCategoryById(id: number, tenantId: number): Promise<{
@@ -573,12 +573,12 @@ export declare class SocialMediaMapsController {
                     isPrimary: boolean;
                     order: number | null;
                     phone: string | null;
+                    contactInfoId: number;
                     fax: string | null;
                     address: string | null;
                     mapUrl: string | null;
                     latitude: number | null;
                     longitude: number | null;
-                    contactInfoId: number;
                 };
             } & {
                 id: number;
@@ -600,8 +600,8 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         };
     }>;
     createLocationCategory(createDto: CreateLocationCategoryDto, tenantId: number): Promise<{
@@ -624,8 +624,8 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         };
     }>;
     updateLocationCategory(id: number, updateDto: UpdateLocationCategoryDto, tenantId: number): Promise<{
@@ -648,8 +648,8 @@ export declare class SocialMediaMapsController {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         };
     }>;
     deleteLocationCategory(id: number, tenantId: number): Promise<{
@@ -671,12 +671,12 @@ export declare class SocialMediaMapsController {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             mapConfiguration: {
                 name: string;
@@ -685,8 +685,8 @@ export declare class SocialMediaMapsController {
             locationCategory: {
                 name: string;
                 id: number;
-                icon: string;
                 color: string;
+                icon: string;
             };
         } & {
             id: number;
@@ -712,12 +712,12 @@ export declare class SocialMediaMapsController {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             mapConfiguration: {
                 name: string;
@@ -749,8 +749,8 @@ export declare class SocialMediaMapsController {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -776,12 +776,12 @@ export declare class SocialMediaMapsController {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             mapConfiguration: {
                 name: string;
@@ -813,8 +813,8 @@ export declare class SocialMediaMapsController {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -867,8 +867,8 @@ export declare class SocialMediaMapsController {
                     isActive: boolean;
                     updatedAt: Date;
                     order: number | null;
-                    icon: string | null;
                     color: string | null;
+                    icon: string | null;
                 };
             } & {
                 id: number;
@@ -889,12 +889,12 @@ export declare class SocialMediaMapsController {
             isPrimary: boolean;
             order: number | null;
             phone: string | null;
+            contactInfoId: number;
             fax: string | null;
             address: string | null;
             mapUrl: string | null;
             latitude: number | null;
             longitude: number | null;
-            contactInfoId: number;
         };
     }>;
     recordSocialMediaAnalytics(createDto: CreateSocialMediaAnalyticsDto, tenantId: number): Promise<{

@@ -109,6 +109,7 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        isEnabled: boolean;
         recipients: string[];
         timezone: string;
         nextRunAt: Date | null;
@@ -118,7 +119,6 @@ export declare class BackupController {
         compressionType: string;
         scheduleType: string;
         cronExpression: string;
-        isEnabled: boolean;
         maxBackups: number;
         notifyOnSuccess: boolean;
         notifyOnFailure: boolean;
@@ -136,6 +136,7 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        isEnabled: boolean;
         recipients: string[];
         timezone: string;
         nextRunAt: Date | null;
@@ -145,7 +146,6 @@ export declare class BackupController {
         compressionType: string;
         scheduleType: string;
         cronExpression: string;
-        isEnabled: boolean;
         maxBackups: number;
         notifyOnSuccess: boolean;
         notifyOnFailure: boolean;
@@ -166,6 +166,7 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        isEnabled: boolean;
         recipients: string[];
         timezone: string;
         nextRunAt: Date | null;
@@ -175,7 +176,6 @@ export declare class BackupController {
         compressionType: string;
         scheduleType: string;
         cronExpression: string;
-        isEnabled: boolean;
         maxBackups: number;
         notifyOnSuccess: boolean;
         notifyOnFailure: boolean;
@@ -193,6 +193,7 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        isEnabled: boolean;
         recipients: string[];
         timezone: string;
         nextRunAt: Date | null;
@@ -202,7 +203,6 @@ export declare class BackupController {
         compressionType: string;
         scheduleType: string;
         cronExpression: string;
-        isEnabled: boolean;
         maxBackups: number;
         notifyOnSuccess: boolean;
         notifyOnFailure: boolean;

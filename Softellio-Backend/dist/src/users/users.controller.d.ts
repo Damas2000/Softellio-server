@@ -11,22 +11,22 @@ export declare class UsersController {
         name: string | null;
         id: number;
         tenantId: number | null;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     findAll(user: any, tenantId: number): Promise<Omit<{
         name: string | null;
         id: number;
         tenantId: number | null;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">[]>;
     findAllAdvanced(queryDto: UserQueryDto, user: any, tenantId: number): Promise<{
@@ -64,22 +64,22 @@ export declare class UsersController {
         name: string | null;
         id: number;
         tenantId: number | null;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     update(id: number, updateUserDto: UpdateUserDto, user: any, tenantId: number): Promise<Omit<{
         name: string | null;
         id: number;
         tenantId: number | null;
+        createdAt: Date;
         role: import(".prisma/client").$Enums.Role;
         email: string;
         password: string;
         isActive: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }, "password">>;
     deactivate(id: number, user: any, tenantId: number): Promise<{

@@ -26,9 +26,9 @@ export declare class SocialMediaMapsService {
             isActive: boolean;
             order: number | null;
             url: string;
-            platform: string;
             icon: string | null;
             contactInfoId: number | null;
+            platform: string;
             teamMemberId: number | null;
         })[];
         meta: {
@@ -76,9 +76,9 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         order: number | null;
         url: string;
-        platform: string;
         icon: string | null;
         contactInfoId: number | null;
+        platform: string;
         teamMemberId: number | null;
     }>;
     createSocialMediaLink(createDto: CreateSocialMediaLinkDto, tenantId: number): Promise<{
@@ -107,9 +107,9 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         order: number | null;
         url: string;
-        platform: string;
         icon: string | null;
         contactInfoId: number | null;
+        platform: string;
         teamMemberId: number | null;
     }>;
     updateSocialMediaLink(id: number, updateDto: UpdateSocialMediaLinkDto, tenantId: number): Promise<{
@@ -138,9 +138,9 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         order: number | null;
         url: string;
-        platform: string;
         icon: string | null;
         contactInfoId: number | null;
+        platform: string;
         teamMemberId: number | null;
     }>;
     deleteSocialMediaLink(id: number, tenantId: number): Promise<void>;
@@ -158,8 +158,8 @@ export declare class SocialMediaMapsService {
                 locationCategory: {
                     name: string;
                     id: number;
-                    icon: string;
                     color: string;
+                    icon: string;
                 };
             } & {
                 id: number;
@@ -210,12 +210,12 @@ export declare class SocialMediaMapsService {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             locationCategory: {
                 translations: {
@@ -234,8 +234,8 @@ export declare class SocialMediaMapsService {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -279,12 +279,12 @@ export declare class SocialMediaMapsService {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             locationCategory: {
                 description: string | null;
@@ -295,8 +295,8 @@ export declare class SocialMediaMapsService {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -340,12 +340,12 @@ export declare class SocialMediaMapsService {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
             locationCategory: {
                 description: string | null;
@@ -356,8 +356,8 @@ export declare class SocialMediaMapsService {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -425,8 +425,8 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         updatedAt: Date;
         order: number | null;
-        icon: string | null;
         color: string | null;
+        icon: string | null;
     })[]>;
     getLocationCategoryById(id: number, tenantId: number): Promise<{
         translations: {
@@ -445,12 +445,12 @@ export declare class SocialMediaMapsService {
                 isPrimary: boolean;
                 order: number | null;
                 phone: string | null;
+                contactInfoId: number;
                 fax: string | null;
                 address: string | null;
                 mapUrl: string | null;
                 latitude: number | null;
                 longitude: number | null;
-                contactInfoId: number;
             };
         } & {
             id: number;
@@ -472,8 +472,8 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         updatedAt: Date;
         order: number | null;
-        icon: string | null;
         color: string | null;
+        icon: string | null;
     }>;
     createLocationCategory(createDto: CreateLocationCategoryDto, tenantId: number): Promise<{
         translations: {
@@ -492,8 +492,8 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         updatedAt: Date;
         order: number | null;
-        icon: string | null;
         color: string | null;
+        icon: string | null;
     }>;
     updateLocationCategory(id: number, updateDto: UpdateLocationCategoryDto, tenantId: number): Promise<{
         translations: {
@@ -512,8 +512,8 @@ export declare class SocialMediaMapsService {
         isActive: boolean;
         updatedAt: Date;
         order: number | null;
-        icon: string | null;
         color: string | null;
+        icon: string | null;
     }>;
     deleteLocationCategory(id: number, tenantId: number): Promise<void>;
     getLocationAssignments(tenantId: number, query: LocationQueryDto): Promise<({
@@ -529,12 +529,12 @@ export declare class SocialMediaMapsService {
             isPrimary: boolean;
             order: number | null;
             phone: string | null;
+            contactInfoId: number;
             fax: string | null;
             address: string | null;
             mapUrl: string | null;
             latitude: number | null;
             longitude: number | null;
-            contactInfoId: number;
         };
         mapConfiguration: {
             name: string;
@@ -543,8 +543,8 @@ export declare class SocialMediaMapsService {
         locationCategory: {
             name: string;
             id: number;
-            icon: string;
             color: string;
+            icon: string;
         };
     } & {
         id: number;
@@ -566,12 +566,12 @@ export declare class SocialMediaMapsService {
             isPrimary: boolean;
             order: number | null;
             phone: string | null;
+            contactInfoId: number;
             fax: string | null;
             address: string | null;
             mapUrl: string | null;
             latitude: number | null;
             longitude: number | null;
-            contactInfoId: number;
         };
         mapConfiguration: {
             name: string;
@@ -603,8 +603,8 @@ export declare class SocialMediaMapsService {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         };
     } & {
         id: number;
@@ -626,12 +626,12 @@ export declare class SocialMediaMapsService {
             isPrimary: boolean;
             order: number | null;
             phone: string | null;
+            contactInfoId: number;
             fax: string | null;
             address: string | null;
             mapUrl: string | null;
             latitude: number | null;
             longitude: number | null;
-            contactInfoId: number;
         };
         mapConfiguration: {
             name: string;
@@ -663,8 +663,8 @@ export declare class SocialMediaMapsService {
             isActive: boolean;
             updatedAt: Date;
             order: number | null;
-            icon: string | null;
             color: string | null;
+            icon: string | null;
         };
     } & {
         id: number;
@@ -710,8 +710,8 @@ export declare class SocialMediaMapsService {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
@@ -732,12 +732,12 @@ export declare class SocialMediaMapsService {
         isPrimary: boolean;
         order: number | null;
         phone: string | null;
+        contactInfoId: number;
         fax: string | null;
         address: string | null;
         mapUrl: string | null;
         latitude: number | null;
         longitude: number | null;
-        contactInfoId: number;
     }>;
     recordSocialMediaAnalytics(createDto: CreateSocialMediaAnalyticsDto, tenantId: number): Promise<{
         id: number;
@@ -770,8 +770,8 @@ export declare class SocialMediaMapsService {
         id: number;
         order: number;
         url: string;
-        platform: string;
         icon: string;
+        platform: string;
     }[]>;
     getPublicMapConfiguration(tenantId: number, query: PublicMapConfigDto): Promise<{
         locationAssignments: ({
@@ -801,8 +801,8 @@ export declare class SocialMediaMapsService {
                 isActive: boolean;
                 updatedAt: Date;
                 order: number | null;
-                icon: string | null;
                 color: string | null;
+                icon: string | null;
             };
         } & {
             id: number;
