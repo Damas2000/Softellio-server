@@ -30,6 +30,7 @@ import { CommonModule } from './common/common.module';
 import { BackupModule } from './backup/backup.module';
 import { BillingModule } from './billing/billing.module';
 import { FrontendModule } from './frontend/frontend.module';
+import { TemplatesModule } from './templates/templates.module';
 import { FrontendBootstrapService } from './frontend/frontend-bootstrap.service';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -85,6 +86,8 @@ import { AppController } from './app.controller';
     BillingModule,
     // Frontend serving module
     FrontendModule,
+    // Template system module
+    TemplatesModule,
     // Rate limiting
     ThrottlerModule.forRoot([
       {

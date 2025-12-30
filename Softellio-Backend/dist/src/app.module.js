@@ -43,6 +43,7 @@ const common_module_1 = require("./common/common.module");
 const backup_module_1 = require("./backup/backup.module");
 const billing_module_1 = require("./billing/billing.module");
 const frontend_module_1 = require("./frontend/frontend.module");
+const templates_module_1 = require("./templates/templates.module");
 const frontend_bootstrap_service_1 = require("./frontend/frontend-bootstrap.service");
 const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
@@ -122,6 +123,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             backup_module_1.BackupModule,
             billing_module_1.BillingModule,
             frontend_module_1.FrontendModule,
+            templates_module_1.TemplatesModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
                     name: 'short',

@@ -81,6 +81,9 @@ model Tenant {
   themeSetting          ThemeSetting?
   pageLayouts           PageLayout[]
   pageSections          PageSection[]
+  // Template system relations
+  siteConfig            TenantSiteConfig?
+  dynamicPages          DynamicPage[]
 
   @@map("tenants")
 }
@@ -1810,4 +1813,108 @@ enum PlanKey {
   basic
   pro
   custom
+}
+
+// ==================== TEMPLATE SYSTEM MODELS ====================
+
+// Global template definitions (read-only)
+model Template {
+  id                String                @id @default(cuid())
+  key               String                @unique // 'printing-premium-v1'
+  name              String                // 'Premium Printing Template'
+  description       String?
+  version           String                // '1.0.0'
+  previewImage      String?               // URL to template preview image
+  supportedSections String[]              // ['hero', 'services', 'testimonials', 'contact', 'gallery']
+  defaultLayout     Json                  // Default page layout snapshot
+  isActive          Boolean               @default(true)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  // Relations
+  tenantSites       TenantSiteConfig[]
+
+  @@map("templates")
+}
+
+// Per-tenant site configuration and branding
+model TenantSiteConfig {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int      @unique // One config per tenant
+  templateKey  String   // Reference to Template.key
+
+  // Branding configuration
+  branding     Json     // { logoUrl, faviconUrl, primaryColor, secondaryColor, fontFamily }
+
+  // Navigation configuration
+  navigation   Json     // NavItem[] - { label, href, order, isCTA, isExternal, children? }
+
+  // Footer configuration
+  footer       Json     // FooterConfig - { columns: { title, links: { label, url }[] }[], socialLinks, copyrightText }
+
+  // SEO defaults
+  seoDefaults  Json?    // { metaTitle, metaDescription, ogImage, twitterCard }
+
+  // Custom CSS/styling overrides
+  customCSS    String?  // Optional custom CSS
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  template     Template @relation(fields: [templateKey], references: [key])
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_site_configs")
+}
+
+// Enhanced Page model for dynamic page builder
+model DynamicPage {
+  id          String   @id @default(cuid())
+  tenantId    Int
+  slug        String   // '/', '/services', '/contact', '/custom-page'
+  title       String   // Page title for admin and SEO
+
+  // Layout reference - connects to PageLayout.key
+  layoutKey   String   // 'HOME', 'SERVICES', 'CONTACT', or generated key for custom pages
+
+  // SEO configuration
+  seo         Json?    // SeoConfig - { metaTitle, metaDescription, metaKeywords, ogTitle, ogDescription, ogImage }
+
+  // Publishing
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+
+  // Page type classification
+  pageType    PageType @default(CUSTOM)
+
+  // Content language
+  language    String   @default("tr")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug, language]) // Unique slug per tenant per language
+  @@index([tenantId, published])
+  @@index([tenantId, pageType])
+  @@map("dynamic_pages")
+}
+
+// Page type enumeration
+enum PageType {
+  HOME        // Homepage (/)
+  SERVICES    // Services page (/services)
+  CONTACT     // Contact page (/contact)
+  ABOUT       // About page (/about)
+  CUSTOM      // Custom user-created page
+}
+
+// Navigation item types
+enum NavItemType {
+  PAGE        // Internal page link
+  EXTERNAL    // External URL
+  DROPDOWN    // Dropdown menu (has children)
 }
