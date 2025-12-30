@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
-import { CreatePageSectionDto, UpdatePageSectionDto, UpsertPageLayoutDto, ReorderSectionItemDto } from './dto/page-section.dto';
+import { CreatePageSectionDto, UpdatePageSectionDto, UpsertPageLayoutDto, ReorderSectionItemDto, UpdatePageLayoutDto, CmsSectionDto } from './dto/page-section.dto';
 import { CreatePageLayoutDto } from './dto/page-specific.dto';
 import { SectionTypesService } from './section-types.service';
 
@@ -83,6 +83,63 @@ export class PageLayoutsService {
     });
 
     return layout;
+  }
+
+  /**
+   * Update page layout with sections (replaces all sections)
+   */
+  async updateLayoutWithSections(tenantId: number, key: string, language: string, updateDto: UpdatePageLayoutDto) {
+    console.log(`[PageLayoutsService] updateLayoutWithSections START: tenantId=${tenantId}, key=${key}, language=${language}, sectionsCount=${updateDto.sections?.length || 0}`);
+
+    // First, ensure layout exists
+    const layout = await this.getOrCreateLayout(tenantId, key, language);
+
+    // Update layout metadata if provided
+    if (updateDto.status) {
+      await this.prisma.pageLayout.update({
+        where: { id: layout.id },
+        data: { status: updateDto.status }
+      });
+    }
+
+    // If sections are provided, replace all sections atomically
+    if (updateDto.sections && updateDto.sections.length > 0) {
+      console.log(`[PageLayoutsService] Replacing sections for layoutId=${layout.id}`);
+
+      // CRITICAL: Use transaction to prevent race conditions
+      await this.prisma.$transaction(async (tx) => {
+        // Delete existing sections
+        const deleteResult = await tx.pageSection.deleteMany({
+          where: {
+            layoutId: layout.id
+          }
+        });
+        console.log(`[PageLayoutsService] Deleted ${deleteResult.count} existing sections`);
+
+        // Create new sections
+        const sectionsToCreate = updateDto.sections.map((section, index) => ({
+          tenantId: tenantId,
+          layoutId: layout.id,
+          type: section.type,
+          variant: section.variant || 'default',
+          order: section.order || index + 1,
+          isEnabled: section.enabled !== false,
+          status: 'published',
+          propsJson: section.propsJson || {}
+        }));
+
+        const createResult = await tx.pageSection.createMany({
+          data: sectionsToCreate
+        });
+        console.log(`[PageLayoutsService] Created ${createResult.count} new sections`);
+      });
+    }
+
+    // Return updated layout with sections
+    const updatedLayout = await this.getOrCreateLayout(tenantId, key, language);
+    console.log(`[PageLayoutsService] updateLayoutWithSections COMPLETE: sectionsCount=${updatedLayout.sections.length}`);
+
+    return updatedLayout;
   }
 
   /**
@@ -290,6 +347,8 @@ export class PageLayoutsService {
    * Get public layout with sections (no auth required)
    */
   async getPublicLayout(tenantId: number, key: string, language?: string) {
+    console.log(`[PageLayoutsService] getPublicLayout called: tenantId=${tenantId}, key=${key}, language=${language}`);
+
     if (!language) {
       const tenant = await this.prisma.tenant.findUnique({
         where: { id: tenantId },
@@ -297,6 +356,8 @@ export class PageLayoutsService {
       });
       language = tenant?.defaultLanguage || 'tr';
     }
+
+    console.log(`[PageLayoutsService] Querying PageLayout: tenantId=${tenantId}, key=${key}, language=${language}`);
 
     const layout = await this.prisma.pageLayout.findUnique({
       where: {
@@ -324,7 +385,10 @@ export class PageLayoutsService {
       }
     });
 
+    console.log(`[PageLayoutsService] Query result: found=${!!layout}, sectionsCount=${layout?.sections?.length || 0}`);
+
     if (!layout) {
+      console.log(`[PageLayoutsService] No layout found, returning empty structure`);
       // Return empty layout structure if not found
       return {
         key,

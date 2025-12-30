@@ -247,3 +247,87 @@ export class UpsertPageLayoutDto {
   @IsString()
   status?: string;
 }
+
+export class CmsSectionDto {
+  @ApiProperty({
+    example: 'hero',
+    description: 'Section type',
+  })
+  @IsString()
+  type: string;
+
+  @ApiProperty({
+    example: 'default',
+    description: 'Section variant',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  variant?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Display order',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  order?: number;
+
+  @ApiProperty({
+    example: true,
+    description: 'Whether section is enabled/visible',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  @ApiProperty({
+    example: {
+      title: 'Welcome to Our Site',
+      subtitle: 'We create amazing experiences',
+      buttonText: 'Get Started'
+    },
+    description: 'Section configuration and content as JSON object',
+  })
+  @IsOptional()
+  @IsObject()
+  propsJson?: any;
+}
+
+export class UpdatePageLayoutDto {
+  @ApiProperty({
+    example: 'published',
+    description: 'Layout status',
+    enum: ['published', 'draft'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiProperty({
+    type: [CmsSectionDto],
+    description: 'Array of sections for the layout',
+    required: false,
+    example: [
+      {
+        type: 'hero',
+        variant: 'default',
+        order: 1,
+        enabled: true,
+        propsJson: {
+          title: 'Welcome to Our Site',
+          subtitle: 'We create amazing experiences'
+        }
+      }
+    ]
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CmsSectionDto)
+  sections?: CmsSectionDto[];
+}

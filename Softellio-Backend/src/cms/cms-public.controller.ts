@@ -11,6 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiHeader } fro
 import { Request } from 'express';
 import { PageLayoutsService } from '../frontend/page-layouts.service';
 import { TenantsService } from '../tenants/tenants.service';
+import { PrismaService } from '../config/prisma.service';
 import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Public CMS')
@@ -19,6 +20,7 @@ export class CmsPublicController {
   constructor(
     private readonly pageLayoutsService: PageLayoutsService,
     private readonly tenantsService: TenantsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('layouts/:pageKey')
@@ -129,35 +131,163 @@ export class CmsPublicController {
   }
 
   /**
-   * Resolve tenant ID for public endpoints using Host header or X-Tenant-Id
+   * Resolve tenant ID for public endpoints using X-Tenant-Host, Host header or X-Tenant-Id
    */
   private async resolvePublicTenantId(request: Request, tenantIdHeader?: string): Promise<number> {
     // Priority 1: X-Tenant-Id header (for local development)
     if (tenantIdHeader) {
       const tenantId = parseInt(tenantIdHeader, 10);
       if (!isNaN(tenantId)) {
+        console.log(`[CMS-PUBLIC] Resolved tenant via X-Tenant-Id: ${tenantId}`);
         return tenantId;
       }
     }
 
-    // Priority 2: Host header (for production domains)
+    // Priority 2: X-Tenant-Host header (CRITICAL FIX - Site sends this!)
+    const tenantHost = request?.headers['x-tenant-host'] as string;
+    if (tenantHost) {
+      try {
+        const tenant = await this.tenantsService.findByDomain(tenantHost);
+        if (tenant) {
+          console.log(`[CMS-PUBLIC] Resolved tenant via X-Tenant-Host: ${tenantHost} -> ${tenant.slug} (${tenant.id})`);
+          return tenant.id;
+        }
+      } catch (error) {
+        console.error(`[CMS-PUBLIC] Failed to resolve via X-Tenant-Host: ${tenantHost}`, error);
+      }
+    }
+
+    // Priority 3: Host header (fallback for production domains)
     const host = request?.headers?.host;
     if (host) {
       try {
         const tenant = await this.tenantsService.findByDomain(host);
         if (tenant) {
+          console.log(`[CMS-PUBLIC] Resolved tenant via Host: ${host} -> ${tenant.slug} (${tenant.id})`);
           return tenant.id;
         }
       } catch (error) {
-        // Continue to fallback
+        console.error(`[CMS-PUBLIC] Failed to resolve via Host: ${host}`, error);
       }
     }
 
-    // Fallback: Use demo tenant (ID 2) for localhost without X-Tenant-Id
-    if (host?.includes('localhost')) {
-      return 2; // Demo tenant ID from seeding
+    // No fallback - throw error with debugging info
+    console.error('[CMS-PUBLIC] Tenant resolution failed - no valid headers found', {
+      'x-tenant-id': tenantIdHeader,
+      'x-tenant-host': tenantHost,
+      'host': host
+    });
+
+    throw new NotFoundException('Tenant not found. Please provide X-Tenant-Host, Host header, or X-Tenant-Id.');
+  }
+
+  @Get('debug/tenant-resolution')
+  @Public()
+  @ApiOperation({
+    summary: 'Debug tenant resolution for public CMS endpoints',
+    description: 'Shows how tenant would be resolved from headers (for debugging only)'
+  })
+  @ApiHeader({
+    name: 'X-Tenant-Id',
+    description: 'Direct tenant ID (for local development)',
+    required: false,
+    example: '2'
+  })
+  @ApiHeader({
+    name: 'X-Tenant-Host',
+    description: 'Tenant host for domain resolution',
+    required: false,
+    example: 'demo.softellio.com'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tenant resolution debug information',
+    schema: {
+      type: 'object',
+      properties: {
+        headers: {
+          type: 'object',
+          properties: {
+            'X-Tenant-Id': { type: 'string', nullable: true },
+            'X-Tenant-Host': { type: 'string', nullable: true },
+            'Host': { type: 'string', nullable: true }
+          }
+        },
+        resolution: {
+          type: 'object',
+          properties: {
+            resolvedTenantId: { type: 'number', nullable: true },
+            resolvedBy: { type: 'string' },
+            tenantSlug: { type: 'string', nullable: true },
+            tenantDomain: { type: 'string', nullable: true }
+          }
+        },
+        timestamp: { type: 'string' }
+      }
+    }
+  })
+  async debugTenantResolution(
+    @Req() request?: Request,
+    @Headers('X-Tenant-Id') tenantIdHeader?: string,
+    @Headers('X-Tenant-Host') tenantHostHeader?: string,
+  ) {
+    const host = request?.headers?.host;
+
+    let resolvedTenantId: number | null = null;
+    let resolvedBy: string = 'none';
+    let tenant: any = null;
+
+    // Try X-Tenant-Id
+    if (tenantIdHeader) {
+      const parsed = parseInt(tenantIdHeader, 10);
+      if (!isNaN(parsed)) {
+        resolvedTenantId = parsed;
+        resolvedBy = 'X-Tenant-Id';
+        tenant = await this.prisma.tenant.findUnique({ where: { id: parsed } });
+      }
     }
 
-    throw new NotFoundException('Tenant not found. Please provide Host header or X-Tenant-Id.');
+    // Try X-Tenant-Host
+    if (!resolvedTenantId && tenantHostHeader) {
+      try {
+        const t = await this.tenantsService.findByDomain(tenantHostHeader);
+        if (t) {
+          resolvedTenantId = t.id;
+          resolvedBy = 'X-Tenant-Host';
+          tenant = t;
+        }
+      } catch (error) {
+        // Continue to next method
+      }
+    }
+
+    // Try Host
+    if (!resolvedTenantId && host) {
+      try {
+        const t = await this.tenantsService.findByDomain(host);
+        if (t) {
+          resolvedTenantId = t.id;
+          resolvedBy = 'Host';
+          tenant = t;
+        }
+      } catch (error) {
+        // No resolution possible
+      }
+    }
+
+    return {
+      headers: {
+        'X-Tenant-Id': tenantIdHeader || null,
+        'X-Tenant-Host': tenantHostHeader || null,
+        'Host': host || null,
+      },
+      resolution: {
+        resolvedTenantId,
+        resolvedBy,
+        tenantSlug: tenant?.slug || null,
+        tenantDomain: tenant?.domain || null,
+      },
+      timestamp: new Date().toISOString()
+    };
   }
 }

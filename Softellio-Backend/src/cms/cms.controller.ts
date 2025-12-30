@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { PageLayoutsService } from '../frontend/page-layouts.service';
+import { UpdatePageLayoutDto } from '../frontend/dto/page-section.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
@@ -144,29 +145,24 @@ export class CmsController {
   async updateLayout(
     @Param('pageKey') pageKey: string,
     @Query('lang') language: string = 'tr',
-    @Body() updateData: any,
+    @Body() updateData: UpdatePageLayoutDto,
     @CurrentUser() user?: any,
     @Headers('X-Tenant-Id') tenantIdHeader?: string
   ) {
     const tenantId = this.resolveTenantId(user, tenantIdHeader);
 
-    // For simplicity, we'll use the upsert method
-    // The updateData should contain the sections array
-    const updatedLayout = await this.pageLayoutsService.upsertLayout(
+    // Use the new service method that handles sections properly
+    const updatedLayout = await this.pageLayoutsService.updateLayoutWithSections(
       tenantId,
       pageKey,
       language,
-      { status: 'published' }
+      updateData
     );
 
-    // If sections are provided in the update, we need to handle them
-    // For now, return the current structure
-    const fullLayout = await this.pageLayoutsService.getOrCreateLayout(tenantId, pageKey, language);
-
     return {
-      key: fullLayout.key,
-      language: fullLayout.language,
-      sections: fullLayout.sections.map(section => ({
+      key: updatedLayout.key,
+      language: updatedLayout.language,
+      sections: updatedLayout.sections.map(section => ({
         id: section.id,
         type: section.type,
         variant: section.variant,
