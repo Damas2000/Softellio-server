@@ -3,7 +3,6 @@ import {
   Get,
   Put,
   Param,
-  Body,
   Query,
   UseGuards,
   Headers,
@@ -16,6 +15,7 @@ import { UpdatePageLayoutDto } from '../frontend/dto/page-section.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
+import { SanitizedBody } from './decorators/sanitized-body.decorator';
 import { Role } from '@prisma/client';
 
 @ApiTags('CMS')
@@ -145,32 +145,53 @@ export class CmsController {
   async updateLayout(
     @Param('pageKey') pageKey: string,
     @Query('lang') language: string = 'tr',
-    @Body() updateData: UpdatePageLayoutDto,
+    @SanitizedBody() updateData: UpdatePageLayoutDto,
     @CurrentUser() user?: any,
     @Headers('X-Tenant-Id') tenantIdHeader?: string
   ) {
+    console.log(`[CmsController] 🎯 updateLayout CALLED: pageKey=${pageKey}, language=${language}`);
+    console.log(`[CmsController] User:`, { role: user?.role, tenantId: user?.tenantId });
+    console.log(`[CmsController] Headers: X-Tenant-Id=${tenantIdHeader}`);
+    console.log(`[CmsController] UpdateData:`, {
+      keys: Object.keys(updateData || {}),
+      sectionsCount: updateData?.sections?.length || 0,
+      status: updateData?.status
+    });
+
     const tenantId = this.resolveTenantId(user, tenantIdHeader);
+    console.log(`[CmsController] Resolved tenantId: ${tenantId}`);
 
-    // Use the new service method that handles sections properly
-    const updatedLayout = await this.pageLayoutsService.updateLayoutWithSections(
-      tenantId,
-      pageKey,
-      language,
-      updateData
-    );
+    try {
+      // Use the new service method that handles sections properly
+      const updatedLayout = await this.pageLayoutsService.updateLayoutWithSections(
+        tenantId,
+        pageKey,
+        language,
+        updateData
+      );
 
-    return {
-      key: updatedLayout.key,
-      language: updatedLayout.language,
-      sections: updatedLayout.sections.map(section => ({
-        id: section.id,
-        type: section.type,
-        variant: section.variant,
-        order: section.order,
-        enabled: section.isEnabled,
-        propsJson: section.propsJson
-      }))
-    };
+      console.log(`[CmsController] ✅ Layout updated successfully, sections: ${updatedLayout.sections.length}`);
+
+      return {
+        key: updatedLayout.key,
+        language: updatedLayout.language,
+        sections: updatedLayout.sections.map(section => ({
+          id: section.id,
+          type: section.type,
+          variant: section.variant,
+          order: section.order,
+          enabled: section.isEnabled,
+          propsJson: section.propsJson
+        }))
+      };
+    } catch (error) {
+      console.error(`[CmsController] ❌ Layout update failed:`, error.message);
+      if (error.message.includes('property id should not exist')) {
+        console.error(`[CmsController] 🚨 DETECTED: "property id should not exist" validation error!`);
+        console.error(`[CmsController] This suggests sanitization failed or wrong endpoint was hit`);
+      }
+      throw error;
+    }
   }
 
 

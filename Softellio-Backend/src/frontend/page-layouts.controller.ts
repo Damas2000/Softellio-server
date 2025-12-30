@@ -136,7 +136,26 @@ export class PageLayoutsController {
     @Query('lang') language: string = 'tr',
     @Body() updateDto: UpsertPageLayoutDto,
   ) {
-    return await this.pageLayoutsService.upsertLayout(tenantId, key, language, updateDto);
+    console.log(`[PageLayoutsController] 🎯 upsertLayout CALLED: key=${key}, language=${language}, tenantId=${tenantId}`);
+    console.log(`[PageLayoutsController] ⚠️  NO SANITIZATION - using regular @Body() decorator`);
+    console.log(`[PageLayoutsController] UpdateDto:`, {
+      keys: Object.keys(updateDto || {}),
+      status: updateDto?.status,
+      language: updateDto?.language
+    });
+    console.log(`[PageLayoutsController] ℹ️  Note: This endpoint only handles layout metadata, not sections`);
+    console.log(`[PageLayoutsController] ℹ️  For section updates, Portal should use /cms/layouts/${key} instead`);
+
+    try {
+      return await this.pageLayoutsService.upsertLayout(tenantId, key, language, updateDto);
+    } catch (error) {
+      console.error(`[PageLayoutsController] ❌ Upsert failed:`, error.message);
+      if (error.message.includes('property id should not exist')) {
+        console.error(`[PageLayoutsController] 🚨 VALIDATION ERROR: This endpoint doesn't handle sections!`);
+        console.error(`[PageLayoutsController] Portal should use /cms/layouts/${key} (with sanitization) for section updates`);
+      }
+      throw error;
+    }
   }
 
   // ==================== SECTIONS ADMIN ROUTES ====================
