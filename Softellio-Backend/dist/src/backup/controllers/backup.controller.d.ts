@@ -20,10 +20,10 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        duration: number | null;
         fileName: string;
         startedAt: Date | null;
         completedAt: Date | null;
-        duration: number | null;
         fileSize: number | null;
         errorMessage: string | null;
         expiresAt: Date | null;
@@ -56,9 +56,9 @@ export declare class BackupController {
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
+        duration: number | null;
         startedAt: Date | null;
         completedAt: Date | null;
-        duration: number | null;
         errorMessage: string | null;
         expiresAt: Date | null;
         isAutomatic: boolean;

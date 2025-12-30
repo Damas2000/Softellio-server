@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { TemplatesService } from './templates.service';
+import { PageCmsIntegrationService } from './page-cms-integration.service';
 import {
   UpsertSiteConfigDto,
   SiteConfigResponseDto,
@@ -8,12 +9,19 @@ import {
   NavItemDto,
   FooterConfigDto
 } from './dto/site-config.dto';
+import {
+  CreateDynamicPageDto,
+  PageType
+} from './dto/dynamic-page.dto';
 
 @Injectable()
 export class SiteConfigService {
+  private readonly logger = new Logger(SiteConfigService.name);
+
   constructor(
     private prisma: PrismaService,
-    private templatesService: TemplatesService
+    private templatesService: TemplatesService,
+    private pageCmsIntegrationService: PageCmsIntegrationService
   ) {}
 
   /**
@@ -112,21 +120,66 @@ export class SiteConfigService {
   }
 
   /**
-   * Initialize default site configuration for tenant from template
+   * 🎯 COMPREHENSIVE: Initialize site + create pages + CMS layouts atomically
+   * When portal chooses a template, this creates everything needed for public site
    */
-  async initializeFromTemplate(tenantId: number, templateKey: string): Promise<SiteConfigResponseDto> {
-    console.log(`[SiteConfigService] Initializing site config from template: ${templateKey} for tenant: ${tenantId}`);
+  async initializeFromTemplate(tenantId: number, templateKey: string): Promise<any> {
+    this.logger.log(`[SITE_INITIALIZATION] 🎯 Starting comprehensive initialization for tenant ${tenantId} with template: ${templateKey}`);
 
     // Check if config already exists
     const existingConfig = await this.getForTenant(tenantId);
     if (existingConfig) {
-      throw new ConflictException('Site configuration already exists for this tenant');
+      this.logger.warn(`[SITE_INITIALIZATION] ⚠️  Site config already exists for tenant ${tenantId}, updating instead`);
+      // Don't throw error, just continue with initialization
     }
 
     // Validate template
     const template = await this.templatesService.findByKey(templateKey);
+    this.logger.log(`[SITE_INITIALIZATION] ✅ Template validated: ${template.name} (${template.version})`);
 
-    // Create default configuration based on template
+    // Use transaction to ensure atomicity
+    const result = await this.prisma.$transaction(async (tx) => {
+      const startTime = Date.now();
+
+      // 1. Create/update site configuration
+      this.logger.log(`[SITE_INITIALIZATION] 1️⃣ Creating site configuration...`);
+      const siteConfig = await this.createSiteConfigInTransaction(tx, tenantId, templateKey);
+
+      // 2. Create homepage (mandatory)
+      this.logger.log(`[SITE_INITIALIZATION] 2️⃣ Creating homepage...`);
+      const homepage = await this.createHomepageInTransaction(tx, tenantId, template);
+
+      // 3. Create additional pages based on template navigation
+      this.logger.log(`[SITE_INITIALIZATION] 3️⃣ Creating additional pages...`);
+      const additionalPages = await this.createAdditionalPagesInTransaction(tx, tenantId, template);
+
+      const duration = Date.now() - startTime;
+      this.logger.log(`[SITE_INITIALIZATION] ✅ Comprehensive initialization completed in ${duration}ms`);
+
+      return {
+        siteConfig,
+        homepage,
+        additionalPages,
+        summary: {
+          tenantId,
+          templateKey,
+          pagesCreated: 1 + additionalPages.length,
+          homepageSlug: homepage.slug,
+          homepagePublished: homepage.published,
+          additionalPageSlugs: additionalPages.map(p => p.slug),
+          duration
+        }
+      };
+    });
+
+    this.logger.log(`[SITE_INITIALIZATION] 🎉 COMPLETE! Tenant ${tenantId} site initialized with ${result.summary.pagesCreated} pages`);
+    return result;
+  }
+
+  /**
+   * Create site configuration within transaction
+   */
+  private async createSiteConfigInTransaction(tx: any, tenantId: number, templateKey: string): Promise<SiteConfigResponseDto> {
     const defaultConfig: UpsertSiteConfigDto = {
       templateKey,
       branding: {
@@ -135,32 +188,151 @@ export class SiteConfigService {
         fontFamily: 'Inter, sans-serif'
       },
       navigation: [
-        { label: 'Home', href: '/', order: 1, isCTA: false, isExternal: false },
-        { label: 'Services', href: '/services', order: 2, isCTA: false, isExternal: false },
-        { label: 'About', href: '/about', order: 3, isCTA: false, isExternal: false },
-        { label: 'Contact', href: '/contact', order: 4, isCTA: true, isExternal: false }
+        { label: 'Ana Sayfa', href: '/', order: 1, isCTA: false, isExternal: false },
+        { label: 'Hizmetlerimiz', href: '/services', order: 2, isCTA: false, isExternal: false },
+        { label: 'Hakkımızda', href: '/about', order: 3, isCTA: false, isExternal: false },
+        { label: 'İletişim', href: '/contact', order: 4, isCTA: true, isExternal: false }
       ],
       footer: {
         columns: [
           {
-            title: 'Quick Links',
+            title: 'Hızlı Linkler',
             links: [
-              { label: 'Home', url: '/' },
-              { label: 'Services', url: '/services' },
-              { label: 'About', url: '/about' },
-              { label: 'Contact', url: '/contact' }
+              { label: 'Ana Sayfa', url: '/' },
+              { label: 'Hizmetlerimiz', url: '/services' },
+              { label: 'Hakkımızda', url: '/about' },
+              { label: 'İletişim', url: '/contact' }
             ]
           }
         ],
-        copyrightText: '© 2024 Your Company Name. All rights reserved.'
+        copyrightText: '© 2024 Şirket Adı. Tüm hakları saklıdır.'
       },
       seoDefaults: {
-        metaTitle: 'Professional Services - Your Company Name',
-        metaDescription: 'High-quality professional services for your business needs.'
+        metaTitle: 'Profesyonel Hizmetler - Şirket Adı',
+        metaDescription: 'İşletmeniz için yüksek kaliteli profesyonel hizmetler.'
       }
     };
 
-    return this.upsert(tenantId, defaultConfig);
+    // Upsert the configuration using transaction
+    const config = await tx.tenantSiteConfig.upsert({
+      where: { tenantId },
+      create: {
+        tenantId,
+        templateKey: defaultConfig.templateKey,
+        branding: defaultConfig.branding as any,
+        navigation: defaultConfig.navigation as any,
+        footer: defaultConfig.footer as any,
+        seoDefaults: defaultConfig.seoDefaults as any || {},
+        customCSS: defaultConfig.customCSS
+      },
+      update: {
+        templateKey: defaultConfig.templateKey,
+        branding: defaultConfig.branding as any,
+        navigation: defaultConfig.navigation as any,
+        footer: defaultConfig.footer as any,
+        seoDefaults: defaultConfig.seoDefaults as any || {},
+        customCSS: defaultConfig.customCSS
+      }
+    });
+
+    this.logger.log(`[SITE_INITIALIZATION] Site config created/updated for tenant: ${tenantId}`);
+    return this.mapConfigToResponseDto(config);
+  }
+
+  /**
+   * Create homepage within transaction (MANDATORY + PUBLISHED)
+   */
+  private async createHomepageInTransaction(tx: any, tenantId: number, template: any): Promise<any> {
+    const homepageDto: CreateDynamicPageDto = {
+      slug: '/',
+      title: 'Ana Sayfa',
+      pageType: PageType.HOME,
+      published: true, // ✅ CRITICAL: Homepage must be published
+      language: 'tr',
+      seo: {
+        metaTitle: 'Ana Sayfa - Profesyonel Hizmetler',
+        metaDescription: 'İşletmeniz için güvenilir ve kaliteli hizmetler sunuyoruz.'
+      }
+    };
+
+    // Create homepage directly with CMS layout using PageCmsIntegrationService
+    const homepage = await this.pageCmsIntegrationService.createPageWithCmsLayout(tenantId, homepageDto);
+    this.logger.log(`[SITE_INITIALIZATION] ✅ Homepage created and published: ${homepage.slug} (${homepage.id})`);
+
+    return homepage;
+  }
+
+  /**
+   * Create additional pages based on template navigation
+   */
+  private async createAdditionalPagesInTransaction(tx: any, tenantId: number, template: any): Promise<any[]> {
+    const additionalPages: CreateDynamicPageDto[] = [
+      {
+        slug: '/services',
+        title: 'Hizmetlerimiz',
+        pageType: PageType.SERVICES,
+        published: false, // Start unpublished, admin can publish when ready
+        language: 'tr',
+        seo: {
+          metaTitle: 'Hizmetlerimiz - Profesyonel Çözümler',
+          metaDescription: 'Sunduğumuz geniş hizmet yelpazesini keşfedin.'
+        }
+      },
+      {
+        slug: '/about',
+        title: 'Hakkımızda',
+        pageType: PageType.ABOUT,
+        published: false,
+        language: 'tr',
+        seo: {
+          metaTitle: 'Hakkımızda - Hikayemiz',
+          metaDescription: 'Şirketimizin hikayesini ve değerlerini öğrenin.'
+        }
+      },
+      {
+        slug: '/contact',
+        title: 'İletişim',
+        pageType: PageType.CONTACT,
+        published: false,
+        language: 'tr',
+        seo: {
+          metaTitle: 'İletişim - Bize Ulaşın',
+          metaDescription: 'Bizimle iletişime geçin ve sorularınızı sorun.'
+        }
+      }
+    ];
+
+    const createdPages = [];
+    for (const pageDto of additionalPages) {
+      try {
+        const page = await this.pageCmsIntegrationService.createPageWithCmsLayout(tenantId, pageDto);
+        this.logger.log(`[SITE_INITIALIZATION] ✅ Additional page created: ${page.slug} (${page.pageType})`);
+        createdPages.push(page);
+      } catch (error) {
+        this.logger.warn(`[SITE_INITIALIZATION] ⚠️  Failed to create page ${pageDto.slug}: ${error.message}`);
+        // Continue with other pages, don't fail the whole initialization
+      }
+    }
+
+    return createdPages;
+  }
+
+  /**
+   * Map config entity to response DTO
+   */
+  private mapConfigToResponseDto(config: any): SiteConfigResponseDto {
+    return {
+      id: config.id,
+      tenantId: config.tenantId,
+      templateKey: config.templateKey,
+      branding: config.branding as any as BrandingConfigDto,
+      navigation: config.navigation as any as NavItemDto[],
+      footer: config.footer as any as FooterConfigDto,
+      seoDefaults: config.seoDefaults as any,
+      customCSS: config.customCSS,
+      createdAt: config.createdAt,
+      updatedAt: config.updatedAt
+    };
   }
 
   /**

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { PrismaService } from '../config/prisma.service';
 import { PageLayoutsService } from '../frontend/page-layouts.service';
 import { TemplatesService } from './templates.service';
+import { PageCmsIntegrationService } from './page-cms-integration.service';
 import {
   CreateDynamicPageDto,
   UpdateDynamicPageDto,
@@ -15,11 +16,12 @@ export class DynamicPagesService {
   constructor(
     private prisma: PrismaService,
     private pageLayoutsService: PageLayoutsService,
-    private templatesService: TemplatesService
+    private templatesService: TemplatesService,
+    private pageCmsIntegrationService: PageCmsIntegrationService
   ) {}
 
   /**
-   * Create a new dynamic page
+   * Create a new dynamic page with integrated CMS layout
    */
   async create(tenantId: number, createDto: CreateDynamicPageDto): Promise<DynamicPageResponseDto> {
     console.log(`[DynamicPagesService] Creating page for tenant ${tenantId}: ${createDto.slug}`);
@@ -27,28 +29,10 @@ export class DynamicPagesService {
     // Validate slug uniqueness for tenant
     await this.validateSlugUniqueness(tenantId, createDto.slug, createDto.language || 'tr');
 
-    // Generate layout key for this page
-    const layoutKey = this.generateLayoutKey(createDto.pageType, createDto.slug);
+    // Use integrated service to create page with CMS layout
+    const page = await this.pageCmsIntegrationService.createPageWithCmsLayout(tenantId, createDto);
 
-    // Create the page record
-    const page = await this.prisma.dynamicPage.create({
-      data: {
-        tenantId,
-        slug: createDto.slug,
-        title: createDto.title,
-        layoutKey,
-        pageType: createDto.pageType,
-        seo: createDto.seo as any || {},
-        published: createDto.published ?? false,
-        publishedAt: createDto.published ? new Date() : null,
-        language: createDto.language || 'tr'
-      }
-    });
-
-    // Initialize page layout from template if this is a new page
-    await this.initializePageLayout(tenantId, layoutKey, createDto.pageType);
-
-    console.log(`[DynamicPagesService] Page created successfully: ${page.id} (${page.slug})`);
+    console.log(`[DynamicPagesService] Page created successfully with CMS integration: ${page.id} (${page.slug})`);
 
     return this.mapToResponseDto(page);
   }
@@ -283,82 +267,6 @@ export class DynamicPagesService {
     }
   }
 
-  /**
-   * Initialize page layout from template
-   */
-  private async initializePageLayout(tenantId: number, layoutKey: string, pageType: PageType): Promise<void> {
-    console.log(`[DynamicPagesService] Initializing layout: ${layoutKey} for page type: ${pageType}`);
-
-    try {
-      // Check if layout already exists
-      const existingLayout = await this.pageLayoutsService.getOrCreateLayout(tenantId, layoutKey, 'tr');
-
-      if (existingLayout.sections.length === 0) {
-        // Get tenant's template to determine default sections
-        const siteConfig = await this.prisma.tenantSiteConfig.findUnique({
-          where: { tenantId },
-          include: { template: true }
-        });
-
-        if (siteConfig?.template) {
-          const defaultLayout = siteConfig.template.defaultLayout as any;
-
-          if (defaultLayout?.sections && Array.isArray(defaultLayout.sections)) {
-            // Create initial sections based on page type
-            const sectionsForPageType = this.getDefaultSectionsForPageType(pageType, defaultLayout.sections);
-
-            if (sectionsForPageType.length > 0) {
-              await this.pageLayoutsService.updateLayoutWithSections(
-                tenantId,
-                layoutKey,
-                'tr',
-                { sections: sectionsForPageType }
-              );
-
-              console.log(`[DynamicPagesService] Initialized ${sectionsForPageType.length} sections for layout: ${layoutKey}`);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error(`[DynamicPagesService] Error initializing layout: ${error.message}`);
-      // Non-critical error - page can still be created without initial sections
-    }
-  }
-
-  /**
-   * Get default sections for page type
-   */
-  private getDefaultSectionsForPageType(pageType: PageType, templateSections: any[]): any[] {
-    switch (pageType) {
-      case PageType.HOME:
-        return templateSections.filter(section =>
-          ['hero', 'services', 'testimonials'].includes(section.type)
-        );
-
-      case PageType.SERVICES:
-        return templateSections.filter(section =>
-          ['hero', 'services'].includes(section.type)
-        );
-
-      case PageType.CONTACT:
-        return templateSections.filter(section =>
-          ['hero', 'contact'].includes(section.type)
-        );
-
-      case PageType.ABOUT:
-        return templateSections.filter(section =>
-          ['hero', 'testimonials'].includes(section.type)
-        );
-
-      case PageType.CUSTOM:
-        // Custom pages start with just a hero section
-        return templateSections.filter(section => section.type === 'hero').slice(0, 1);
-
-      default:
-        return [];
-    }
-  }
 
   /**
    * Validate slug uniqueness

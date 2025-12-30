@@ -120,8 +120,8 @@ export declare class SocialMediaMapsController {
             order: number | null;
             url: string;
             icon: string | null;
-            contactInfoId: number | null;
             platform: string;
+            contactInfoId: number | null;
             teamMemberId: number | null;
         })[];
         meta: {
@@ -173,8 +173,8 @@ export declare class SocialMediaMapsController {
             order: number | null;
             url: string;
             icon: string | null;
-            contactInfoId: number | null;
             platform: string;
+            contactInfoId: number | null;
             teamMemberId: number | null;
         };
     }>;
@@ -208,8 +208,8 @@ export declare class SocialMediaMapsController {
             order: number | null;
             url: string;
             icon: string | null;
-            contactInfoId: number | null;
             platform: string;
+            contactInfoId: number | null;
             teamMemberId: number | null;
         };
     }>;
@@ -243,8 +243,8 @@ export declare class SocialMediaMapsController {
             order: number | null;
             url: string;
             icon: string | null;
-            contactInfoId: number | null;
             platform: string;
+            contactInfoId: number | null;
             teamMemberId: number | null;
         };
     }>;

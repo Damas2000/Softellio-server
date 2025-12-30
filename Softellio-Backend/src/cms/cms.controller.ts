@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { PageLayoutsService } from '../frontend/page-layouts.service';
+import { TemplateValidationService } from '../templates/template-validation.service';
 import { UpdatePageLayoutDto } from '../frontend/dto/page-section.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -25,6 +26,7 @@ import { Role } from '@prisma/client';
 export class CmsController {
   constructor(
     private readonly pageLayoutsService: PageLayoutsService,
+    private readonly templateValidationService: TemplateValidationService,
   ) {}
 
   @Get('layouts/:pageKey')
@@ -162,6 +164,15 @@ export class CmsController {
     console.log(`[CmsController] Resolved tenantId: ${tenantId}`);
 
     try {
+      // 🛡️  TEMPLATE VALIDATION: Enforce template constraints
+      if (updateData.sections && updateData.sections.length > 0) {
+        console.log(`[CmsController] 🛡️  Validating ${updateData.sections.length} sections against template constraints`);
+
+        await this.templateValidationService.validateLayoutInheritance(tenantId, updateData.sections);
+
+        console.log(`[CmsController] ✅ Template validation passed`);
+      }
+
       // Use the new service method that handles sections properly
       const updatedLayout = await this.pageLayoutsService.updateLayoutWithSections(
         tenantId,

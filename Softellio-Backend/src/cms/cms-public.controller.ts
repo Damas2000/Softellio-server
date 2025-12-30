@@ -12,6 +12,7 @@ import { Request } from 'express';
 import { PageLayoutsService } from '../frontend/page-layouts.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { PrismaService } from '../config/prisma.service';
+import { PublicRequestLoggerService, PublicRequestLogContext } from '../templates/public-request-logger.service';
 import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Public CMS')
@@ -21,6 +22,7 @@ export class CmsPublicController {
     private readonly pageLayoutsService: PageLayoutsService,
     private readonly tenantsService: TenantsService,
     private readonly prisma: PrismaService,
+    private readonly publicLogger: PublicRequestLoggerService
   ) {}
 
   @Get('layouts/:pageKey')
@@ -101,11 +103,26 @@ export class CmsPublicController {
     @Req() request?: Request,
     @Headers('X-Tenant-Id') tenantIdHeader?: string
   ) {
+    // 🚀 START: Comprehensive logging
+    const context: PublicRequestLogContext = {
+      endpoint: '/public/cms/layouts/:pageKey',
+      method: 'GET',
+      host: request?.headers?.host as string,
+      tenantHost: request?.headers?.['x-tenant-host'] as string,
+      language: language || 'tr',
+      pageKey: pageKey,
+      userAgent: request?.headers?.['user-agent'] as string,
+      ip: request?.ip || request?.headers?.['x-forwarded-for'] as string,
+      startTime: Date.now()
+    };
+
+    const requestId = await this.publicLogger.logRequestStart(context);
+
     try {
       const tenantId = await this.resolvePublicTenantId(request, tenantIdHeader);
       const layout = await this.pageLayoutsService.getOrCreateLayout(tenantId, pageKey, language);
 
-      return {
+      const result = {
         key: layout.key,
         language: layout.language,
         sections: layout.sections.map(section => ({
@@ -117,16 +134,26 @@ export class CmsPublicController {
           propsJson: section.propsJson
         }))
       };
+
+      // ✅ SUCCESS: Log completion
+      await this.publicLogger.logRequestComplete(requestId, context, true);
+
+      return result;
     } catch (error) {
       // If tenant not found or layout creation fails, return empty sections
       // This ensures public sites can handle missing layouts gracefully
       const defaultLanguage = language || 'tr';
 
-      return {
+      const result = {
         key: pageKey,
         language: defaultLanguage,
         sections: []
       };
+
+      // ⚠️ WARNING: Log graceful failure
+      await this.publicLogger.logRequestComplete(requestId, context, true, `Graceful fallback: ${error.message}`);
+
+      return result;
     }
   }
 

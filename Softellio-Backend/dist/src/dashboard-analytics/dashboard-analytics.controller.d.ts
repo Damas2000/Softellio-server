@@ -174,10 +174,10 @@ export declare class DashboardAnalyticsController {
                 status: string;
                 id: number;
                 createdAt: Date;
+                duration: number | null;
                 startedAt: Date;
                 reportId: number;
                 completedAt: Date | null;
-                duration: number | null;
                 fileUrl: string | null;
                 fileSize: number | null;
                 recordCount: number | null;

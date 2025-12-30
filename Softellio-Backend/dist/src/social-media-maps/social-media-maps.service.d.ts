@@ -27,8 +27,8 @@ export declare class SocialMediaMapsService {
             order: number | null;
             url: string;
             icon: string | null;
-            contactInfoId: number | null;
             platform: string;
+            contactInfoId: number | null;
             teamMemberId: number | null;
         })[];
         meta: {
@@ -77,8 +77,8 @@ export declare class SocialMediaMapsService {
         order: number | null;
         url: string;
         icon: string | null;
-        contactInfoId: number | null;
         platform: string;
+        contactInfoId: number | null;
         teamMemberId: number | null;
     }>;
     createSocialMediaLink(createDto: CreateSocialMediaLinkDto, tenantId: number): Promise<{
@@ -108,8 +108,8 @@ export declare class SocialMediaMapsService {
         order: number | null;
         url: string;
         icon: string | null;
-        contactInfoId: number | null;
         platform: string;
+        contactInfoId: number | null;
         teamMemberId: number | null;
     }>;
     updateSocialMediaLink(id: number, updateDto: UpdateSocialMediaLinkDto, tenantId: number): Promise<{
@@ -139,8 +139,8 @@ export declare class SocialMediaMapsService {
         order: number | null;
         url: string;
         icon: string | null;
-        contactInfoId: number | null;
         platform: string;
+        contactInfoId: number | null;
         teamMemberId: number | null;
     }>;
     deleteSocialMediaLink(id: number, tenantId: number): Promise<void>;
