@@ -36,7 +36,13 @@ let TenantGuard = class TenantGuard {
             return true;
         }
         if (requestTenantId === null) {
-            throw new common_1.ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
+            const isAuthRoute = request.url.startsWith('/auth/');
+            if (isAuthRoute && user.role === client_1.Role.TENANT_ADMIN) {
+                return true;
+            }
+            if (!isAuthRoute) {
+                throw new common_1.ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
+            }
         }
         if (!user.tenantId) {
             throw new common_1.ForbiddenException('User is not associated with any tenant');

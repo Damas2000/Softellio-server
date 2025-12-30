@@ -31,9 +31,20 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    // For reserved domains (api.softellio.com), only SUPER_ADMIN allowed
+    // For reserved domains (api.softellio.com), allow auth routes for TENANT_ADMIN
+    // since admin portals (portal/platform) need to authenticate tenant users
     if (requestTenantId === null) {
-      throw new ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
+      const isAuthRoute = request.url.startsWith('/auth/');
+
+      // Allow TENANT_ADMIN on auth routes (login portal access)
+      if (isAuthRoute && user.role === Role.TENANT_ADMIN) {
+        return true;
+      }
+
+      // For non-auth routes on reserved domains, only SUPER_ADMIN allowed
+      if (!isAuthRoute) {
+        throw new ForbiddenException('Access denied. Only SUPER_ADMIN can access this domain');
+      }
     }
 
     // For tenant-scoped users, ensure they can only access their tenant's data

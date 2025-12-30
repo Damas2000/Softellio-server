@@ -22,7 +22,9 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CmsController {
-  constructor(private readonly pageLayoutsService: PageLayoutsService) {}
+  constructor(
+    private readonly pageLayoutsService: PageLayoutsService,
+  ) {}
 
   @Get('layouts/:pageKey')
   @ApiOperation({
@@ -174,6 +176,7 @@ export class CmsController {
       }))
     };
   }
+
 
   /**
    * Resolve tenant ID based on user role and header

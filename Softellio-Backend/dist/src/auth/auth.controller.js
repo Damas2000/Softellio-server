@@ -35,9 +35,6 @@ let AuthController = AuthController_1 = class AuthController {
         if (host) {
             if (this.isReservedDomain(host)) {
                 this.logger.debug(`Reserved domain detected: ${host}`);
-                if (!this.isSuperAdminEmail(loginDto.email)) {
-                    throw new common_2.BadRequestException(`Domain ${host} is reserved for SUPER_ADMIN access only`);
-                }
             }
             else {
                 tenant = await this.tenantsService.findByDomain(host);
@@ -50,7 +47,7 @@ let AuthController = AuthController_1 = class AuthController {
                 }
             }
         }
-        if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email)) {
+        if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email) && !this.isReservedDomain(host)) {
             throw new common_2.BadRequestException('Tenant information is required for this login');
         }
         const ipAddress = this.getClientIp(request);
@@ -162,7 +159,7 @@ __decorate([
         type: auth_response_dto_1.AuthResponseDto,
     }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid credentials' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Domain reserved for SUPER_ADMIN access only' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid tenant information or authentication failed' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Res)({ passthrough: true })),

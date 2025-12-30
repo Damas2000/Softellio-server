@@ -47,7 +47,7 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 400, description: 'Domain reserved for SUPER_ADMIN access only' })
+  @ApiResponse({ status: 400, description: 'Invalid tenant information or authentication failed' })
   async login(
     @Body() loginDto: LoginDto,
     @Req() request: Request,
@@ -61,10 +61,9 @@ export class AuthController {
       // Check for reserved domains that should never be used for tenant resolution
       if (this.isReservedDomain(host)) {
         this.logger.debug(`Reserved domain detected: ${host}`);
-        // For reserved domains, only allow SUPER_ADMIN login
-        if (!this.isSuperAdminEmail(loginDto.email)) {
-          throw new BadRequestException(`Domain ${host} is reserved for SUPER_ADMIN access only`);
-        }
+        // For reserved domains, allow both SUPER_ADMIN and TENANT_ADMIN login
+        // since admin portals (portal/platform) need TENANT_ADMIN access
+        // TenantGuard will handle proper access control after authentication
       } else {
         // Use TenantsService for tenant resolution
         tenant = await this.tenantsService.findByDomain(host);
@@ -77,8 +76,9 @@ export class AuthController {
       }
     }
 
-    // For SUPER_ADMIN role, tenant is optional. For others, tenant is required.
-    if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email)) {
+    // For reserved domains or SUPER_ADMIN role, tenant is optional
+    // For regular domains, tenant is required for non-SUPER_ADMIN users
+    if (!tenant && loginDto.email && !this.isSuperAdminEmail(loginDto.email) && !this.isReservedDomain(host)) {
       throw new BadRequestException('Tenant information is required for this login');
     }
 
