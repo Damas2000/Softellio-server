@@ -655,6 +655,13 @@ export class SeedingService {
         description: 'Modern template for printing companies with hero, services, portfolio, testimonials and contact sections',
         version: '1.0.0',
         previewImage: 'https://via.placeholder.com/800x600/3B82F6/FFFFFF?text=Printing+Premium',
+        // Legacy format - kept for backward compatibility
+        // New structured format would be:
+        // [
+        //   { type: 'hero', variants: ['premium'], defaultVariant: 'premium' },
+        //   { type: 'services', variants: ['premium'], defaultVariant: 'premium' },
+        //   // ... etc
+        // ]
         supportedSections: [
           'hero:premium',
           'services:premium',

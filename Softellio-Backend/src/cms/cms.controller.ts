@@ -164,13 +164,16 @@ export class CmsController {
     console.log(`[CmsController] Resolved tenantId: ${tenantId}`);
 
     try {
-      // 🛡️  TEMPLATE VALIDATION: Enforce template constraints
-      if (updateData.sections && updateData.sections.length > 0) {
-        console.log(`[CmsController] 🛡️  Validating ${updateData.sections.length} sections against template constraints`);
+      let sectionsToSave = updateData.sections || [];
 
-        await this.templateValidationService.validateLayoutInheritance(tenantId, updateData.sections);
+      // 🛡️  TEMPLATE VALIDATION + NORMALIZATION: Enforce template constraints and normalize variants
+      if (sectionsToSave.length > 0) {
+        console.log(`[CmsController] 🛡️  Validating ${sectionsToSave.length} sections against template constraints`);
 
-        console.log(`[CmsController] ✅ Template validation passed`);
+        // This now returns normalized sections with proper variants
+        sectionsToSave = await this.templateValidationService.validateLayoutInheritance(tenantId, sectionsToSave);
+
+        console.log(`[CmsController] ✅ Template validation passed, using normalized sections`);
       }
 
       // Use the new service method that handles sections properly
@@ -178,7 +181,7 @@ export class CmsController {
         tenantId,
         pageKey,
         language,
-        updateData
+        { ...updateData, sections: sectionsToSave }
       );
 
       console.log(`[CmsController] ✅ Layout updated successfully, sections: ${updatedLayout.sections.length}`);

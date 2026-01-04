@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { TemplatesService } from './templates.service';
 import { SiteConfigService } from './site-config.service';
+import { SectionConfigUtil, SectionTypeConfig } from './utils/section-config.util';
 
 @Injectable()
 export class TemplateValidationService {
@@ -57,27 +58,90 @@ export class TemplateValidationService {
   }
 
   /**
-   * 🔴 STRICT: Validate layout inheritance rules
+   * 🔴 STRICT: Validate layout inheritance rules with normalization
    * Core rule: Layout structure must follow template core constraints
    */
-  async validateLayoutInheritance(tenantId: number, sections: any[]): Promise<void> {
+  async validateLayoutInheritance(tenantId: number, sections: any[]): Promise<any[]> {
     this.logger.log(`[TEMPLATE_VALIDATION] 🏗️  Validating layout inheritance for tenant ${tenantId}`);
 
-    // Extract section types from layout
-    const sectionTypes = sections.map(section => section.type).filter(Boolean);
-
-    if (sectionTypes.length === 0) {
-      return; // Empty layouts are allowed
+    if (sections.length === 0) {
+      return []; // Empty layouts are allowed
     }
 
-    // Validate section types against template
-    await this.validateSectionTypes(tenantId, sectionTypes);
+    // Get template configuration
+    const templateConfig = await this.getTemplateConfig(tenantId);
+    if (!templateConfig) {
+      this.logger.warn(`[TEMPLATE_VALIDATION] ⚠️  No template config for tenant ${tenantId}, skipping validation`);
+      return sections; // No template constraints if no config
+    }
 
-    // Additional inheritance rules
-    await this.validateSectionStructure(sections);
-    await this.validateSectionOrdering(sections);
+    // 🔧 NORMALIZE: Apply template rules to fix missing/default variants
+    const normalizedSections = await this.normalizeSections(sections, templateConfig, tenantId);
+
+    // Validate normalized sections
+    await this.validateSectionStructure(normalizedSections);
+    await this.validateSectionOrdering(normalizedSections);
 
     this.logger.log(`[TEMPLATE_VALIDATION] ✅ Layout inheritance validation passed`);
+    return normalizedSections;
+  }
+
+  /**
+   * 🔧 NORMALIZE: Apply template rules to incoming sections
+   * Handles missing/default variants according to template configuration
+   */
+  async normalizeSections(sections: any[], templateConfig: SectionTypeConfig[], tenantId: number): Promise<any[]> {
+    this.logger.log(`[TEMPLATE_VALIDATION] 🔧 Normalizing ${sections.length} sections for tenant ${tenantId}`);
+
+    const result = SectionConfigUtil.normalizeSections(sections, templateConfig);
+
+    if (!result.isValid && result.errors) {
+      const errorMessage = SectionConfigUtil.formatValidationErrors(result.errors);
+
+      this.logger.error(`[TEMPLATE_VALIDATION] ❌ Section normalization failed: ${errorMessage}`);
+
+      throw new BadRequestException({
+        message: `Section validation failed: ${errorMessage}`,
+        code: 'SECTION_NORMALIZATION_FAILED',
+        errors: result.errors,
+        supportedTypes: templateConfig.map(c => ({
+          type: c.type,
+          variants: c.variants,
+          defaultVariant: c.defaultVariant
+        })),
+        constraint: 'TEMPLATE_SECTION_VALIDATION'
+      });
+    }
+
+    const normalizedSections = result.normalizedSections!;
+
+    this.logger.log(`[TEMPLATE_VALIDATION] 🔧 Normalized ${normalizedSections.length} sections successfully`);
+
+    // Log normalization details
+    sections.forEach((original, index) => {
+      const normalized = normalizedSections[index];
+      if (original.variant !== normalized.variant) {
+        this.logger.log(
+          `[TEMPLATE_VALIDATION] 🔧 Section ${index + 1} (${original.type}): ` +
+          `variant "${original.variant || 'undefined'}" → "${normalized.variant}"`
+        );
+      }
+    });
+
+    return normalizedSections;
+  }
+
+  /**
+   * Get template configuration for tenant
+   */
+  async getTemplateConfig(tenantId: number): Promise<SectionTypeConfig[] | null> {
+    const siteConfig = await this.siteConfigService.getForTenant(tenantId);
+    if (!siteConfig) {
+      return null;
+    }
+
+    const template = await this.templatesService.findByKey(siteConfig.templateKey);
+    return SectionConfigUtil.getTemplateConfig(template.supportedSections, template.key);
   }
 
   /**

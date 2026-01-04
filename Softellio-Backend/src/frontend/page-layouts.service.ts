@@ -3,6 +3,7 @@ import { PrismaService } from '../config/prisma.service';
 import { CreatePageSectionDto, UpdatePageSectionDto, UpsertPageLayoutDto, ReorderSectionItemDto, UpdatePageLayoutDto, CmsSectionDto } from './dto/page-section.dto';
 import { CreatePageLayoutDto } from './dto/page-specific.dto';
 import { SectionTypesService } from './section-types.service';
+import { SectionConfigUtil } from '../templates/utils/section-config.util';
 
 @Injectable()
 export class PageLayoutsService {
@@ -397,10 +398,13 @@ export class PageLayoutsService {
       };
     }
 
+    // Ensure sections have explicit variants for public consumption
+    const sectionsWithExplicitVariants = await this.ensureExplicitVariants(tenantId, layout.sections);
+
     return {
       key: layout.key,
       language: layout.language,
-      sections: layout.sections
+      sections: sectionsWithExplicitVariants
     };
   }
 
@@ -727,5 +731,72 @@ export class PageLayoutsService {
         }
       }
     ];
+  }
+
+  /**
+   * Ensure sections have explicit variants for public consumption
+   * Normalizes sections that might have been saved without explicit variants
+   */
+  private async ensureExplicitVariants(tenantId: number, sections: any[]): Promise<any[]> {
+    if (!sections || sections.length === 0) {
+      return sections;
+    }
+
+    try {
+      // Get template configuration for normalization
+      const templateConfig = await this.getTemplateConfigForTenant(tenantId);
+      if (!templateConfig) {
+        // No template config, return as-is
+        return sections;
+      }
+
+      // Apply normalization to ensure explicit variants
+      const result = SectionConfigUtil.normalizeSections(sections, templateConfig);
+
+      if (result.isValid && result.normalizedSections) {
+        return result.normalizedSections;
+      }
+
+      // If normalization fails, log warning but return original sections
+      // This prevents breaking public APIs due to validation issues
+      console.warn(`[PageLayoutsService] Section normalization failed for tenant ${tenantId}:`, result.errors);
+      return sections;
+
+    } catch (error) {
+      console.warn(`[PageLayoutsService] Error normalizing sections for tenant ${tenantId}:`, error.message);
+      return sections;
+    }
+  }
+
+  /**
+   * Get template configuration for tenant (helper method)
+   */
+  private async getTemplateConfigForTenant(tenantId: number) {
+    try {
+      // Get tenant's site config to find template key
+      const siteConfig = await this.prisma.tenantSiteConfig.findUnique({
+        where: { tenantId },
+        select: { templateKey: true }
+      });
+
+      if (!siteConfig || !siteConfig.templateKey) {
+        return null;
+      }
+
+      // Get template supported sections
+      const template = await this.prisma.template.findUnique({
+        where: { key: siteConfig.templateKey },
+        select: { supportedSections: true, key: true }
+      });
+
+      if (!template) {
+        return null;
+      }
+
+      return SectionConfigUtil.getTemplateConfig(template.supportedSections, template.key);
+    } catch (error) {
+      console.warn(`[PageLayoutsService] Error getting template config for tenant ${tenantId}:`, error.message);
+      return null;
+    }
   }
 }
