@@ -11,6 +11,9 @@ export class SeedingService {
     console.log('🌱 Starting database seeding...');
 
     try {
+      // Create templates first (global)
+      await this.createTemplates();
+
       // Create super admin user
       await this.createSuperAdmin();
 
@@ -82,6 +85,9 @@ export class SeedingService {
     // Create tenant admin for demo tenant
     await this.createTenantAdmin(demoTenant.id);
 
+    // Initialize template for demo tenant
+    await this.initializeDemoTemplate(demoTenant.id);
+
     // Create demo content for tenant
     await this.createDemoContent(demoTenant.id);
 
@@ -106,6 +112,159 @@ export class SeedingService {
 
     console.log(`✅ Tenant admin created: ${tenantAdmin.email}`);
     return tenantAdmin;
+  }
+
+  private async initializeDemoTemplate(tenantId: number) {
+    console.log('🎨 Initializing demo template configuration...');
+
+    // Check if site config already exists
+    const existingConfig = await this.prisma.tenantSiteConfig.findUnique({
+      where: { tenantId },
+    });
+
+    if (existingConfig) {
+      console.log('⚠️  Template site config already exists, skipping...');
+      return existingConfig;
+    }
+
+    // Create TenantSiteConfig
+    const siteConfig = await this.prisma.tenantSiteConfig.create({
+      data: {
+        tenantId,
+        templateKey: 'printing-premium-v1',
+        branding: {
+          logoUrl: 'https://via.placeholder.com/200x80/1E40AF/FFFFFF?text=DEMO+LOGO',
+          faviconUrl: 'https://via.placeholder.com/32x32/1E40AF/FFFFFF?text=D',
+          primaryColor: '#1E40AF',
+          secondaryColor: '#3B82F6',
+          fontFamily: 'Inter, sans-serif'
+        },
+        navigation: [
+          {
+            label: 'Ana Sayfa',
+            href: '/',
+            order: 1,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'Hizmetlerimiz',
+            href: '/services',
+            order: 2,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'Portföy',
+            href: '/portfolio',
+            order: 3,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'Hakkımızda',
+            href: '/about',
+            order: 4,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'İletişim',
+            href: '/contact',
+            order: 5,
+            isCTA: true,
+            isExternal: false
+          }
+        ],
+        footer: {
+          columns: [
+            {
+              title: 'Hizmetlerimiz',
+              links: [
+                { label: 'Branda & Afiş', url: '/services/branda-afis' },
+                { label: 'Tabela Sistemleri', url: '/services/tabela' },
+                { label: 'Araç Giydirme', url: '/services/arac-giydirme' },
+                { label: 'Dijital Baskı', url: '/services/dijital-baski' }
+              ]
+            },
+            {
+              title: 'Kurumsal',
+              links: [
+                { label: 'Hakkımızda', url: '/about' },
+                { label: 'Referanslar', url: '/portfolio' },
+                { label: 'Kalite Politikası', url: '/quality' },
+                { label: 'İletişim', url: '/contact' }
+              ]
+            },
+            {
+              title: 'Destek',
+              links: [
+                { label: 'Sıkça Sorulan Sorular', url: '/faq' },
+                { label: 'Garanti Koşulları', url: '/warranty' },
+                { label: 'Kargo & Teslimat', url: '/shipping' },
+                { label: 'İade Şartları', url: '/returns' }
+              ]
+            }
+          ],
+          socialLinks: [
+            {
+              platform: 'facebook',
+              url: 'https://facebook.com/demo-company',
+              label: 'Facebook\'ta takip edin'
+            },
+            {
+              platform: 'instagram',
+              url: 'https://instagram.com/demo-company',
+              label: 'Instagram\'da takip edin'
+            },
+            {
+              platform: 'linkedin',
+              url: 'https://linkedin.com/company/demo-company',
+              label: 'LinkedIn\'de takip edin'
+            }
+          ],
+          copyrightText: '© 2024 Demo Baskı Şirketi. Tüm hakları saklıdır.'
+        },
+        seoDefaults: {
+          metaTitle: 'Demo Baskı Şirketi - Profesyonel Baskı Çözümleri',
+          metaDescription: 'Branda, afiş, tabela ve dijital baskı alanında profesyonel çözümler sunan Demo Baskı Şirketi ile tanışın.',
+          ogImage: 'https://via.placeholder.com/1200x630/1E40AF/FFFFFF?text=Demo+Baski+Sirketi',
+          twitterCard: 'summary_large_image'
+        }
+      }
+    });
+
+    // Create HOME DynamicPage
+    const existingHomePage = await this.prisma.dynamicPage.findFirst({
+      where: { tenantId, slug: '/' },
+    });
+
+    if (!existingHomePage) {
+      await this.prisma.dynamicPage.create({
+        data: {
+          tenantId,
+          slug: '/',
+          title: 'Ana Sayfa',
+          layoutKey: 'HOME',
+          pageType: 'HOME',
+          published: true,
+          publishedAt: new Date(),
+          language: 'tr',
+          seo: {
+            metaTitle: 'Demo Baskı Şirketi - Branda, Afiş, Tabela',
+            metaDescription: 'Profesyonel baskı çözümleri ile işinizi büyütün. Branda, afiş, tabela ve dijital baskı hizmetlerimiz ile tanışın.',
+            ogTitle: 'Demo Baskı Şirketi - Ana Sayfa',
+            ogDescription: 'Profesyonel baskı çözümleri ile işinizi büyütün.',
+            ogImage: 'https://via.placeholder.com/1200x630/1E40AF/FFFFFF?text=Ana+Sayfa'
+          }
+        }
+      });
+
+      console.log('✅ Homepage DynamicPage created');
+    }
+
+    console.log('✅ Demo template initialized');
+    return siteConfig;
   }
 
   private async createDemoContent(tenantId: number) {
@@ -472,6 +631,189 @@ export class SeedingService {
     console.log('✅ Demo menu created');
   }
 
+  private async createTemplates() {
+    console.log('🎨 Creating templates...');
+
+    // Check if printing template already exists
+    const existingTemplate = await this.prisma.template.findUnique({
+      where: { key: 'printing-premium-v1' },
+    });
+
+    if (existingTemplate) {
+      console.log('⚠️  Template printing-premium-v1 already exists, skipping...');
+      return existingTemplate;
+    }
+
+    // Create printing-premium-v1 template
+    const printingTemplate = await this.prisma.template.create({
+      data: {
+        key: 'printing-premium-v1',
+        name: 'Premium Printing Template',
+        description: 'Modern template for printing companies with hero, services, portfolio, testimonials and contact sections',
+        version: '1.0.0',
+        previewImage: 'https://via.placeholder.com/800x600/3B82F6/FFFFFF?text=Printing+Premium',
+        supportedSections: [
+          'hero:premium',
+          'services:premium',
+          'portfolio:premium',
+          'process:premium',
+          'testimonials:premium',
+          'cta:premium'
+        ],
+        defaultLayout: {
+          sections: [
+            {
+              type: 'hero',
+              variant: 'premium',
+              order: 1,
+              enabled: true,
+              propsJson: {
+                title: 'Branda • Afiş • Tabela',
+                subtitle: 'Profesyonel baskı çözümleri ile işinizi büyütün',
+                description: 'Modern teknoloji ve kaliteli malzemelerle, sizin için en iyi baskı ürünlerini üretiyoruz.',
+                ctaText: 'Hemen Teklif Alın',
+                ctaUrl: '/contact',
+                backgroundImage: 'https://via.placeholder.com/1920x1080/1E40AF/FFFFFF?text=Hero+Background',
+                features: [
+                  'Hızlı Teslimat',
+                  'Kaliteli Malzeme',
+                  '7/24 Destek'
+                ]
+              }
+            },
+            {
+              type: 'services',
+              variant: 'premium',
+              order: 2,
+              enabled: true,
+              propsJson: {
+                title: 'Hizmetlerimiz',
+                subtitle: 'Geniş ürün yelpazemiz ile tüm ihtiyaçlarınıza cevap veriyoruz',
+                services: [
+                  {
+                    title: 'Branda & Afiş',
+                    description: 'Dayanıklı ve kaliteli branda, afiş çözümleri',
+                    icon: '📢',
+                    features: ['Dijital Baskı', 'UV Dayanımlı', '2 Yıl Garanti']
+                  },
+                  {
+                    title: 'Tabela Sistemleri',
+                    description: 'LED, neon ve klasik tabela çeşitleri',
+                    icon: '💡',
+                    features: ['LED Aydınlatma', 'Şık Tasarım', 'Uzun Ömürlü']
+                  },
+                  {
+                    title: 'Promosyon Ürünleri',
+                    description: 'Katalog, broşür, kartvizit ve daha fazlası',
+                    icon: '📋',
+                    features: ['Özel Tasarım', 'Hızlı Üretim', 'Uygun Fiyat']
+                  },
+                  {
+                    title: 'Araç Giydirme',
+                    description: 'Araç reklam kaplama ve folyo uygulamaları',
+                    icon: '🚗',
+                    features: ['3M Folyo', 'Profesyonel Uygulama', '5 Yıl Garanti']
+                  },
+                  {
+                    title: 'Dijital Baskı',
+                    description: 'Yüksek çözünürlükte dijital baskı hizmetleri',
+                    icon: '🖨️',
+                    features: ['4K Kalite', '24 Saat Üretim', 'Geniş Format']
+                  },
+                  {
+                    title: 'Özel Projeler',
+                    description: 'İhtiyaçlarınıza özel tasarım ve üretim',
+                    icon: '⭐',
+                    features: ['Özel Tasarım', 'Danışmanlık', 'Kurulum Hizmeti']
+                  }
+                ]
+              }
+            },
+            {
+              type: 'testimonials',
+              variant: 'premium',
+              order: 3,
+              enabled: true,
+              propsJson: {
+                title: 'Müşterilerimiz Ne Diyor?',
+                subtitle: 'Kaliteli hizmetimizden memnun olan müşterilerimizin değerlendirmeleri',
+                testimonials: [
+                  {
+                    name: 'Ahmet Yılmaz',
+                    title: 'Restaurant Sahibi',
+                    content: 'Restoranum için yaptırdığım tabela harika oldu. Hem kaliteli hem de çok şık. Kesinlikle tavsiye ederim.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/3B82F6/FFFFFF?text=AY'
+                  },
+                  {
+                    name: 'Fatma Kaya',
+                    title: 'Mağaza Sahibi',
+                    content: 'Mağazam için yaptırdığım branda ve afiş çok dayanıklı çıktı. 2 yıldır hiç problemi yok.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/10B981/FFFFFF?text=FK'
+                  },
+                  {
+                    name: 'Mehmet Demir',
+                    title: 'Şirket Sahibi',
+                    content: 'Araç giydirme işlemini çok profesyonel şekilde yaptılar. Fiyat performans olarak mükemmel.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/F59E0B/FFFFFF?text=MD'
+                  },
+                  {
+                    name: 'Ayşe Çelik',
+                    title: 'Kuaför Sahibi',
+                    content: 'LED tabela sayesinde müşteri sayım arttı. Çok beğeniyorlar ve dikkat çekiyor.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/EF4444/FFFFFF?text=AÇ'
+                  },
+                  {
+                    name: 'Can Özkan',
+                    title: 'Emlak Uzmanı',
+                    content: 'Kartvizit ve broşürlerim çok kaliteli çıktı. Tasarım desteği de harikaydy.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/8B5CF6/FFFFFF?text=CÖ'
+                  },
+                  {
+                    name: 'Sevil Yıldız',
+                    title: 'Cafe Sahibi',
+                    content: 'Cafe\'m için yaptırdığım tüm baskı ürünleri çok başarılı. Fiyatlar da çok uygun.',
+                    rating: 5,
+                    image: 'https://via.placeholder.com/150x150/06B6D4/FFFFFF?text=SY'
+                  }
+                ]
+              }
+            },
+            {
+              type: 'cta',
+              variant: 'premium',
+              order: 4,
+              enabled: true,
+              propsJson: {
+                title: 'Projeniz İçin Hemen Teklif Alın',
+                description: 'Uzman ekibimiz projeniz için en uygun çözümü sunmaya hazır. Ücretsiz keşif ve detaylı teklif için hemen iletişime geçin.',
+                ctaText: 'Ücretsiz Teklif Al',
+                ctaUrl: '/contact',
+                secondaryCtaText: 'WhatsApp ile İletişim',
+                secondaryCtaUrl: 'https://wa.me/905551234567',
+                features: [
+                  'Ücretsiz keşif ve ölçüm',
+                  'Detaylı teklif raporu',
+                  '24 saat içinde geri dönüş',
+                  'Profesyonel tasarım desteği'
+                ],
+                backgroundColor: '#1E40AF'
+              }
+            }
+          ]
+        },
+        isActive: true
+      }
+    });
+
+    console.log(`✅ Template created: ${printingTemplate.name}`);
+    return printingTemplate;
+  }
+
   async clearDatabase() {
     console.log('🗑️  Clearing database...');
 
@@ -487,8 +829,16 @@ export class SeedingService {
     await this.prisma.siteSettingTranslation.deleteMany();
     await this.prisma.siteSetting.deleteMany();
     await this.prisma.media.deleteMany();
+
+    // Template system tables
+    await this.prisma.dynamicPage.deleteMany();
+    await this.prisma.tenantSiteConfig.deleteMany();
+
     await this.prisma.user.deleteMany();
     await this.prisma.tenant.deleteMany();
+
+    // Global templates (last)
+    await this.prisma.template.deleteMany();
 
     console.log('✅ Database cleared');
   }

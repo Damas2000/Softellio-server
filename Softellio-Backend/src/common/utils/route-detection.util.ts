@@ -32,6 +32,9 @@ export class RouteDetectionUtil {
     '/monitoring',
     '/backup',
     '/billing',
+    '/public',
+    '/cms',
+    '/templates',
   ];
 
   static isApiRoute(url: string): boolean {
