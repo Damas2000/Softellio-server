@@ -261,6 +261,9 @@ export class SeedingService {
       });
 
       console.log('✅ Homepage DynamicPage created');
+
+      // Initialize CMS layout for homepage with template sections
+      await this.initializeCmsLayoutForHomepage(tenantId, 'printing-premium-v1');
     }
 
     console.log('✅ Demo template initialized');
@@ -814,6 +817,87 @@ export class SeedingService {
     return printingTemplate;
   }
 
+  /**
+   * Initialize CMS layout for homepage with template sections
+   */
+  private async initializeCmsLayoutForHomepage(tenantId: number, templateKey: string) {
+    console.log('🎨 Initializing CMS layout for homepage...');
+
+    // Check if homepage layout already exists
+    const existingLayout = await this.prisma.pageLayout.findUnique({
+      where: {
+        tenantId_key_language: {
+          tenantId,
+          key: 'HOME',
+          language: 'tr'
+        }
+      },
+      include: {
+        sections: true
+      }
+    });
+
+    if (existingLayout && existingLayout.sections.length > 0) {
+      console.log('⚠️  Homepage layout with sections already exists, skipping...');
+      return existingLayout;
+    }
+
+    // Get template with default layout
+    const template = await this.prisma.template.findUnique({
+      where: { key: templateKey },
+      select: { defaultLayout: true }
+    });
+
+    if (!template || !template.defaultLayout || !(template.defaultLayout as any).sections) {
+      console.warn(`⚠️  No template default layout found for ${templateKey}`);
+      return;
+    }
+
+    const defaultSections = (template.defaultLayout as any).sections;
+
+    // Create or get homepage layout
+    const layout = await this.prisma.pageLayout.upsert({
+      where: {
+        tenantId_key_language: {
+          tenantId,
+          key: 'HOME',
+          language: 'tr'
+        }
+      },
+      update: {},
+      create: {
+        tenantId,
+        key: 'HOME',
+        language: 'tr',
+        status: 'published'
+      }
+    });
+
+    // Create sections from template
+    const sectionsToCreate = defaultSections.map((section: any, index: number) => ({
+      layoutId: layout.id,
+      type: section.type,
+      variant: section.variant,
+      order: section.order || (index + 1),
+      isEnabled: section.enabled ?? true,
+      propsJson: section.propsJson || {},
+      status: 'published'
+    }));
+
+    // Delete existing sections if any
+    await this.prisma.pageSection.deleteMany({
+      where: { layoutId: layout.id }
+    });
+
+    // Create new sections
+    await this.prisma.pageSection.createMany({
+      data: sectionsToCreate
+    });
+
+    console.log(`✅ Created ${sectionsToCreate.length} sections for homepage layout`);
+    return layout;
+  }
+
   async clearDatabase() {
     console.log('🗑️  Clearing database...');
 
@@ -831,6 +915,8 @@ export class SeedingService {
     await this.prisma.media.deleteMany();
 
     // Template system tables
+    await this.prisma.pageSection.deleteMany();
+    await this.prisma.pageLayout.deleteMany();
     await this.prisma.dynamicPage.deleteMany();
     await this.prisma.tenantSiteConfig.deleteMany();
 
