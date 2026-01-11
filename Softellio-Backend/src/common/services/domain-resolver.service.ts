@@ -5,7 +5,7 @@ import { Tenant, TenantDomain } from '@prisma/client';
 export interface TenantResolutionResult {
   tenant: Tenant & { tenantDomains?: TenantDomain[] };
   domain: TenantDomain | null;
-  resolvedBy: 'custom_domain' | 'subdomain' | 'default' | 'fallback' | 'portal_jwt';
+  resolvedBy: 'TenantDomain' | 'Direct' | 'Slug' | 'portal_jwt';
 }
 
 @Injectable()
@@ -23,7 +23,7 @@ export class DomainResolverService {
    */
   async resolveTenantFromDomain(hostHeader: string): Promise<TenantResolutionResult> {
     if (!hostHeader) {
-      throw new NotFoundException('Domain header is required');
+      throw new NotFoundException('Domain header is required for tenant resolution');
     }
 
     const normalizedHost = this.normalizeHost(hostHeader);
@@ -34,17 +34,37 @@ export class DomainResolverService {
       throw new NotFoundException(`Reserved domain cannot be used for tenant resolution: ${normalizedHost}`);
     }
 
-    // Use same 3-step logic as TenantsService.findByDomain()
+    // PRODUCTION-CORRECT: Use TenantDomain-first strategy
     const tenant = await this.findTenantByDomain(normalizedHost);
 
     if (!tenant) {
-      throw new NotFoundException(`No tenant found for domain: ${normalizedHost}`);
+      // ENHANCED ERROR: Provide actionable guidance for production
+      const shouldLogDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_TENANT_RESOLUTION === 'true';
+
+      let errorMessage = `No active tenant found for domain: ${normalizedHost}`;
+
+      if (shouldLogDebug || process.env.NODE_ENV !== 'production') {
+        errorMessage += '\n\nTROUBLESHOOTING:\n';
+        errorMessage += '1. Ensure TenantDomain record exists for this domain\n';
+        errorMessage += '2. Check tenant status is "active" and isActive=true\n';
+        errorMessage += '3. For demo.softellio.com: run npx ts-node src/seeding/production-tenant-resolution-fix.ts\n';
+        errorMessage += '4. Enable DEBUG_TENANT_RESOLUTION=true for detailed logs';
+
+        if (normalizedHost.includes('.softellio.com')) {
+          const subdomain = normalizedHost.replace('.softellio.com', '');
+          errorMessage += `\n5. Verify tenant exists with slug="${subdomain}"`;
+        }
+      }
+
+      throw new NotFoundException(errorMessage);
     }
 
     this.logger.debug(`Tenant resolved: ${tenant.slug} (${tenant.id})`);
 
     // Find associated tenant domain if exists
     let tenantDomain: TenantDomain | null = null;
+    let resolvedBy = 'Direct'; // Default assumption
+
     try {
       tenantDomain = await this.prisma.tenantDomain.findFirst({
         where: {
@@ -53,6 +73,11 @@ export class DomainResolverService {
           isActive: true
         }
       });
+
+      // Update resolvedBy based on what we found
+      if (tenantDomain) {
+        resolvedBy = 'TenantDomain';
+      }
     } catch (error) {
       this.logger.warn(`Could not find TenantDomain entry for ${normalizedHost}: ${error.message}`);
     }
@@ -60,12 +85,17 @@ export class DomainResolverService {
     return {
       tenant: tenant,
       domain: tenantDomain,
-      resolvedBy: tenantDomain ? 'custom_domain' : 'subdomain'
+      resolvedBy: resolvedBy as 'TenantDomain' | 'Direct' | 'Slug'
     };
   }
 
   /**
-   * Find tenant by domain using same 3-step logic as TenantsService.findByDomain()
+   * PRODUCTION-CORRECT: Find tenant by domain with TenantDomain-first strategy
+   *
+   * Priority Order (CHANGED for production reliability):
+   * 1. TenantDomain table lookup (primary, supports custom domains)
+   * 2. Direct tenant.domain lookup (legacy compatibility)
+   * 3. Subdomain slug extraction (fallback for dev/legacy)
    */
   private async findTenantByDomain(host: string): Promise<Tenant | null> {
     // Remove protocol and port if present (already done by normalizeHost, but being explicit)
@@ -74,76 +104,114 @@ export class DomainResolverService {
     const shouldLogDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_TENANT_RESOLUTION === 'true';
 
     if (shouldLogDebug) {
-      this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1: Looking for tenant.domain = "${cleanHost}"`);
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] Production-correct resolution for: "${cleanHost}"`);
     }
 
-    // Step 1: Try to find by main domain field
-    let tenant = await this.prisma.tenant.findFirst({
+    let tenant: Tenant | null = null;
+    let resolvedBy = '';
+
+    // STEP 1 (NEW PRIMARY): TenantDomain table lookup - most reliable for production
+    if (shouldLogDebug) {
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1: TenantDomain lookup for "${cleanHost}"`);
+    }
+
+    const tenantDomain = await this.prisma.tenantDomain.findFirst({
       where: {
         domain: cleanHost,
         isActive: true,
-        status: 'active'
+        tenant: {
+          isActive: true,
+          status: 'active'
+        }
+      },
+      include: {
+        tenant: true
       }
     });
 
-    if (shouldLogDebug) {
-      this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1 result: ${tenant ? `Found tenant ${tenant.slug} (${tenant.id})` : 'No tenant found'}`);
+    if (tenantDomain) {
+      tenant = tenantDomain.tenant;
+      resolvedBy = 'TenantDomain';
+
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1 SUCCESS: Found tenant ${tenant.slug} (${tenant.id}) via TenantDomain record (isPrimary: ${tenantDomain.isPrimary})`);
+      }
+    } else {
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1: No TenantDomain record found`);
+      }
     }
 
-    // Step 2: If not found, search in TenantDomain table
+    // STEP 2 (LEGACY): Direct tenant.domain lookup
     if (!tenant) {
       if (shouldLogDebug) {
-        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2: Looking for TenantDomain record for "${cleanHost}"`);
-      }
-
-      const tenantDomain = await this.prisma.tenantDomain.findFirst({
-        where: {
-          domain: cleanHost,
-          isActive: true,
-          tenant: {
-            isActive: true,
-            status: 'active'
-          }
-        },
-        include: {
-          tenant: true
-        }
-      });
-
-      if (tenantDomain) {
-        tenant = tenantDomain.tenant;
-        if (shouldLogDebug) {
-          this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2 result: Found tenant ${tenant.slug} (${tenant.id}) via TenantDomain record`);
-        }
-      } else if (shouldLogDebug) {
-        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2 result: No TenantDomain record found`);
-      }
-    }
-
-    // Step 3: If still not found, try to extract slug from subdomain
-    if (!tenant && cleanHost.includes('.softellio.com')) {
-      const subdomain = cleanHost.replace('.softellio.com', '');
-      const slug = subdomain.replace(/panel$/, ''); // Remove 'panel' suffix for admin domains
-
-      if (shouldLogDebug) {
-        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3: Extracting slug from "${cleanHost}" -> subdomain: "${subdomain}" -> slug: "${slug}"`);
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2: Direct tenant.domain lookup for "${cleanHost}"`);
       }
 
       tenant = await this.prisma.tenant.findFirst({
         where: {
-          slug: slug,
+          domain: cleanHost,
           isActive: true,
           status: 'active'
         }
       });
 
-      if (shouldLogDebug) {
-        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3 result: ${tenant ? `Found tenant ${tenant.slug} (${tenant.id}) by slug lookup` : 'No tenant found by slug'}`);
+      if (tenant) {
+        resolvedBy = 'Direct';
+        if (shouldLogDebug) {
+          this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2 SUCCESS: Found tenant ${tenant.slug} (${tenant.id}) via direct domain field`);
+        }
+      } else {
+        if (shouldLogDebug) {
+          this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2: No direct tenant.domain match`);
+        }
       }
     }
 
+    // STEP 3 (FALLBACK): Subdomain slug extraction
+    if (!tenant && cleanHost.includes('.softellio.com')) {
+      const subdomain = cleanHost.replace('.softellio.com', '');
+      const slug = subdomain.replace(/panel$/, ''); // Remove 'panel' suffix for admin domains
+
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3: Slug extraction from "${cleanHost}" -> subdomain: "${subdomain}" -> slug: "${slug}"`);
+      }
+
+      // Additional validation: only allow valid slug format
+      if (slug && slug.length > 0 && /^[a-zA-Z0-9-_]+$/.test(slug)) {
+        tenant = await this.prisma.tenant.findFirst({
+          where: {
+            slug: slug,
+            isActive: true,
+            status: 'active'
+          }
+        });
+
+        if (tenant) {
+          resolvedBy = 'Slug';
+          if (shouldLogDebug) {
+            this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3 SUCCESS: Found tenant ${tenant.slug} (${tenant.id}) by slug lookup`);
+          }
+        } else {
+          if (shouldLogDebug) {
+            this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3: No tenant found for slug "${slug}"`);
+          }
+        }
+      } else {
+        if (shouldLogDebug) {
+          this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3: Invalid slug format "${slug}", skipping lookup`);
+        }
+      }
+    }
+
+    // Final result with production insights
     if (shouldLogDebug) {
-      this.logger.debug(`🔍 [DOMAIN RESOLVER] Final result for "${cleanHost}": ${tenant ? `${tenant.slug} (${tenant.id})` : 'NOT FOUND'}`);
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] FINAL RESULT for "${cleanHost}": ${tenant ? `${tenant.slug} (${tenant.id}) via ${resolvedBy}` : 'NOT FOUND - check TenantDomain table'}`);
+    }
+
+    // Additional production debugging: suggest TenantDomain record creation
+    if (!tenant && shouldLogDebug) {
+      this.logger.warn(`🚨 [DOMAIN RESOLVER] PRODUCTION TIP: Create TenantDomain record for "${cleanHost}" to ensure reliable resolution`);
     }
 
     return tenant;
@@ -192,23 +260,27 @@ export class DomainResolverService {
 
 
   /**
-   * Validate tenant access permissions
+   * Validate tenant access permissions with enhanced error messages
    */
   validateTenantAccess(tenant: Tenant): void {
     if (!tenant) {
-      throw new NotFoundException('Tenant not found');
+      throw new NotFoundException('Tenant not found during access validation');
     }
 
     if (!tenant.isActive) {
-      throw new ForbiddenException('Tenant is inactive');
+      throw new ForbiddenException(`Tenant "${tenant.slug}" is marked as inactive. Contact system administrator to reactivate.`);
     }
 
     if (tenant.status === 'SUSPENDED') {
-      throw new ForbiddenException('Tenant account has been suspended');
+      throw new ForbiddenException(`Tenant "${tenant.slug}" account has been suspended. Contact support for assistance.`);
     }
 
     if (tenant.status === 'TRIAL_EXPIRED') {
-      throw new ForbiddenException('Tenant trial period has expired');
+      throw new ForbiddenException(`Tenant "${tenant.slug}" trial period has expired. Please upgrade your subscription.`);
+    }
+
+    if (tenant.status !== 'active') {
+      throw new ForbiddenException(`Tenant "${tenant.slug}" status is "${tenant.status}". Expected "active" status for access.`);
     }
   }
 
@@ -365,6 +437,54 @@ export class DomainResolverService {
       data: {
         isActive: false,
         updatedAt: new Date()
+      }
+    });
+  }
+
+  /**
+   * PRODUCTION GUARDRAIL: Ensure TenantDomain record exists for a tenant's primary domain
+   * Call this whenever creating or updating tenant domains to ensure reliable resolution
+   */
+  async ensureTenantDomainRecord(tenantId: number, domain: string, isPrimary: boolean = true): Promise<TenantDomain> {
+    const normalizedDomain = this.normalizeHost(domain);
+
+    // Check if record already exists
+    const existing = await this.prisma.tenantDomain.findFirst({
+      where: {
+        tenantId,
+        domain: normalizedDomain
+      }
+    });
+
+    if (existing) {
+      // Update if needed to ensure it's active and properly configured
+      if (!existing.isActive || (isPrimary && !existing.isPrimary)) {
+        return await this.prisma.tenantDomain.update({
+          where: { id: existing.id },
+          data: {
+            isActive: true,
+            isPrimary,
+            isVerified: true,
+            verifiedAt: new Date(),
+            sslStatus: 'ACTIVE'
+          }
+        });
+      }
+      return existing;
+    }
+
+    // Create new record
+    return await this.prisma.tenantDomain.create({
+      data: {
+        tenantId,
+        domain: normalizedDomain,
+        type: normalizedDomain.includes('.softellio.com') ? 'SUBDOMAIN' : 'CUSTOM',
+        isPrimary,
+        isActive: true,
+        isVerified: true,
+        verificationToken: `auto-created-${Date.now()}`,
+        verifiedAt: new Date(),
+        sslStatus: 'ACTIVE'
       }
     });
   }

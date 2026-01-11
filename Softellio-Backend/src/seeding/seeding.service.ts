@@ -65,24 +65,43 @@ export class SeedingService {
     });
 
     if (existingTenant) {
-      console.log('⚠️  Demo tenant already exists, checking/fixing slug...');
+      console.log('⚠️  Demo tenant already exists, ensuring production-correct configuration...');
 
-      // CRITICAL FIX: Ensure existing tenant has correct slug for domain resolution
+      // PRODUCTION FIX: Ensure existing tenant has correct slug and TenantDomain record
+      let needsUpdate = false;
+      const updateData: any = {};
+
       if (existingTenant.slug !== 'demo') {
-        console.log('🔧  Updating existing tenant slug to "demo" for proper domain resolution...');
-        const updatedTenant = await this.prisma.tenant.update({
-          where: { id: existingTenant.id },
-          data: {
-            slug: 'demo',
-            status: 'active', // Ensure status is correct
-            isActive: true    // Ensure isActive is correct
-          }
-        });
-        console.log('✅  Demo tenant slug updated successfully');
-        return updatedTenant;
+        console.log('🔧  Updating tenant slug to "demo" for domain resolution...');
+        updateData.slug = 'demo';
+        needsUpdate = true;
       }
 
-      return existingTenant;
+      if (existingTenant.status !== 'active') {
+        console.log('🔧  Updating tenant status to "active"...');
+        updateData.status = 'active';
+        needsUpdate = true;
+      }
+
+      if (!existingTenant.isActive) {
+        console.log('🔧  Activating tenant...');
+        updateData.isActive = true;
+        needsUpdate = true;
+      }
+
+      let tenant = existingTenant;
+      if (needsUpdate) {
+        tenant = await this.prisma.tenant.update({
+          where: { id: existingTenant.id },
+          data: updateData
+        });
+        console.log('✅  Demo tenant configuration updated successfully');
+      }
+
+      // PRODUCTION-CRITICAL: Ensure TenantDomain record exists for reliable resolution
+      await this.ensureTenantDomainRecord(tenant);
+
+      return tenant;
     }
 
     // Create demo tenant
@@ -98,7 +117,10 @@ export class SeedingService {
       },
     });
 
-    console.log(`✅ Demo tenant created: ${demoTenant.name}`);
+    console.log(`✅ Demo tenant created: ${demoTenant.name} (slug: ${demoTenant.slug})`);
+
+    // PRODUCTION-CRITICAL: Create TenantDomain record for reliable domain resolution
+    await this.ensureTenantDomainRecord(demoTenant);
 
     // Create tenant admin for demo tenant
     await this.createTenantAdmin(demoTenant.id);
@@ -952,5 +974,68 @@ export class SeedingService {
     await this.prisma.template.deleteMany();
 
     console.log('✅ Database cleared');
+  }
+
+  /**
+   * PRODUCTION-CRITICAL: Ensure TenantDomain record exists for reliable domain resolution
+   * This is the SINGLE SOURCE OF TRUTH for production tenant resolution
+   */
+  private async ensureTenantDomainRecord(tenant: any) {
+    console.log('🌐 Ensuring TenantDomain record for production-reliable resolution...');
+
+    // Determine the correct domain based on environment
+    const domain = process.env.NODE_ENV === 'production'
+      ? tenant.domain  // e.g., "demo.softellio.com"
+      : tenant.domain; // Keep same for dev/staging consistency
+
+    // Check if TenantDomain record already exists
+    const existingDomain = await this.prisma.tenantDomain.findFirst({
+      where: {
+        domain: domain,
+        tenantId: tenant.id
+      }
+    });
+
+    if (existingDomain) {
+      console.log(`✅ TenantDomain record already exists: ${domain} -> tenant ${tenant.slug} (${tenant.id})`);
+
+      // Ensure it's configured correctly
+      if (!existingDomain.isActive || !existingDomain.isPrimary) {
+        console.log('🔧 Updating TenantDomain record configuration...');
+        await this.prisma.tenantDomain.update({
+          where: { id: existingDomain.id },
+          data: {
+            isActive: true,
+            isPrimary: true, // Make it the primary domain for reliable resolution
+            isVerified: true // Skip verification in demo/dev
+          }
+        });
+        console.log('✅ TenantDomain record updated');
+      }
+
+      return existingDomain;
+    }
+
+    // Create new TenantDomain record for production-reliable resolution
+    console.log(`🔧 Creating TenantDomain record: ${domain} -> tenant ${tenant.slug} (${tenant.id})`);
+
+    const tenantDomain = await this.prisma.tenantDomain.create({
+      data: {
+        tenantId: tenant.id,
+        domain: domain,
+        type: 'CUSTOM', // or 'SUBDOMAIN' - both work
+        isPrimary: true, // CRITICAL: Make this the primary domain
+        isActive: true,
+        isVerified: true, // Skip verification for demo/internal domains
+        verificationToken: `softellio-demo-${Date.now()}`,
+        verifiedAt: new Date(),
+        sslStatus: 'ACTIVE' // Assume SSL is handled by platform
+      }
+    });
+
+    console.log(`✅ TenantDomain record created: ${domain} -> tenant ${tenant.slug} (${tenant.id})`);
+    console.log('🎯 Production domain resolution will now work reliably via TenantDomain table');
+
+    return tenantDomain;
   }
 }
