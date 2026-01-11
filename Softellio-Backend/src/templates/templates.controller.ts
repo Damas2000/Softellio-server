@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -326,5 +327,83 @@ export class TemplatesController {
   async deactivateTemplate(@Param('key') key: string) {
     await this.templatesService.deactivate(key);
     return { message: `Template "${key}" deactivated successfully` };
+  }
+
+  @Post('admin/create-test-tenant')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Create clean test tenant (Super Admin only)',
+    description: 'Creates a clean test tenant with deterministic data for testing portal+site alignment. Tenant: testprint, Domain: testprint.localhost.com, Admin: admin@testprint.com / ChangeMe123!'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Test tenant created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        tenant: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 123 },
+            slug: { type: 'string', example: 'testprint' },
+            domain: { type: 'string', example: 'testprint.localhost.com' }
+          }
+        },
+        admin: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', example: 'admin@testprint.com' },
+            password: { type: 'string', example: 'ChangeMe123!' }
+          }
+        },
+        homepage: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'cmk123abc' },
+            slug: { type: 'string', example: '/' },
+            layoutKey: { type: 'string', example: 'HOME' },
+            published: { type: 'boolean', example: true },
+            sectionsCount: { type: 'number', example: 4 }
+          }
+        },
+        verification: {
+          type: 'object',
+          properties: {
+            apiEndpoint: { type: 'string', example: 'GET /public/site/pages/by-slug/%2F?lang=tr' },
+            curlCommand: { type: 'string', example: 'curl -s "https://api.softellio.com/public/site/pages/by-slug/%2F?lang=tr" -H "X-Tenant-Host: testprint.localhost.com"' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Test tenant creation failed' })
+  @ApiResponse({ status: 409, description: 'Test tenant already exists' })
+  async createTestTenant() {
+    try {
+      // Import and use the same script logic
+      const { createCleanTestTenant } = await import('../scripts/seed-clean-test-tenant');
+      const result = await createCleanTestTenant();
+
+      if (result.success) {
+        return {
+          success: true,
+          message: 'Clean test tenant created successfully',
+          tenant: result.tenant,
+          admin: result.admin,
+          homepage: result.homepage,
+          verification: {
+            apiEndpoint: 'GET /public/site/pages/by-slug/%2F?lang=tr',
+            curlCommand: 'curl -s "https://api.softellio.com/public/site/pages/by-slug/%2F?lang=tr" -H "X-Tenant-Host: testprint.localhost.com"',
+            portalLogin: 'Login at portal.softellio.com with admin@testprint.com / ChangeMe123!',
+            notes: 'Test API endpoint, portal CMS, and site rendering for consistency'
+          }
+        };
+      } else {
+        throw new Error(result.error || 'Unknown error during test tenant creation');
+      }
+    } catch (error) {
+      throw new Error(`Test tenant creation failed: ${error.message}`);
+    }
   }
 }

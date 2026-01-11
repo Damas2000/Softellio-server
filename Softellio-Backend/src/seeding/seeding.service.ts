@@ -27,6 +27,264 @@ export class SeedingService {
     }
   }
 
+  /**
+   * Create clean test tenant for development/testing
+   * Can be called independently for testing purposes
+   */
+  async createTestTenant() {
+    console.log('🧪 Creating clean test tenant...');
+
+    try {
+      // Check if test tenant already exists
+      const existingTenant = await this.prisma.tenant.findFirst({
+        where: {
+          OR: [
+            { slug: 'testprint' },
+            { domain: 'testprint.localhost.com' }
+          ]
+        }
+      });
+
+      if (existingTenant) {
+        console.log('⚠️  Test tenant already exists, skipping creation');
+        return existingTenant;
+      }
+
+      // Create test tenant
+      const testTenant = await this.prisma.tenant.create({
+        data: {
+          name: 'TestPrint Solutions',
+          slug: 'testprint',
+          domain: 'testprint.localhost.com',
+          defaultLanguage: 'tr',
+          availableLanguages: ['tr', 'en'],
+          isActive: true,
+          status: 'active',
+        }
+      });
+
+      console.log(`✅ Test tenant created: ${testTenant.slug}`);
+
+      // Create TenantDomain records
+      await this.ensureTenantDomainRecord(testTenant);
+
+      // Create tenant admin
+      await this.createTestTenantAdmin(testTenant.id);
+
+      // Initialize test template
+      await this.initializeTestTemplate(testTenant.id);
+
+      console.log('✅ Test tenant setup completed successfully!');
+      return testTenant;
+    } catch (error) {
+      console.error('❌ Test tenant creation failed:', error);
+      throw error;
+    }
+  }
+
+  private async createTestTenantAdmin(tenantId: number) {
+    console.log('👨‍💼 Creating test tenant admin...');
+
+    const hashedPassword = await bcrypt.hash('ChangeMe123!', 10);
+
+    const tenantAdmin = await this.prisma.user.create({
+      data: {
+        name: 'TestPrint Administrator',
+        email: 'admin@testprint.com',
+        password: hashedPassword,
+        role: Role.TENANT_ADMIN,
+        tenantId,
+        isActive: true,
+      },
+    });
+
+    console.log(`✅ Test tenant admin created: ${tenantAdmin.email}`);
+    return tenantAdmin;
+  }
+
+  private async initializeTestTemplate(tenantId: number) {
+    console.log('🎨 Initializing test template configuration...');
+
+    // Create TenantSiteConfig
+    const siteConfig = await this.prisma.tenantSiteConfig.create({
+      data: {
+        tenantId,
+        templateKey: 'printing-premium-v1',
+        branding: {
+          logoUrl: 'https://via.placeholder.com/200x80/059669/FFFFFF?text=TESTPRINT',
+          faviconUrl: 'https://via.placeholder.com/32x32/059669/FFFFFF?text=T',
+          primaryColor: '#059669',
+          secondaryColor: '#10B981',
+          fontFamily: 'Inter, sans-serif'
+        },
+        navigation: [
+          {
+            label: 'Ana Sayfa',
+            href: '/',
+            order: 1,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'Hizmetler',
+            href: '/services',
+            order: 2,
+            isCTA: false,
+            isExternal: false
+          },
+          {
+            label: 'İletişim',
+            href: '/contact',
+            order: 3,
+            isCTA: true,
+            isExternal: false
+          }
+        ],
+        footer: {
+          columns: [
+            {
+              title: 'Hizmetler',
+              links: [
+                { label: 'Dijital Baskı', url: '/services/dijital' },
+                { label: 'Tasarım', url: '/services/tasarim' }
+              ]
+            }
+          ],
+          socialLinks: [
+            { platform: 'facebook', url: 'https://facebook.com/testprint', label: 'Facebook' }
+          ],
+          copyrightText: '© 2026 TestPrint Solutions. Tüm hakları saklıdır.'
+        },
+        seoDefaults: {
+          metaTitle: 'TestPrint Solutions - Test Baskı Sitesi',
+          metaDescription: 'Test amaçlı baskı sitesi.',
+          ogImage: 'https://via.placeholder.com/1200x630/059669/FFFFFF?text=TestPrint',
+          twitterCard: 'summary_large_image'
+        }
+      }
+    });
+
+    // Create HOME DynamicPage
+    const homepage = await this.prisma.dynamicPage.create({
+      data: {
+        tenantId,
+        slug: '/',
+        title: 'Ana Sayfa',
+        layoutKey: 'HOME',
+        pageType: 'HOME',
+        published: true,
+        publishedAt: new Date(),
+        language: 'tr',
+        seo: {
+          metaTitle: 'TestPrint Solutions - Ana Sayfa',
+          metaDescription: 'Test baskı sitesi ana sayfa.',
+          ogTitle: 'TestPrint Solutions',
+          ogDescription: 'Test amaçlı site.',
+          ogImage: 'https://via.placeholder.com/1200x630/059669/FFFFFF?text=TestPrint'
+        }
+      }
+    });
+
+    console.log('✅ Test homepage DynamicPage created');
+
+    // Initialize CMS layout for test homepage with deterministic sections
+    await this.initializeTestCmsLayout(tenantId);
+
+    return siteConfig;
+  }
+
+  private async initializeTestCmsLayout(tenantId: number) {
+    console.log('🎨 Initializing test CMS layout with 4 deterministic sections...');
+
+    // Create the layout
+    const layout = await this.prisma.pageLayout.create({
+      data: {
+        tenantId,
+        key: 'HOME',
+        language: 'tr',
+        status: 'published'
+      }
+    });
+
+    // Create exactly 4 sections as specified
+    const sectionsData = [
+      {
+        type: 'hero',
+        variant: 'premium',
+        order: 1,
+        propsJson: {
+          title: 'TestPrint Solutions',
+          subtitle: 'Test amaçlı baskı sitesi',
+          description: 'Portal ve site uyumluluğunu test etmek için oluşturulan temiz test ortamı.',
+          buttonText: 'Test Et',
+          buttonUrl: '/contact',
+          backgroundColor: '#059669'
+        }
+      },
+      {
+        type: 'services',
+        variant: 'premium',
+        order: 2,
+        propsJson: {
+          title: 'Test Hizmetleri',
+          subtitle: 'Test amaçlı hizmet listesi',
+          services: [
+            { title: 'Test Service 1', description: 'İlk test hizmeti', icon: '🔧' },
+            { title: 'Test Service 2', description: 'İkinci test hizmeti', icon: '⚙️' }
+          ]
+        }
+      },
+      {
+        type: 'testimonials',
+        variant: 'premium',
+        order: 3,
+        propsJson: {
+          title: 'Test Yorumları',
+          subtitle: 'Test müşteri yorumları',
+          testimonials: [
+            {
+              name: 'Test Kullanıcı 1',
+              company: 'Test Şirketi',
+              text: 'Test amaçlı yorum metni.',
+              rating: 5
+            }
+          ]
+        }
+      },
+      {
+        type: 'cta',
+        variant: 'premium',
+        order: 4,
+        propsJson: {
+          title: 'Test CTA',
+          description: 'Test amaçlı çağrı-eylem bölümü.',
+          ctaText: 'Test Başlat',
+          ctaUrl: '/contact',
+          backgroundColor: '#059669'
+        }
+      }
+    ];
+
+    // Create all sections
+    for (const sectionData of sectionsData) {
+      await this.prisma.pageSection.create({
+        data: {
+          tenantId,
+          layoutId: layout.id,
+          type: sectionData.type,
+          variant: sectionData.variant,
+          order: sectionData.order,
+          isEnabled: true,
+          status: 'published',
+          propsJson: sectionData.propsJson
+        }
+      });
+    }
+
+    console.log(`✅ Created ${sectionsData.length} test sections: ${sectionsData.map(s => s.type).join(', ')}`);
+    return layout;
+  }
+
   private async createSuperAdmin() {
     console.log('👤 Creating super admin user...');
 
