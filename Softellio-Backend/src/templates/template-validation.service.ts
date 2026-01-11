@@ -3,6 +3,7 @@ import { PrismaService } from '../config/prisma.service';
 import { TemplatesService } from './templates.service';
 import { SiteConfigService } from './site-config.service';
 import { SectionConfigUtil, SectionTypeConfig } from './utils/section-config.util';
+import { SectionSanitizerUtil } from './utils/section-sanitizer.util';
 
 @Injectable()
 export class TemplateValidationService {
@@ -68,15 +69,31 @@ export class TemplateValidationService {
       return []; // Empty layouts are allowed
     }
 
+    // 🧹 SANITIZE: Remove client-only fields before validation (prevents "forbidden fields" errors)
+    const sanitizedSections = SectionSanitizerUtil.sanitizeSections(sections);
+
+    if (sanitizedSections.length !== sections.length) {
+      this.logger.warn(`[TEMPLATE_VALIDATION] ⚠️  Removed ${sections.length - sanitizedSections.length} invalid sections during sanitization`);
+    }
+
+    // Log sanitization stats in debug mode
+    const shouldLogDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_SECTION_SANITIZATION === 'true';
+    if (shouldLogDebug) {
+      const stats = SectionSanitizerUtil.getSanitizationStats(sections);
+      if (stats.fieldsRemoved > 0) {
+        this.logger.debug(`[TEMPLATE_VALIDATION] 🧹 Sanitization stats: ${stats.sectionsModified} sections modified, ${stats.fieldsRemoved} fields removed`);
+      }
+    }
+
     // Get template configuration
     const templateConfig = await this.getTemplateConfig(tenantId);
     if (!templateConfig) {
       this.logger.warn(`[TEMPLATE_VALIDATION] ⚠️  No template config for tenant ${tenantId}, skipping validation`);
-      return sections; // No template constraints if no config
+      return sanitizedSections; // Return sanitized sections even without template constraints
     }
 
     // 🔧 NORMALIZE: Apply template rules to fix missing/default variants
-    const normalizedSections = await this.normalizeSections(sections, templateConfig, tenantId);
+    const normalizedSections = await this.normalizeSections(sanitizedSections, templateConfig, tenantId);
 
     // Validate normalized sections
     await this.validateSectionStructure(normalizedSections);
@@ -178,22 +195,25 @@ export class TemplateValidationService {
         });
       }
 
-      // Forbidden fields check (from sanitization)
-      const forbiddenFields = ['id', 'property'];
+      // Security check: Dangerous fields that should never be present after sanitization
+      const dangerousFields = ['__proto__', 'constructor', 'prototype', 'eval', 'function'];
       const sectionKeys = Object.keys(section);
-      const foundForbiddenFields = sectionKeys.filter(key =>
-        forbiddenFields.some(forbidden => key.includes(forbidden))
+      const foundDangerousFields = sectionKeys.filter(key =>
+        dangerousFields.some(dangerous => key.includes(dangerous))
       );
 
-      if (foundForbiddenFields.length > 0) {
+      if (foundDangerousFields.length > 0) {
+        this.logger.error(`[TEMPLATE_VALIDATION] 🚨 SECURITY: Dangerous fields found after sanitization in section ${index + 1}: ${foundDangerousFields.join(', ')}`);
         throw new BadRequestException({
-          message: `Section ${index + 1} (${section.type}) contains forbidden fields: ${foundForbiddenFields.join(', ')}`,
-          code: 'SECTION_STRUCTURE_VIOLATION',
+          message: `Section ${index + 1} (${section.type}) contains dangerous fields: ${foundDangerousFields.join(', ')}`,
+          code: 'SECTION_SECURITY_VIOLATION',
           sectionIndex: index,
-          constraint: 'FORBIDDEN_FIELDS',
-          forbiddenFields: foundForbiddenFields
+          constraint: 'DANGEROUS_FIELDS',
+          dangerousFields: foundDangerousFields
         });
       }
+
+      // Note: Client-side fields like 'id' are now handled by sanitization before this validation
     });
   }
 

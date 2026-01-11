@@ -145,7 +145,7 @@ async function fixDemoTenantResolution() {
         data: {
           tenantId: demoTenant.id,
           domain: 'demo.softellio.com',
-          type: 'SUBDOMAIN',
+          type: 'SYSTEM',
           isPrimary: true,
           isActive: true,
           isVerified: true,

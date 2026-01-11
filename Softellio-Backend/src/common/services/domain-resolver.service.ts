@@ -478,7 +478,7 @@ export class DomainResolverService {
       data: {
         tenantId,
         domain: normalizedDomain,
-        type: normalizedDomain.includes('.softellio.com') ? 'SUBDOMAIN' : 'CUSTOM',
+        type: normalizedDomain.includes('.softellio.com') ? 'SYSTEM' : 'CUSTOM',
         isPrimary,
         isActive: true,
         isVerified: true,

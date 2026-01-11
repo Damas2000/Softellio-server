@@ -182,10 +182,24 @@ export class TenantMiddleware implements NestMiddleware {
             `Tenant resolved by ${resolution.resolvedBy}: ${tenant.slug} (${tenantId}) for domain: ${domainHeader}`
           );
 
+          // Map resolvedBy values to interface format
+          const mapResolvedBy = (resolvedBy: string) => {
+            switch (resolvedBy) {
+              case 'TenantDomain':
+                return resolution.domain?.type === 'CUSTOM' ? 'custom_domain' : 'subdomain';
+              case 'Direct':
+                return 'default';
+              case 'Slug':
+                return 'subdomain';
+              default:
+                return 'fallback';
+            }
+          };
+
           // Attach domain resolution info to request for potential use by controllers
           req.domainResolution = {
             originalDomain: domainHeader,
-            resolvedBy: resolution.resolvedBy,
+            resolvedBy: mapResolvedBy(resolution.resolvedBy),
             tenantDomain: resolution.domain,
           };
         }
