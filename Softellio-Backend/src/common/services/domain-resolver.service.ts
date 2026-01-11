@@ -71,6 +71,12 @@ export class DomainResolverService {
     // Remove protocol and port if present (already done by normalizeHost, but being explicit)
     const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
 
+    const shouldLogDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_TENANT_RESOLUTION === 'true';
+
+    if (shouldLogDebug) {
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1: Looking for tenant.domain = "${cleanHost}"`);
+    }
+
     // Step 1: Try to find by main domain field
     let tenant = await this.prisma.tenant.findFirst({
       where: {
@@ -80,8 +86,16 @@ export class DomainResolverService {
       }
     });
 
+    if (shouldLogDebug) {
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 1 result: ${tenant ? `Found tenant ${tenant.slug} (${tenant.id})` : 'No tenant found'}`);
+    }
+
     // Step 2: If not found, search in TenantDomain table
     if (!tenant) {
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2: Looking for TenantDomain record for "${cleanHost}"`);
+      }
+
       const tenantDomain = await this.prisma.tenantDomain.findFirst({
         where: {
           domain: cleanHost,
@@ -98,6 +112,11 @@ export class DomainResolverService {
 
       if (tenantDomain) {
         tenant = tenantDomain.tenant;
+        if (shouldLogDebug) {
+          this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2 result: Found tenant ${tenant.slug} (${tenant.id}) via TenantDomain record`);
+        }
+      } else if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 2 result: No TenantDomain record found`);
       }
     }
 
@@ -106,6 +125,10 @@ export class DomainResolverService {
       const subdomain = cleanHost.replace('.softellio.com', '');
       const slug = subdomain.replace(/panel$/, ''); // Remove 'panel' suffix for admin domains
 
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3: Extracting slug from "${cleanHost}" -> subdomain: "${subdomain}" -> slug: "${slug}"`);
+      }
+
       tenant = await this.prisma.tenant.findFirst({
         where: {
           slug: slug,
@@ -113,6 +136,14 @@ export class DomainResolverService {
           status: 'active'
         }
       });
+
+      if (shouldLogDebug) {
+        this.logger.debug(`🔍 [DOMAIN RESOLVER] Step 3 result: ${tenant ? `Found tenant ${tenant.slug} (${tenant.id}) by slug lookup` : 'No tenant found by slug'}`);
+      }
+    }
+
+    if (shouldLogDebug) {
+      this.logger.debug(`🔍 [DOMAIN RESOLVER] Final result for "${cleanHost}": ${tenant ? `${tenant.slug} (${tenant.id})` : 'NOT FOUND'}`);
     }
 
     return tenant;

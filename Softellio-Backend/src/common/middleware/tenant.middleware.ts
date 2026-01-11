@@ -88,14 +88,18 @@ export class TenantMiddleware implements NestMiddleware {
       // Method 1: Direct tenant ID header (for API clients with known tenant)
       const tenantIdHeader = req.headers['x-tenant-id'] as string;
 
-      // Development debug logging
-      if (process.env.NODE_ENV === 'development') {
+      // Development debug logging + Production diagnostics for tenant resolution issues
+      const shouldLogDebug = process.env.NODE_ENV === 'development' || process.env.DEBUG_TENANT_RESOLUTION === 'true';
+      if (shouldLogDebug) {
         this.logger.debug(`🔍 [DEBUG] Headers check: x-tenant-id="${tenantIdHeader}"`);
         this.logger.debug(`🔍 [DEBUG] All tenant-related headers:`, {
           'x-tenant-id': req.headers['x-tenant-id'],
           'x-tenant-host': req.headers['x-tenant-host'],
           'x-tenant-domain': req.headers['x-tenant-domain'],
-          'host': req.headers['host']
+          'host': req.headers['host'],
+          'hostname': req.hostname,
+          'url': req.url,
+          'method': req.method
         });
       }
 
@@ -105,7 +109,7 @@ export class TenantMiddleware implements NestMiddleware {
           throw new BadRequestException('Invalid tenant ID in header');
         }
 
-        if (process.env.NODE_ENV === 'development') {
+        if (shouldLogDebug) {
           this.logger.debug(`🔍 [DEBUG] Parsed tenantId from header: ${tenantId}`);
         }
 
@@ -146,8 +150,26 @@ export class TenantMiddleware implements NestMiddleware {
           this.logger.debug('Reserved domain access - tenantId set to null for SUPER_ADMIN context');
           return next();
         } else {
+          if (shouldLogDebug) {
+            this.logger.debug(`🔍 [DEBUG] Attempting domain resolution for: "${domainHeader}"`);
+          }
+
           // Use domain resolver service for sophisticated tenant resolution
           const resolution = await this.domainResolver.resolveTenantFromDomain(domainHeader);
+
+          if (shouldLogDebug) {
+            this.logger.debug(`🔍 [DEBUG] Domain resolution result:`, {
+              domain: domainHeader,
+              tenantFound: !!resolution.tenant,
+              tenantId: resolution.tenant?.id,
+              tenantSlug: resolution.tenant?.slug,
+              tenantDomain: resolution.tenant?.domain,
+              tenantStatus: resolution.tenant?.status,
+              tenantIsActive: resolution.tenant?.isActive,
+              resolvedBy: resolution.resolvedBy,
+              tenantDomainRecord: resolution.domain
+            });
+          }
 
           // Validate tenant access
           this.domainResolver.validateTenantAccess(resolution.tenant);
@@ -174,7 +196,7 @@ export class TenantMiddleware implements NestMiddleware {
       req.tenant = tenant;
 
       // Development debug logging for final resolution
-      if (process.env.NODE_ENV === 'development') {
+      if (shouldLogDebug) {
         this.logger.debug(`🔍 [DEBUG] Final tenant context attached: req.tenantId=${req.tenantId}, tenant.slug=${tenant?.slug || 'null'}`);
       }
 
@@ -187,10 +209,21 @@ export class TenantMiddleware implements NestMiddleware {
       }
 
     } catch (error) {
-      this.logger.error(`❌ Tenant middleware error: ${error.message}`, error.stack);
+      this.logger.error(`❌ Tenant middleware error for ${req.method} ${req.path}:`, {
+        message: error.message,
+        domain: req.headers.host,
+        tenantHeaders: {
+          'x-tenant-id': req.headers['x-tenant-id'],
+          'x-tenant-host': req.headers['x-tenant-host'],
+          'x-tenant-domain': req.headers['x-tenant-domain'],
+          'host': req.headers['host']
+        },
+        stack: error.stack
+      });
 
-      // For development, provide more detailed error information
-      if (process.env.NODE_ENV === 'development') {
+      // For development or with debug flag, provide more detailed error information
+      const shouldShowDetails = process.env.NODE_ENV === 'development' || process.env.DEBUG_TENANT_RESOLUTION === 'true';
+      if (shouldShowDetails) {
         throw new BadRequestException(`Tenant resolution failed: ${error.message}`);
       }
 

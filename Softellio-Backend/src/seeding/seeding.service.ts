@@ -65,7 +65,23 @@ export class SeedingService {
     });
 
     if (existingTenant) {
-      console.log('⚠️  Demo tenant already exists, skipping...');
+      console.log('⚠️  Demo tenant already exists, checking/fixing slug...');
+
+      // CRITICAL FIX: Ensure existing tenant has correct slug for domain resolution
+      if (existingTenant.slug !== 'demo') {
+        console.log('🔧  Updating existing tenant slug to "demo" for proper domain resolution...');
+        const updatedTenant = await this.prisma.tenant.update({
+          where: { id: existingTenant.id },
+          data: {
+            slug: 'demo',
+            status: 'active', // Ensure status is correct
+            isActive: true    // Ensure isActive is correct
+          }
+        });
+        console.log('✅  Demo tenant slug updated successfully');
+        return updatedTenant;
+      }
+
       return existingTenant;
     }
 
@@ -73,10 +89,12 @@ export class SeedingService {
     const demoTenant = await this.prisma.tenant.create({
       data: {
         name: 'Demo Company',
+        slug: 'demo', // CRITICAL: Explicit slug for domain resolution Step 3
         domain: 'demo.softellio.com',
         defaultLanguage: 'tr',
         availableLanguages: ['tr', 'en'],
         isActive: true,
+        status: 'active', // Explicit status for domain resolution queries
       },
     });
 
