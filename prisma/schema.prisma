@@ -89,21 +89,41 @@ model Tenant {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  tenantId     Int?
-  role         Role
-  name         String?
-  email        String         @unique
-  password     String
-  isActive     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  blogPosts    BlogPost[]     @relation("PostAuthor")
-  media        Media[]        @relation("MediaUploader")
-  activities   UserActivity[] @relation("UserActivities")
-  tenant       Tenant?        @relation(fields: [tenantId], references: [id])
+  id            Int             @id @default(autoincrement())
+  tenantId      Int?
+  role          Role
+  name          String?
+  email         String          @unique
+  password      String
+  isActive      Boolean         @default(true)
+  portalAccess  Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  blogPosts     BlogPost[]      @relation("PostAuthor")
+  media         Media[]         @relation("MediaUploader")
+  activities    UserActivity[]  @relation("UserActivities")
+  portalSessions PortalSession[] @relation("UserPortalSessions")
+  tenant        Tenant?         @relation(fields: [tenantId], references: [id])
 
+  @@index([portalAccess])
   @@map("users")
+}
+
+model PortalSession {
+  id        String   @id @default(cuid())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation("UserPortalSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token, expiresAt])
+  @@index([expiresAt])
+  @@map("portal_sessions")
 }
 
 model UserActivity {
