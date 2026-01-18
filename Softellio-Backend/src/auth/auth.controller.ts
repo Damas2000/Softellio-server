@@ -12,13 +12,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@n
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-tenant.decorator';
 import { TenantsService } from '../tenants/tenants.service';
-import { Logger, BadRequestException, UnauthorizedException, Get } from '@nestjs/common';
+import { Logger, BadRequestException, UnauthorizedException, Get, Param } from '@nestjs/common';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -29,6 +31,8 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private tenantsService: TenantsService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   @Post('login')
@@ -92,8 +96,8 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: isProduction, // MUST be true when sameSite is 'none'
-      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-site cookies
+      secure: isProduction, // Required for HTTPS in production
+      sameSite: 'lax', // 'lax' works for same-domain subdomains (api.softellio.com <-> portal.softellio.com)
       domain: process.env.COOKIE_DOMAIN || (isProduction ? '.softellio.com' : undefined),
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -129,6 +133,53 @@ export class AuthController {
       },
       environment: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
+    };
+  }
+
+  @Get('test-token/:seconds')
+  @Public()
+  @ApiOperation({ summary: 'Generate test token with custom expiration (dev only)' })
+  @ApiResponse({ status: 200, description: 'Test token generated' })
+  async testToken(@Req() request: Request, @Res({ passthrough: true }) response: Response, @Param('seconds') seconds: string) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('Test endpoints not available in production');
+    }
+
+    // Create a test token that expires in X seconds
+    const testUser = {
+      id: 999,
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'TENANT_ADMIN',
+      tenantId: 1
+    };
+
+    const testToken = await this.jwtService.signAsync(
+      {
+        sub: testUser.id,
+        email: testUser.email,
+        role: testUser.role,
+        tenantId: testUser.tenantId,
+      },
+      {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: parseInt(seconds),
+      }
+    );
+
+    // Set the test token as a cookie
+    response.cookie('auth_token', testToken, {
+      httpOnly: true,
+      secure: false, // Dev mode
+      sameSite: 'lax',
+      path: '/',
+      maxAge: parseInt(seconds) * 1000,
+    });
+
+    return {
+      message: `Test token created with ${seconds} seconds expiration`,
+      token: testToken,
+      expiresAt: new Date(Date.now() + parseInt(seconds) * 1000).toISOString()
     };
   }
 
@@ -174,19 +225,24 @@ export class AuthController {
     });
 
     if (!token) {
-      throw new UnauthorizedException('No auth token found');
+      throw new UnauthorizedException('Unauthorized');
     }
 
-    const user = await this.authService.validateJwtToken(token);
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        tenantId: user.tenantId
-      }
-    };
+    try {
+      const user = await this.authService.validateJwtToken(token);
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          tenantId: user.tenantId
+        }
+      };
+    } catch (error) {
+      // Re-throw the specific error from the auth service
+      throw error;
+    }
   }
 
   @Post('logout')
@@ -204,7 +260,7 @@ export class AuthController {
       domain: process.env.COOKIE_DOMAIN || (isProduction ? '.softellio.com' : undefined),
       path: '/',
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax'
+      sameSite: 'lax' // Must match the original cookie setting
     });
 
     // Optional: Log logout activity if we can extract user from token

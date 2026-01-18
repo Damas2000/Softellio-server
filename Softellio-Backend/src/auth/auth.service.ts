@@ -222,10 +222,25 @@ export class AuthService {
     } catch (error) {
       this.logger.error('JWT validation failed:', {
         error: error.message,
+        errorName: error.name,
         tokenLength: token?.length || 0,
         tokenPreview: token?.substring(0, 50) + '...'
       });
-      throw new UnauthorizedException('Invalid token');
+
+      // Check for specific JWT error types
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid token');
+      } else if (error.name === 'NotBeforeError') {
+        throw new UnauthorizedException('Token not yet valid');
+      } else if (error instanceof UnauthorizedException) {
+        // Re-throw our own UnauthorizedException (like user not found)
+        throw error;
+      } else {
+        // Generic error
+        throw new UnauthorizedException('Invalid token');
+      }
     }
   }
 }
