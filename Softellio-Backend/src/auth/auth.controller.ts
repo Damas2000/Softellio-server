@@ -89,16 +89,47 @@ export class AuthController {
     const result = await this.authService.login(loginDto, tenant, ipAddress, userAgent);
 
     // Set JWT access token as HTTP-only cookie
-    response.cookie('auth_token', result.accessToken, {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.softellio.com' : undefined),
+      secure: isProduction, // MUST be true when sameSite is 'none'
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-site cookies
+      domain: process.env.COOKIE_DOMAIN || (isProduction ? '.softellio.com' : undefined),
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    } as any;
+
+    this.logger.debug('Setting auth cookie with options:', {
+      ...cookieOptions,
+      tokenLength: result.accessToken.length
     });
 
+    response.cookie('auth_token', result.accessToken, cookieOptions);
+
     return { user: result.user };
+  }
+
+  @Get('debug')
+  @Public()
+  @ApiOperation({ summary: 'Debug endpoint for auth troubleshooting' })
+  @ApiResponse({ status: 200, description: 'Debug information' })
+  async debug(@Req() request: Request) {
+    const token = this.extractTokenFromCookie(request);
+
+    return {
+      hasAuthCookie: !!token,
+      tokenLength: token?.length || 0,
+      cookieHeader: request.headers.cookie?.includes('auth_token') || false,
+      cookies: Object.keys(request.cookies || {}),
+      headers: {
+        host: request.headers.host,
+        origin: request.headers.origin,
+        'user-agent': request.headers['user-agent']?.substring(0, 50),
+        'x-tenant-host': request.headers['x-tenant-host']
+      },
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    };
   }
 
   @Get('me')
@@ -124,7 +155,23 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async me(@Req() request: Request) {
+    // Debug logging for troubleshooting
+    this.logger.debug('Auth /me request headers:', {
+      host: request.headers.host,
+      origin: request.headers.origin,
+      'x-tenant-host': request.headers['x-tenant-host'],
+      'user-agent': request.headers['user-agent']?.substring(0, 50),
+      hasCookieHeader: !!request.headers.cookie,
+      cookieHeader: request.headers.cookie?.substring(0, 100),
+    });
+
     const token = this.extractTokenFromCookie(request);
+
+    this.logger.debug('Token extraction result:', {
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      cookiesPresent: Object.keys(request.cookies || {}),
+    });
 
     if (!token) {
       throw new UnauthorizedException('No auth token found');
@@ -151,11 +198,13 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ ok: boolean }> {
-    // Clear auth_token cookie
+    // Clear auth_token cookie (must match original cookie options)
+    const isProduction = process.env.NODE_ENV === 'production';
     response.clearCookie('auth_token', {
-      domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.softellio.com' : undefined),
+      domain: process.env.COOKIE_DOMAIN || (isProduction ? '.softellio.com' : undefined),
       path: '/',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax'
     });
 
     // Optional: Log logout activity if we can extract user from token

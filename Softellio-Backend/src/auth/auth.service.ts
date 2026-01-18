@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +10,8 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -171,8 +173,22 @@ export class AuthService {
 
   async validateJwtToken(token: string): Promise<any> {
     try {
+      this.logger.debug('Validating JWT token:', {
+        tokenLength: token?.length || 0,
+        tokenPreview: token?.substring(0, 50) + '...'
+      });
+
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      this.logger.debug('JWT payload decoded successfully:', {
+        userId: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        tenantId: payload.tenantId,
+        exp: payload.exp,
+        iat: payload.iat
       });
 
       // Get user from database to ensure they're still active
@@ -184,8 +200,17 @@ export class AuthService {
       });
 
       if (!user) {
+        this.logger.warn('User not found or inactive during token validation:', {
+          userId: payload.sub,
+          email: payload.email
+        });
         throw new UnauthorizedException('User not found or inactive');
       }
+
+      this.logger.debug('JWT validation successful for user:', {
+        userId: user.id,
+        email: user.email
+      });
 
       return {
         id: user.id,
@@ -195,6 +220,11 @@ export class AuthService {
         tenantId: user.tenantId
       };
     } catch (error) {
+      this.logger.error('JWT validation failed:', {
+        error: error.message,
+        tokenLength: token?.length || 0,
+        tokenPreview: token?.substring(0, 50) + '...'
+      });
       throw new UnauthorizedException('Invalid token');
     }
   }
