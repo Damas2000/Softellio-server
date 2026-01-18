@@ -33,14 +33,18 @@ async function getAllowedOrigins(): Promise<string[]> {
       }
     }
 
-    // Always include development origins and platform.softellio.com
+    // Always include development origins and production domains
     const defaultOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',  // Public site (Next.js)
       'http://localhost:3002',  // Portal CMS (Next.js)
+      'http://localhost:3003',  // Dev site
       'http://localhost:4200',
       'https://platform.softellio.com',
-      'http://platform.softellio.com'
+      'http://platform.softellio.com',
+      'https://portal.softellio.com',
+      'https://demo.softellio.com',
+      'https://softellio.com'
     ];
 
     // Combine and deduplicate origins
@@ -54,9 +58,13 @@ async function getAllowedOrigins(): Promise<string[]> {
       'http://localhost:3000',
       'http://localhost:3001',  // Public site (Next.js)
       'http://localhost:3002',  // Portal CMS (Next.js)
+      'http://localhost:3003',  // Dev site
       'http://localhost:4200',
       'https://platform.softellio.com',
-      'http://platform.softellio.com'
+      'http://platform.softellio.com',
+      'https://portal.softellio.com',
+      'https://demo.softellio.com',
+      'https://softellio.com'
     ];
   }
 }
@@ -97,7 +105,7 @@ async function bootstrap() {
       'Origin',
       'X-Requested-With'
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
   // Global validation pipe

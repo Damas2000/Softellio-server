@@ -93,6 +93,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.softellio.com' : undefined),
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -152,6 +153,7 @@ export class AuthController {
   ): Promise<{ ok: boolean }> {
     // Clear auth_token cookie
     response.clearCookie('auth_token', {
+      domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.softellio.com' : undefined),
       path: '/',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     });
