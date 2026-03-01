@@ -33,18 +33,27 @@ async function getAllowedOrigins(): Promise<string[]> {
       }
     }
 
+    // Parse CORS_ORIGINS from environment (comma-separated)
+    const envOrigins = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+      : [];
+
     // Always include development origins and production domains
     const defaultOrigins = [
       'http://localhost:3000',
-      'http://localhost:3001',  // Public site (Next.js)
-      'http://localhost:3002',  // Portal CMS (Next.js)
+      'http://localhost:3001',  // Portal CMS (Next.js)
+      'http://localhost:3002',  // Dev portal
       'http://localhost:3003',  // Dev site
       'http://localhost:4200',
+      'http://localhost:4321',  // Astro frontend
       'https://platform.softellio.com',
       'http://platform.softellio.com',
       'https://portal.softellio.com',
       'https://demo.softellio.com',
-      'https://softellio.com'
+      'https://softellio.com',
+      'https://www.softellio.com',
+      'https://api.softellio.com',
+      ...envOrigins,
     ];
 
     // Combine and deduplicate origins
@@ -54,17 +63,24 @@ async function getAllowedOrigins(): Promise<string[]> {
     return allOrigins;
   } catch (error) {
     console.warn('⚠️ Could not load CORS origins from database, using defaults:', error.message);
+    const envOrigins = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+      : [];
     return [
       'http://localhost:3000',
-      'http://localhost:3001',  // Public site (Next.js)
-      'http://localhost:3002',  // Portal CMS (Next.js)
+      'http://localhost:3001',  // Portal CMS (Next.js)
+      'http://localhost:3002',  // Dev portal
       'http://localhost:3003',  // Dev site
       'http://localhost:4200',
+      'http://localhost:4321',  // Astro frontend
       'https://platform.softellio.com',
       'http://platform.softellio.com',
       'https://portal.softellio.com',
       'https://demo.softellio.com',
-      'https://softellio.com'
+      'https://softellio.com',
+      'https://www.softellio.com',
+      'https://api.softellio.com',
+      ...envOrigins,
     ];
   }
 }
