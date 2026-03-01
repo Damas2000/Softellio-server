@@ -1180,6 +1180,7 @@ export class SeedingService {
 
     // Create sections from template
     const sectionsToCreate = defaultSections.map((section: any, index: number) => ({
+      tenantId,
       layoutId: layout.id,
       type: section.type,
       variant: section.variant,
